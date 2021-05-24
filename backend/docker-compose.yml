@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+    api:
+        build: .
+        env_file: .env
+        ports: 
+            - ${SERVER_PORT}:${SERVER_PORT}
