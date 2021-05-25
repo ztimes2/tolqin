@@ -37,7 +37,7 @@ func main() {
 	go func() {
 		logger.Infof("server listening on port %s", conf.ServerPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalf("server failed to listen: %w", err)
+			logger.Fatalf("server failed to listen: %v", err)
 		}
 	}()
 
