@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrSpotNotFound = errors.New("spot not found")
+	ErrNotFound        = errors.New("resource not found")
+	ErrNothingToUpdate = errors.New("nothing to update")
 )
 
 type SpotStore interface {

@@ -44,7 +44,7 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return surfing.Spot{}, surfing.ErrSpotNotFound
+			return surfing.Spot{}, surfing.ErrNotFound
 		}
 		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -107,18 +107,23 @@ func (ss *SpotStore) CreateSpot(p surfing.CreateSpotParams) (surfing.Spot, error
 func (ss *SpotStore) UpdateSpot(p surfing.UpdateSpotParams) (surfing.Spot, error) {
 	setMap := make(map[string]interface{})
 	if p.Name != nil {
-		setMap["name"] = p.Name
+		setMap["name"] = *p.Name
 	}
 	if p.Latitude != nil {
-		setMap["latitude"] = p.Latitude
+		setMap["latitude"] = *p.Latitude
 	}
 	if p.Longitude != nil {
-		setMap["longitude"] = p.Longitude
+		setMap["longitude"] = *p.Longitude
+	}
+
+	if len(setMap) == 0 {
+		return surfing.Spot{}, surfing.ErrNothingToUpdate
 	}
 
 	query, args, err := ss.builder.
 		Update("spots").
 		SetMap(setMap).
+		Where(sq.Eq{"id": p.ID}).
 		Suffix("RETURNING id, name, latitude, longitude, created_at").
 		ToSql()
 	if err != nil {
@@ -128,7 +133,7 @@ func (ss *SpotStore) UpdateSpot(p surfing.UpdateSpotParams) (surfing.Spot, error
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return surfing.Spot{}, surfing.ErrSpotNotFound
+			return surfing.Spot{}, surfing.ErrNotFound
 		}
 		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -156,7 +161,7 @@ func (ss *SpotStore) DeleteSpot(id string) error {
 	}
 
 	if count == 0 {
-		return surfing.ErrSpotNotFound
+		return surfing.ErrNotFound
 	}
 
 	return nil

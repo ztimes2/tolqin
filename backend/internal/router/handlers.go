@@ -41,7 +41,7 @@ func (h *handler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Para
 
 	spot, err := h.service.Spot(id)
 	if err != nil {
-		if errors.Is(err, surfing.ErrSpotNotFound) {
+		if errors.Is(err, surfing.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
 			return
 		}
@@ -55,7 +55,7 @@ func (h *handler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Para
 func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	spots, err := h.service.Spots()
 	if err != nil {
-		if errors.Is(err, surfing.ErrSpotNotFound) {
+		if errors.Is(err, surfing.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
 			return
 		}
@@ -124,8 +124,13 @@ func (h *handler) updateSpot(w http.ResponseWriter, r *http.Request, p httproute
 		Longitude: payload.Longitude,
 	})
 	if err != nil {
-		if errors.Is(err, surfing.ErrSpotNotFound) {
+		if errors.Is(err, surfing.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
+			return
+		}
+		if errors.Is(err, surfing.ErrNothingToUpdate) {
+			writeError(w, r, http.StatusBadRequest, "Nothing to update.")
+			return
 		}
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
@@ -143,7 +148,7 @@ func (h *handler) deleteSpot(w http.ResponseWriter, r *http.Request, p httproute
 	spotID := p.ByName(paramKeySpotID)
 
 	if err := h.service.DeleteSpot(spotID); err != nil {
-		if errors.Is(err, surfing.ErrSpotNotFound) {
+		if errors.Is(err, surfing.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
 		}
 		writeUnexpectedError(w, r, err)

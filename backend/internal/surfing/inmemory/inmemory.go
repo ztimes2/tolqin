@@ -27,7 +27,7 @@ func (s *SpotStore) Spot(id string) (surfing.Spot, error) {
 
 	spot, ok := s.spots[id]
 	if !ok {
-		return surfing.Spot{}, surfing.ErrSpotNotFound
+		return surfing.Spot{}, surfing.ErrNotFound
 	}
 
 	return spot, nil
@@ -72,7 +72,7 @@ func (s *SpotStore) UpdateSpot(p surfing.UpdateSpotParams) (surfing.Spot, error)
 
 	spot, ok := s.spots[p.ID]
 	if !ok {
-		return surfing.Spot{}, surfing.ErrSpotNotFound
+		return surfing.Spot{}, surfing.ErrNotFound
 	}
 
 	if p.Name != nil {
@@ -96,7 +96,7 @@ func (s *SpotStore) DeleteSpot(id string) error {
 
 	spot, ok := s.spots[id]
 	if !ok {
-		return surfing.ErrSpotNotFound
+		return surfing.ErrNotFound
 	}
 
 	delete(s.spots, spot.ID)
