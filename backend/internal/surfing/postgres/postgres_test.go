@@ -24,28 +24,21 @@ func wrapDB(db *sql.DB) *sqlx.DB {
 func TestSpotStore_Spot(t *testing.T) {
 	tests := []struct {
 		name          string
-		mockDBFn      func() (*sql.DB, sqlmock.Sqlmock, error)
+		mockFn        func(sqlmock.Sqlmock)
 		id            string
 		expectedSpot  surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name: "return error during unexpected db error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
 							"FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
 					WillReturnError(errors.New("unexpected error"))
-
-				return db, mock, nil
 			},
 			id:            "1",
 			expectedSpot:  surfing.Spot{},
@@ -53,21 +46,14 @@ func TestSpotStore_Spot(t *testing.T) {
 		},
 		{
 			name: "return error for unexisting resource",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
 							"FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
 					WillReturnError(sql.ErrNoRows)
-
-				return db, mock, nil
 			},
 			id:            "1",
 			expectedSpot:  surfing.Spot{},
@@ -75,13 +61,8 @@ func TestSpotStore_Spot(t *testing.T) {
 		},
 		{
 			name: "return spot without error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
 							"FROM spots WHERE id = $1",
@@ -94,8 +75,6 @@ func TestSpotStore_Spot(t *testing.T) {
 						AddRow("1", "Test", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
-
-				return db, mock, nil
 			},
 			id: "1",
 			expectedSpot: surfing.Spot{
@@ -111,11 +90,13 @@ func TestSpotStore_Spot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db, mock, err := test.mockDBFn()
+			db, mock, err := sqlmock.New()
 			if err != nil {
 				assert.Fail(t, err.Error())
 			}
 			defer db.Close()
+
+			test.mockFn(mock)
 
 			store := NewSpotStore(wrapDB(db))
 
@@ -131,39 +112,27 @@ func TestSpotStore_Spot(t *testing.T) {
 func TestSpotStore_Spots(t *testing.T) {
 	tests := []struct {
 		name          string
-		mockDBFn      func() (*sql.DB, sqlmock.Sqlmock, error)
+		mockFn        func(sqlmock.Sqlmock)
 		expectedSpots []surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name: "return error during unexpected db error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
 							"FROM spots",
 					)).
 					WillReturnError(errors.New("unexpected error"))
-
-				return db, mock, nil
 			},
 			expectedSpots: nil,
 			expectedErrFn: assert.Error,
 		},
 		{
 			name: "return error during row scanning",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
 							"FROM spots",
@@ -175,21 +144,14 @@ func TestSpotStore_Spots(t *testing.T) {
 						AddRow(1, true, "1.23", "3.21", "Not-a-time"),
 					).
 					RowsWillBeClosed()
-
-				return db, mock, nil
 			},
 			expectedSpots: nil,
 			expectedErrFn: assert.Error,
 		},
 		{
 			name: "return 0 spots without error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
 							"FROM spots",
@@ -200,21 +162,14 @@ func TestSpotStore_Spots(t *testing.T) {
 						}),
 					).
 					RowsWillBeClosed()
-
-				return db, mock, nil
 			},
 			expectedSpots: nil,
 			expectedErrFn: assert.NoError,
 		},
 		{
 			name: "return multiple spots without error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
 							"FROM spots",
@@ -227,8 +182,6 @@ func TestSpotStore_Spots(t *testing.T) {
 						AddRow("2", "Test", 2.34, 4.32, time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
-
-				return db, mock, nil
 			},
 			expectedSpots: []surfing.Spot{
 				{
@@ -252,11 +205,13 @@ func TestSpotStore_Spots(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db, mock, err := test.mockDBFn()
+			db, mock, err := sqlmock.New()
 			if err != nil {
 				assert.Fail(t, err.Error())
 			}
 			defer db.Close()
+
+			test.mockFn(mock)
 
 			store := NewSpotStore(wrapDB(db))
 
@@ -272,20 +227,15 @@ func TestSpotStore_Spots(t *testing.T) {
 func TestSpotStore_CreateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
-		mockDBFn      func() (*sql.DB, sqlmock.Sqlmock, error)
+		mockFn        func(sqlmock.Sqlmock)
 		params        surfing.CreateSpotParams
 		expectedSpot  surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name: "return error during unexpected db error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"INSERT INTO spots (name,latitude,longitude) "+
 							"VALUES ($1,$2,$3) "+
@@ -293,8 +243,6 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 					)).
 					WithArgs("Test", 1.23, 3.21).
 					WillReturnError(errors.New("unexpected error"))
-
-				return db, mock, nil
 			},
 			params: surfing.CreateSpotParams{
 				Name:      "Test",
@@ -306,13 +254,8 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot without error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"INSERT INTO spots (name,latitude,longitude) "+
 							"VALUES ($1,$2,$3) "+
@@ -326,8 +269,6 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 						AddRow("1", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
-
-				return db, mock, nil
 			},
 			params: surfing.CreateSpotParams{
 				Name:      "Test",
@@ -347,11 +288,13 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db, mock, err := test.mockDBFn()
+			db, mock, err := sqlmock.New()
 			if err != nil {
 				assert.Fail(t, err.Error())
 			}
 			defer db.Close()
+
+			test.mockFn(mock)
 
 			store := NewSpotStore(wrapDB(db))
 			spot, err := store.CreateSpot(test.params)
@@ -366,20 +309,15 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 func TestSpotStore_UpdateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
-		mockDBFn      func() (*sql.DB, sqlmock.Sqlmock, error)
+		mockFn        func(sqlmock.Sqlmock)
 		params        surfing.UpdateSpotParams
 		expectedSpot  surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name: "return error during unexpected db error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET latitude = $1, longitude = $2, name = $3 "+
@@ -388,8 +326,6 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					)).
 					WithArgs(2.34, 4.32, "Test updated", "1").
 					WillReturnError(errors.New("unexpected error"))
-
-				return db, mock, nil
 			},
 			params: surfing.UpdateSpotParams{
 				ID:        "1",
@@ -402,13 +338,8 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return error for unexisting resource",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET latitude = $1, longitude = $2, name = $3 "+
@@ -417,8 +348,6 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					)).
 					WithArgs(2.34, 4.32, "Test updated", "1").
 					WillReturnError(sql.ErrNoRows)
-
-				return db, mock, nil
 			},
 			params: surfing.UpdateSpotParams{
 				ID:        "1",
@@ -430,14 +359,8 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 			expectedErrFn: testutil.IsError(surfing.ErrNotFound),
 		},
 		{
-			name: "return error when nothing to update",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-				return db, mock, nil
-			},
+			name:   "return error when nothing to update",
+			mockFn: func(m sqlmock.Sqlmock) {},
 			params: surfing.UpdateSpotParams{
 				ID: "1",
 			},
@@ -446,13 +369,8 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot without error for full update",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET latitude = $1, longitude = $2, name = $3 "+
@@ -467,8 +385,6 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 						AddRow("1", "Test updated", 2.34, 4.32, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
-
-				return db, mock, nil
 			},
 			params: surfing.UpdateSpotParams{
 				ID:        "1",
@@ -487,13 +403,8 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot without error for partial update",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET name = $1 "+
@@ -508,8 +419,6 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 						AddRow("1", "Test updated", 2.34, 4.32, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
-
-				return db, mock, nil
 			},
 			params: surfing.UpdateSpotParams{
 				ID:   "1",
@@ -528,11 +437,13 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db, mock, err := test.mockDBFn()
+			db, mock, err := sqlmock.New()
 			if err != nil {
 				assert.Fail(t, err.Error())
 			}
 			defer db.Close()
+
+			test.mockFn(mock)
 
 			store := NewSpotStore(wrapDB(db))
 			spot, err := store.UpdateSpot(test.params)
@@ -547,39 +458,27 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 func TestSpotStore_DeleteSpot(t *testing.T) {
 	tests := []struct {
 		name          string
-		mockDBFn      func() (*sql.DB, sqlmock.Sqlmock, error)
+		mockFn        func(sqlmock.Sqlmock)
 		id            string
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name: "return error during unexpected db error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectExec(regexp.QuoteMeta(
 						"DELETE FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
 					WillReturnError(errors.New("unexpected error"))
-
-				return db, mock, nil
 			},
 			id:            "1",
 			expectedErrFn: assert.Error,
 		},
 		{
 			name: "return error when reading affected rows",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectExec(regexp.QuoteMeta(
 						"DELETE FROM spots WHERE id = $1",
 					)).
@@ -587,41 +486,27 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 					WillReturnResult(sqlmock.NewErrorResult(
 						errors.New("unexpected error"),
 					))
-
-				return db, mock, nil
 			},
 			id:            "1",
 			expectedErrFn: assert.Error,
 		},
 		{
 			name: "return error for unexisting resource",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectExec(regexp.QuoteMeta(
 						"DELETE FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
 					WillReturnResult(sqlmock.NewResult(0, 0))
-
-				return db, mock, nil
 			},
 			id:            "1",
 			expectedErrFn: assert.Error,
 		},
 		{
 			name: "return no error",
-			mockDBFn: func() (*sql.DB, sqlmock.Sqlmock, error) {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					return nil, nil, err
-				}
-
-				mock.
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
 					ExpectExec(regexp.QuoteMeta(
 						"DELETE FROM spots WHERE id = $1",
 					)).
@@ -630,8 +515,6 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 						0, // Postgres driver does not support LastInsertId
 						1,
 					))
-
-				return db, mock, nil
 			},
 			id:            "1",
 			expectedErrFn: assert.NoError,
@@ -640,11 +523,13 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db, mock, err := test.mockDBFn()
+			db, mock, err := sqlmock.New()
 			if err != nil {
 				assert.Fail(t, err.Error())
 			}
 			defer db.Close()
+
+			test.mockFn(mock)
 
 			store := NewSpotStore(wrapDB(db))
 			err = store.DeleteSpot(test.id)
