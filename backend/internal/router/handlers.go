@@ -150,6 +150,7 @@ func (h *handler) deleteSpot(w http.ResponseWriter, r *http.Request, p httproute
 	if err := h.service.DeleteSpot(spotID); err != nil {
 		if errors.Is(err, surfing.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
+			return
 		}
 		writeUnexpectedError(w, r, err)
 		return
