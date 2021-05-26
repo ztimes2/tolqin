@@ -18,7 +18,7 @@ import (
 )
 
 func wrapDB(db *sql.DB) *sqlx.DB {
-	return sqlx.NewDb(db, "postgres")
+	return sqlx.NewDb(db, driverName)
 }
 
 func TestSpotStore_Spot(t *testing.T) {

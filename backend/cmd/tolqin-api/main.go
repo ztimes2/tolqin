@@ -13,7 +13,7 @@ import (
 	"github.com/ztimes2/tolqin/backend/internal/logging"
 	"github.com/ztimes2/tolqin/backend/internal/router"
 	"github.com/ztimes2/tolqin/backend/internal/surfing"
-	"github.com/ztimes2/tolqin/backend/internal/surfing/inmemory"
+	"github.com/ztimes2/tolqin/backend/internal/surfing/postgres"
 )
 
 func main() {
@@ -23,9 +23,20 @@ func main() {
 	logger, err := logging.NewLogger(conf.LogLevel, conf.LogFormat)
 	fatalOnError(err, "failed to initialize logger")
 
+	db, err := postgres.NewDB(postgres.Config{
+		Host:         conf.DatabaseHost,
+		Port:         conf.DatabasePort,
+		Username:     conf.DatabaseUsername,
+		Password:     conf.DatabasePassword,
+		DatabaseName: conf.DatabaseName,
+		SSLMode:      postgres.NewSSLMode(conf.DatabaseSSLMode),
+	})
+	fatalOnError(err, "faile to connect to database")
+
+	spotStore := postgres.NewSpotStore(db)
 	validate := validator.New()
-	spotStore := inmemory.NewSpotStore()
 	service := surfing.NewService(validate, spotStore)
+
 	router := router.New(service, logger)
 
 	server := &http.Server{
