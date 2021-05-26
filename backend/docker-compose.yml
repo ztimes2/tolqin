@@ -1,7 +1,11 @@
 version: "3.8"
 services:
-    api:
-        build: .
-        env_file: .env
-        ports: 
-            - ${SERVER_PORT}:${SERVER_PORT}
+    db:
+        image: postgres
+        environment:
+            - POSTGRES_PASSWORD=root
+            - POSTGRES_USER=root
+            - POSTGRES_DB=tolqin
+        ports:
+            - 5432:5432
+        command: ["-c", "log_statement=all"]
