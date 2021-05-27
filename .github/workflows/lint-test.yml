@@ -23,7 +23,6 @@ jobs:
       uses: golangci/golangci-lint-action@v2
       with:
         skip-go-installation: true
-        args: -v
 
   unit-test:
     runs-on: ubuntu-latest
