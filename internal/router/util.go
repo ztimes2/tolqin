@@ -22,7 +22,7 @@ func write(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}
 	}
 
 	w.WriteHeader(statusCode)
-	_, _ = w.Write(body)
+	w.Write(body)
 }
 
 func writeUnexpectedError(w http.ResponseWriter, r *http.Request, err error) {

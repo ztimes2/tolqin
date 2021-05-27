@@ -35,7 +35,7 @@ func TestSpotStore_Spot(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
-							"FROM spots WHERE id = $1",
+							"FROM spots WHERE i = $1",
 					)).
 					WithArgs("1").
 					WillReturnError(errors.New("unexpected error"))
