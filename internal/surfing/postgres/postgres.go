@@ -10,7 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/ztimes2/tolqin/backend/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
 const (

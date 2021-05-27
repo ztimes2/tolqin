@@ -12,9 +12,9 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ztimes2/tolqin/backend/internal/surfing"
-	"github.com/ztimes2/tolqin/backend/internal/testutil"
-	"github.com/ztimes2/tolqin/backend/internal/typeutil"
+	"github.com/ztimes2/tolqin/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/testutil"
+	"github.com/ztimes2/tolqin/internal/typeutil"
 )
 
 func wrapDB(db *sql.DB) *sqlx.DB {

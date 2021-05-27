@@ -9,11 +9,11 @@ import (
 	"syscall"
 
 	"github.com/go-playground/validator"
-	"github.com/ztimes2/tolqin/backend/internal/config"
-	"github.com/ztimes2/tolqin/backend/internal/logging"
-	"github.com/ztimes2/tolqin/backend/internal/router"
-	"github.com/ztimes2/tolqin/backend/internal/surfing"
-	"github.com/ztimes2/tolqin/backend/internal/surfing/postgres"
+	"github.com/ztimes2/tolqin/internal/config"
+	"github.com/ztimes2/tolqin/internal/logging"
+	"github.com/ztimes2/tolqin/internal/router"
+	"github.com/ztimes2/tolqin/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/surfing/postgres"
 )
 
 func main() {

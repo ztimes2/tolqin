@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator"
-	"github.com/ztimes2/tolqin/backend/internal/logging"
+	"github.com/ztimes2/tolqin/internal/logging"
 )
 
 func write(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {

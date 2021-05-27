@@ -1,4 +1,4 @@
-module github.com/ztimes2/tolqin/backend
+module github.com/ztimes2/tolqin
 
 go 1.16
 

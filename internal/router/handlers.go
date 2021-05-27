@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/julienschmidt/httprouter"
-	"github.com/ztimes2/tolqin/backend/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
 type spotResponse struct {

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ztimes2/tolqin/backend/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
 type SpotStore struct {

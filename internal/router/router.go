@@ -6,8 +6,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"github.com/ztimes2/tolqin/backend/internal/logging"
-	"github.com/ztimes2/tolqin/backend/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/logging"
+	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
 const (
