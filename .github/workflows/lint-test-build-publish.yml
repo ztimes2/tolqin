@@ -64,4 +64,4 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         
     - name: Build and push image to DockerHub
-      run: ./scripts/publish.sh
+      run: ./scripts/publish.sh ${{ secrets.DOCKERHUB_REPOSITORY }}
