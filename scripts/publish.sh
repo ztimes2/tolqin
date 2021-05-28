@@ -1,7 +1,8 @@
 #!/bin/bash
 
+REGISTRY=$1
 REVISION=$(git rev-parse HEAD)
-TAG=ztimes2/tolqin-api:$REVISION
+TAG=$REGISTRY:$REVISION 
 
 docker build -t $TAG .
 docker push $TAG
