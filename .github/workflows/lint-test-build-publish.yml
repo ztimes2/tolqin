@@ -23,7 +23,6 @@ jobs:
         skip-go-installation: true
 
   unit-test:
-    needs: lint
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -38,7 +37,6 @@ jobs:
       run: go test --covermode=count ./...
 
   build:
-    needs: unit-test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -53,7 +51,7 @@ jobs:
       run: go build cmd/tolqin-api/main.go
 
   publish:
-    needs: build
+    needs: [lint, unit-test, build]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
