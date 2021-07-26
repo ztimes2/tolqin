@@ -12,9 +12,9 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ztimes2/tolqin/internal/pconv"
 	"github.com/ztimes2/tolqin/internal/surfing"
 	"github.com/ztimes2/tolqin/internal/testutil"
-	"github.com/ztimes2/tolqin/internal/typeutil"
 )
 
 func wrapDB(db *sql.DB) *sqlx.DB {
@@ -329,9 +329,9 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 			},
 			params: surfing.UpdateSpotParams{
 				ID:        "1",
-				Name:      typeutil.String("Test updated"),
-				Latitude:  typeutil.Float64(2.34),
-				Longitude: typeutil.Float64(4.32),
+				Name:      pconv.String("Test updated"),
+				Latitude:  pconv.Float64(2.34),
+				Longitude: pconv.Float64(4.32),
 			},
 			expectedSpot:  surfing.Spot{},
 			expectedErrFn: assert.Error,
@@ -351,9 +351,9 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 			},
 			params: surfing.UpdateSpotParams{
 				ID:        "1",
-				Name:      typeutil.String("Test updated"),
-				Latitude:  typeutil.Float64(2.34),
-				Longitude: typeutil.Float64(4.32),
+				Name:      pconv.String("Test updated"),
+				Latitude:  pconv.Float64(2.34),
+				Longitude: pconv.Float64(4.32),
 			},
 			expectedSpot:  surfing.Spot{},
 			expectedErrFn: testutil.IsError(surfing.ErrNotFound),
@@ -388,9 +388,9 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 			},
 			params: surfing.UpdateSpotParams{
 				ID:        "1",
-				Name:      typeutil.String("Test updated"),
-				Latitude:  typeutil.Float64(2.34),
-				Longitude: typeutil.Float64(4.32),
+				Name:      pconv.String("Test updated"),
+				Latitude:  pconv.Float64(2.34),
+				Longitude: pconv.Float64(4.32),
 			},
 			expectedSpot: surfing.Spot{
 				ID:        "1",
@@ -422,7 +422,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 			},
 			params: surfing.UpdateSpotParams{
 				ID:   "1",
-				Name: typeutil.String("Test updated"),
+				Name: pconv.String("Test updated"),
 			},
 			expectedSpot: surfing.Spot{
 				ID:        "1",
