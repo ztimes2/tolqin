@@ -5,7 +5,7 @@ import (
 )
 
 func IsError(target error) assert.ErrorAssertionFunc {
-	return func(tt assert.TestingT, e error, i ...interface{}) bool {
-		return assert.ErrorIs(tt, e, target, i...)
+	return func(t assert.TestingT, err error, i ...interface{}) bool {
+		return assert.ErrorIs(t, err, target, i...)
 	}
 }
