@@ -48,19 +48,6 @@ type errorResponse struct {
 	Description string `json:"error_description"`
 }
 
-type listResponse struct {
-	Items []interface{} `json:"items"`
-}
-
-func toListResponse(items []interface{}) listResponse {
-	if len(items) == 0 {
-		items = make([]interface{}, 0)
-	}
-	return listResponse{
-		Items: items,
-	}
-}
-
 func humanizeValidationErrors(errs validator.ValidationErrors) string {
 	if len(errs) == 0 {
 		return "Invalid input."

@@ -26,6 +26,10 @@ func toSpotResponse(s surfing.Spot) spotResponse {
 	}
 }
 
+type spotsResponse struct {
+	Items []spotResponse `json:"items"`
+}
+
 type handler struct {
 	service *surfing.Service
 }
@@ -63,12 +67,15 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		return
 	}
 
-	var items []interface{}
-	for _, s := range spots {
-		items = append(items, toSpotResponse(s))
+	resp := spotsResponse{
+		Items: make([]spotResponse, len(spots)),
 	}
 
-	write(w, r, http.StatusOK, toListResponse(items))
+	for _, s := range spots {
+		resp.Items = append(resp.Items, toSpotResponse(s))
+	}
+
+	write(w, r, http.StatusOK, resp)
 }
 
 func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
