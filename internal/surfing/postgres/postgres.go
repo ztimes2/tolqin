@@ -169,24 +169,23 @@ func (ss *SpotStore) CreateSpot(p surfing.CreateSpotParams) (surfing.Spot, error
 }
 
 func (ss *SpotStore) UpdateSpot(p surfing.UpdateSpotParams) (surfing.Spot, error) {
-	setMap := make(map[string]interface{})
+	values := make(map[string]interface{})
 	if p.Name != nil {
-		setMap["name"] = *p.Name
+		values["name"] = *p.Name
 	}
 	if p.Latitude != nil {
-		setMap["latitude"] = *p.Latitude
+		values["latitude"] = *p.Latitude
 	}
 	if p.Longitude != nil {
-		setMap["longitude"] = *p.Longitude
+		values["longitude"] = *p.Longitude
 	}
-
-	if len(setMap) == 0 {
+	if len(values) == 0 {
 		return surfing.Spot{}, surfing.ErrNothingToUpdate
 	}
 
 	query, args, err := ss.builder.
 		Update("spots").
-		SetMap(setMap).
+		SetMap(values).
 		Where(sq.Eq{"id": p.ID}).
 		Suffix("RETURNING id, name, latitude, longitude, created_at").
 		ToSql()
