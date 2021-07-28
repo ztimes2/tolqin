@@ -15,9 +15,6 @@ github.com/go-playground/universal-translator
 # github.com/go-playground/validator v9.31.0+incompatible
 ## explicit
 github.com/go-playground/validator
-# github.com/google/uuid v1.2.0
-## explicit
-github.com/google/uuid
 # github.com/heetch/confita v0.10.0
 ## explicit
 github.com/heetch/confita
