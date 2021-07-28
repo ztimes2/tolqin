@@ -11,9 +11,9 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/ztimes2/tolqin/internal/config"
 	"github.com/ztimes2/tolqin/internal/logging"
+	"github.com/ztimes2/tolqin/internal/postgres"
 	"github.com/ztimes2/tolqin/internal/router"
 	"github.com/ztimes2/tolqin/internal/surfing"
-	"github.com/ztimes2/tolqin/internal/surfing/postgres"
 )
 
 func main() {
