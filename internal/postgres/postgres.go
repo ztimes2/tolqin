@@ -10,6 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/ztimes2/tolqin/internal/importing"
 	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
@@ -228,4 +229,96 @@ func (ss *SpotStore) DeleteSpot(id string) error {
 	}
 
 	return nil
+}
+
+type SpotImporter struct {
+	db        *sqlx.DB
+	builder   sq.StatementBuilderType
+	batchSize int
+}
+
+func NewSpotImporter(db *sqlx.DB, batchSize int) *SpotImporter {
+	return &SpotImporter{
+		db:        db,
+		builder:   sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		batchSize: batchSize,
+	}
+}
+
+func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry,
+) ([]surfing.Spot, error) {
+
+	if len(entries) == 0 {
+		return nil, importing.ErrNothingToImport
+	}
+
+	tx, err := si.db.Beginx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	var spots []surfing.Spot
+
+	i := 0
+	j := clampIntMax(si.batchSize-1, len(entries)-1)
+	for i != j {
+		batch := entries[i:j]
+
+		ss, err := si.importSpots(tx, batch)
+		if err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to import spots: %w", err)
+		}
+
+		spots = append(spots, ss...)
+
+		i = clampIntMax(j+1, len(entries)-1)
+		j = clampIntMax(j+si.batchSize, len(entries)-1)
+	}
+
+	tx.Commit()
+	return spots, nil
+}
+
+func clampIntMax(i, max int) int {
+	if i > max {
+		return max
+	}
+	return i
+}
+
+func (si *SpotImporter) importSpots(tx *sqlx.Tx, entries []importing.SpotEntry,
+) ([]surfing.Spot, error) {
+
+	builder := si.builder.
+		Insert("spots").
+		Columns("name", "latitude", "longitude")
+
+	for _, e := range entries {
+		builder = builder.Values(e.Name, e.Latitude, e.Longitude)
+	}
+
+	query, args, err := builder.
+		Suffix("RETURNING id, name, latitude, longitude, created_at").
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build query: %w", err)
+	}
+
+	rows, err := tx.Queryx(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	var spots []surfing.Spot
+	defer rows.Close()
+	for rows.Next() {
+		var s spot
+		if err := rows.StructScan(&s); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		spots = append(spots, surfing.Spot(s))
+	}
+
+	return spots, nil
 }
