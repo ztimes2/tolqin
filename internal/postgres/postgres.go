@@ -260,7 +260,7 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry,
 
 	var spots []surfing.Spot
 
-	coord := batch.New(si.batchSize, len(entries))
+	coord := batch.New(len(entries), si.batchSize)
 	for coord.HasNext() {
 		b := coord.Batch()
 
