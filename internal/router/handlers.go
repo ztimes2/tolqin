@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator"
 	"github.com/julienschmidt/httprouter"
@@ -57,7 +58,19 @@ func (h *handler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Para
 }
 
 func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	spots, err := h.service.Spots()
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
+		return
+	}
+
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, "Invalid offset.")
+		return
+	}
+
+	spots, err := h.service.Spots(limit, offset)
 	if err != nil {
 		if errors.Is(err, surfing.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")

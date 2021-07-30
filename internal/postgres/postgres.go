@@ -118,10 +118,12 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 	return surfing.Spot(s), nil
 }
 
-func (ss *SpotStore) Spots() ([]surfing.Spot, error) {
+func (ss *SpotStore) Spots(limit, offset int) ([]surfing.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "created_at").
 		From("spots").
+		Limit(uint64(limit)).
+		Offset(uint64(offset)).
 		ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query: %w", err)

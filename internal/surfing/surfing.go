@@ -14,7 +14,7 @@ var (
 
 type SpotStore interface {
 	Spot(id string) (Spot, error)
-	Spots() ([]Spot, error)
+	Spots(limit, offset int) ([]Spot, error)
 	CreateSpot(CreateSpotParams) (Spot, error)
 	UpdateSpot(UpdateSpotParams) (Spot, error)
 	DeleteSpot(id string) error
@@ -57,8 +57,8 @@ func (s *Service) Spot(id string) (Spot, error) {
 	return s.spotStore.Spot(id)
 }
 
-func (s *Service) Spots() ([]Spot, error) {
-	return s.spotStore.Spots()
+func (s *Service) Spots(limit, offset int) ([]Spot, error) {
+	return s.spotStore.Spots(limit, offset)
 }
 
 func (s *Service) CreateSpot(p CreateSpotParams) (Spot, error) {

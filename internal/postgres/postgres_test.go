@@ -113,17 +113,21 @@ func TestSpotStore_Spot(t *testing.T) {
 func TestSpotStore_Spots(t *testing.T) {
 	tests := []struct {
 		name          string
+		limit         int
+		offset        int
 		mockFn        func(sqlmock.Sqlmock)
 		expectedSpots []surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
-			name: "return error during unexpected db error",
+			name:   "return error during unexpected db error",
+			limit:  10,
+			offset: 0,
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
-							"FROM spots",
+							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnError(errors.New("unexpected error"))
 			},
@@ -131,12 +135,14 @@ func TestSpotStore_Spots(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
-			name: "return error during row scanning",
+			name:   "return error during row scanning",
+			limit:  10,
+			offset: 0,
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
-							"FROM spots",
+							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnRows(sqlmock.
 						NewRows([]string{
@@ -150,12 +156,14 @@ func TestSpotStore_Spots(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
-			name: "return 0 spots without error",
+			name:   "return 0 spots without error",
+			limit:  10,
+			offset: 0,
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
-							"FROM spots",
+							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnRows(sqlmock.
 						NewRows([]string{
@@ -168,12 +176,14 @@ func TestSpotStore_Spots(t *testing.T) {
 			expectedErrFn: assert.NoError,
 		},
 		{
-			name: "return multiple spots without error",
+			name:   "return multiple spots without error",
+			limit:  10,
+			offset: 0,
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, created_at " +
-							"FROM spots",
+							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnRows(sqlmock.
 						NewRows([]string{
@@ -216,7 +226,7 @@ func TestSpotStore_Spots(t *testing.T) {
 
 			store := NewSpotStore(wrapDB(db))
 
-			spots, err := store.Spots()
+			spots, err := store.Spots(test.limit, test.offset)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpots, spots)
 
