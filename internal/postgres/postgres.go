@@ -260,11 +260,12 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry,
 	var spots []surfing.Spot
 
 	i := 0
-	j := si.batchSize - 1
-	for i < len(entries) {
-		j = clampIntMax(j, len(entries)-1)
-
+	j := clampIntMax(si.batchSize - 1, len(entries) - 1)
+	for {
 		batch := entries[i : j+1]
+		if len(batch) == 0 {
+			break
+		}
 
 		ss, err := si.importSpots(tx, batch)
 		if err != nil {
@@ -275,7 +276,7 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry,
 		spots = append(spots, ss...)
 
 		i = j + 1
-		j += si.batchSize
+		j = clampIntMax(j+si.batchSize, len(entries)-1)
 	}
 
 	tx.Commit()
