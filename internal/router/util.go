@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator"
 	"github.com/ztimes2/tolqin/internal/logging"
@@ -53,4 +54,22 @@ func humanizeValidationErrors(errs validator.ValidationErrors) string {
 		return "Invalid input."
 	}
 	return fmt.Sprintf("Invalid %q field.", errs[0].Field())
+}
+
+func queryParamInt(r *http.Request, key string) (int, error) {
+	if r.Form == nil {
+		r.ParseForm()
+	}
+
+	v := r.FormValue(key)
+	if v == "" {
+		return 0, nil
+	}
+
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		return 0, err
+	}
+
+	return i, nil
 }

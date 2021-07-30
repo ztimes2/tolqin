@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/go-playground/validator"
 	"github.com/julienschmidt/httprouter"
@@ -58,13 +57,13 @@ func (h *handler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Para
 }
 
 func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	limit, err := queryParamInt(r, "limit")
 	if err != nil {
 		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
 		return
 	}
 
-	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	offset, err := queryParamInt(r, "offset")
 	if err != nil {
 		writeError(w, r, http.StatusBadRequest, "Invalid offset.")
 		return
@@ -84,8 +83,8 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		Items: make([]spotResponse, len(spots)),
 	}
 
-	for _, s := range spots {
-		resp.Items = append(resp.Items, toSpotResponse(s))
+	for i, s := range spots {
+		resp.Items[i] = toSpotResponse(s)
 	}
 
 	write(w, r, http.StatusOK, resp)
