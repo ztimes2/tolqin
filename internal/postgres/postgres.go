@@ -10,6 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/ztimes2/tolqin/internal/batch"
 	"github.com/ztimes2/tolqin/internal/importing"
 	"github.com/ztimes2/tolqin/internal/surfing"
 )
@@ -259,35 +260,21 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry,
 
 	var spots []surfing.Spot
 
-	i := 0
-	j := clampIntMax(si.batchSize - 1, len(entries) - 1)
-	for {
-		batch := entries[i : j+1]
-		if len(batch) == 0 {
-			break
-		}
+	coord := batch.New(si.batchSize, len(entries))
+	for coord.HasNext() {
+		b := coord.Batch()
 
-		ss, err := si.importSpots(tx, batch)
+		ss, err := si.importSpots(tx, entries[b.I:b.J+1])
 		if err != nil {
 			tx.Rollback()
 			return nil, fmt.Errorf("failed to import spots: %w", err)
 		}
 
 		spots = append(spots, ss...)
-
-		i = j + 1
-		j = clampIntMax(j+si.batchSize, len(entries)-1)
 	}
 
 	tx.Commit()
 	return spots, nil
-}
-
-func clampIntMax(i, max int) int {
-	if i > max {
-		return max
-	}
-	return i
 }
 
 func (si *SpotImporter) importSpots(tx *sqlx.Tx, entries []importing.SpotEntry,
