@@ -12,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ztimes2/tolqin/internal/importing"
 	"github.com/ztimes2/tolqin/internal/pconv"
 	"github.com/ztimes2/tolqin/internal/surfing"
 	"github.com/ztimes2/tolqin/internal/testutil"
@@ -534,6 +535,312 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 			store := NewSpotStore(wrapDB(db))
 			err = store.DeleteSpot(test.id)
 			test.expectedErrFn(t, err)
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestSpotImporter_ImportSpots(t *testing.T) {
+	tests := []struct {
+		name          string
+		batchSize     int
+		mockFn        func(sqlmock.Sqlmock)
+		entries       []importing.SpotEntry
+		expectedSpots []surfing.Spot
+		expectedErrFn assert.ErrorAssertionFunc
+	}{
+		{
+			name:          "return error when nothing to import",
+			batchSize:     2,
+			mockFn:        func(m sqlmock.Sqlmock) {},
+			entries:       []importing.SpotEntry{},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsError(importing.ErrNothingToImport),
+		},
+		{
+			name:      "return error during tx init error",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin().
+					WillReturnError(errors.New("something went wrong"))
+			},
+			entries: []importing.SpotEntry{
+				{
+					Name:      "Test 1",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 2",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 3",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 4",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 5",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return error during unexpected db failure",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin()
+
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude) "+
+							"VALUES ($1,$2,$3),($4,$5,$6) "+
+							"RETURNING id, name, latitude, longitude, created_at",
+					)).
+					WithArgs(
+						"Test 1", 1.23, 3.21,
+						"Test 2", 1.23, 3.21,
+					).
+					WillReturnError(errors.New("something went wrong"))
+
+				m.ExpectRollback()
+			},
+			entries: []importing.SpotEntry{
+				{
+					Name:      "Test 1",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 2",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 3",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 4",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 5",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return error during row scanning",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin()
+
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude) "+
+							"VALUES ($1,$2,$3),($4,$5,$6) "+
+							"RETURNING id, name, latitude, longitude, created_at",
+					)).
+					WithArgs(
+						"Test 1", 1.23, 3.21,
+						"Test 2", 1.23, 3.21,
+					).
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "created_at",
+						}).
+						AddRow("1", "Test 1", 1.23, 3.21, false).
+						AddRow("2", "Test 2", 1.23, 3.21, false),
+					)
+
+				m.ExpectRollback()
+			},
+			entries: []importing.SpotEntry{
+				{
+					Name:      "Test 1",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 2",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 3",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 4",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 5",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return spots without error",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin()
+
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude) "+
+							"VALUES ($1,$2,$3),($4,$5,$6) "+
+							"RETURNING id, name, latitude, longitude, created_at",
+					)).
+					WithArgs(
+						"Test 1", 1.23, 3.21,
+						"Test 2", 1.23, 3.21,
+					).
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "created_at",
+						}).
+						AddRow("1", "Test 1", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("2", "Test 2", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
+					)
+
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude) "+
+							"VALUES ($1,$2,$3),($4,$5,$6) "+
+							"RETURNING id, name, latitude, longitude, created_at",
+					)).
+					WithArgs(
+						"Test 3", 1.23, 3.21,
+						"Test 4", 1.23, 3.21,
+					).
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "created_at",
+						}).
+						AddRow("3", "Test 3", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("4", "Test 4", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
+					)
+
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude) "+
+							"VALUES ($1,$2,$3) "+
+							"RETURNING id, name, latitude, longitude, created_at",
+					)).
+					WithArgs("Test 5", 1.23, 3.21).
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "created_at",
+						}).
+						AddRow("5", "Test 5", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
+					)
+
+				m.ExpectCommit()
+			},
+			entries: []importing.SpotEntry{
+				{
+					Name:      "Test 1",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 2",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 3",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 4",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+				{
+					Name:      "Test 5",
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+			},
+			expectedSpots: []surfing.Spot{
+				{
+					ID:        "1",
+					Name:      "Test 1",
+					Latitude:  1.23,
+					Longitude: 3.21,
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					ID:        "2",
+					Name:      "Test 2",
+					Latitude:  1.23,
+					Longitude: 3.21,
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					ID:        "3",
+					Name:      "Test 3",
+					Latitude:  1.23,
+					Longitude: 3.21,
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					ID:        "4",
+					Name:      "Test 4",
+					Latitude:  1.23,
+					Longitude: 3.21,
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					ID:        "5",
+					Name:      "Test 5",
+					Latitude:  1.23,
+					Longitude: 3.21,
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			if err != nil {
+				assert.Fail(t, err.Error())
+			}
+			defer db.Close()
+
+			test.mockFn(mock)
+
+			importer := NewSpotImporter(wrapDB(db), test.batchSize)
+			spots, err := importer.ImportSpots(test.entries)
+			test.expectedErrFn(t, err)
+			assert.Equal(t, test.expectedSpots, spots)
 
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
