@@ -58,7 +58,7 @@ func humanizeValidationErrors(errs validator.ValidationErrors) string {
 
 func queryParamInt(r *http.Request, key string) (int, error) {
 	if r.Form == nil {
-		r.ParseForm()
+		_ = r.ParseForm()
 	}
 
 	v := r.FormValue(key)
