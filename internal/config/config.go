@@ -10,35 +10,76 @@ import (
 const (
 	defaultLogLevel  = "info"
 	defaultLogFormat = "json"
+
+	defaultBatchSize = 100
 )
 
-type Config struct {
-	ServerPort string `config:"SERVER_PORT,required"`
-	LogLevel   string `config:"LOG_LEVEL"`
-	LogFormat  string `config:"LOG_FORMAT"`
-
-	DatabaseHost     string `config:"DB_HOST,required"`
-	DatabasePort     string `config:"DB_PORT,required"`
-	DatabaseUsername string `config:"DB_USERNAME"`
-	DatabasePassword string `config:"DB_PASSWORD"`
-	DatabaseName     string `config:"DB_NAME,required"`
-	DatabaseSSLMode  string `config:"DB_SSLMODE"`
+type Database struct {
+	Host     string `config:"DB_HOST,required"`
+	Port     string `config:"DB_PORT,required"`
+	Username string `config:"DB_USERNAME"`
+	Password string `config:"DB_PASSWORD"`
+	Name     string `config:"DB_NAME,required"`
+	SSLMode  string `config:"DB_SSLMODE"`
 }
 
-func Load() (Config, error) {
+type Logger struct {
+	LogLevel  string `config:"LOG_LEVEL"`
+	LogFormat string `config:"LOG_FORMAT"`
+}
+
+type API struct {
+	Database
+	Logger
+
+	ServerPort string `config:"SERVER_PORT,required"`
+}
+
+func LoadAPI() (API, error) {
 	loader := confita.NewLoader(
 		env.NewBackend(),
 		newDotEnv(),
 	)
 
-	c := Config{
-		LogLevel:  defaultLogLevel,
-		LogFormat: defaultLogFormat,
+	cfg := API{
+		Logger: Logger{
+			LogLevel:  defaultLogLevel,
+			LogFormat: defaultLogFormat,
+		},
 	}
 
-	if err := loader.Load(context.Background(), &c); err != nil {
-		return Config{}, err
+	if err := loader.Load(context.Background(), &cfg); err != nil {
+		return API{}, err
 	}
 
-	return c, nil
+	return cfg, nil
+}
+
+type Importer struct {
+	Database
+	Logger
+
+	BatchSize int    `config:"BATCH_SIZE"`
+	CSVFile   string `config:"CSV_FILE"`
+}
+
+func LoadImporter() (Importer, error) {
+	loader := confita.NewLoader(
+		env.NewBackend(),
+		newDotEnv(),
+	)
+
+	cfg := Importer{
+		Logger: Logger{
+			LogLevel:  defaultLogLevel,
+			LogFormat: defaultLogFormat,
+		},
+		BatchSize: defaultBatchSize,
+	}
+
+	if err := loader.Load(context.Background(), &cfg); err != nil {
+		return Importer{}, err
+	}
+
+	return cfg, nil
 }

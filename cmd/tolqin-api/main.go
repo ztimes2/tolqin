@@ -17,21 +17,28 @@ import (
 )
 
 func main() {
-	conf, err := config.Load()
-	fatalOnError(err, "failed to load config")
+	conf, err := config.LoadAPI()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 
 	logger, err := logging.NewLogger(conf.LogLevel, conf.LogFormat)
-	fatalOnError(err, "failed to initialize logger")
+	if err != nil {
+		log.Fatalf("failed to initialize logger: %v", err)
+	}
 
 	db, err := postgres.NewDB(postgres.Config{
-		Host:         conf.DatabaseHost,
-		Port:         conf.DatabasePort,
-		Username:     conf.DatabaseUsername,
-		Password:     conf.DatabasePassword,
-		DatabaseName: conf.DatabaseName,
-		SSLMode:      postgres.NewSSLMode(conf.DatabaseSSLMode),
+		Host:         conf.Database.Host,
+		Port:         conf.Database.Port,
+		Username:     conf.Database.Username,
+		Password:     conf.Database.Password,
+		DatabaseName: conf.Database.Name,
+		SSLMode:      postgres.NewSSLMode(conf.Database.SSLMode),
 	})
-	fatalOnError(err, "faile to connect to database")
+	if err != nil {
+		logger.WithError(err).Fatalf("failed to connect to database: %v", err)
+	}
+	defer db.Close()
 
 	spotStore := postgres.NewSpotStore(db)
 	validate := validator.New()
@@ -48,7 +55,7 @@ func main() {
 	go func() {
 		logger.Infof("server listening on port %s", conf.ServerPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalf("server failed to listen: %v", err)
+			logger.WithError(err).Fatalf("server failed to listen: %v", err)
 		}
 	}()
 
@@ -57,15 +64,6 @@ func main() {
 	<-stopCh
 	logger.Info("shutting down server")
 	if err := server.Shutdown(context.Background()); err != nil {
-		logger.
-			WithError(err).
-			Errorf("failed to gracefully shut down server: %v", err)
-	}
-
-}
-
-func fatalOnError(err error, message string) {
-	if err != nil {
-		log.Fatalf("%s: %v", message, err)
+		logger.WithError(err).Errorf("failed to gracefully shut down server: %v", err)
 	}
 }

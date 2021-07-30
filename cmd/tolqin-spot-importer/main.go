@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ztimes2/tolqin/internal/config"
 	"github.com/ztimes2/tolqin/internal/csv"
 	"github.com/ztimes2/tolqin/internal/importing"
 	"github.com/ztimes2/tolqin/internal/logging"
@@ -12,24 +13,30 @@ import (
 )
 
 func main() {
-	// TODO load from env config
-	var logLevel, logFormat string
-	logger, err := logging.NewLogger(logLevel, logFormat)
+	conf, err := config.LoadImporter()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	logger, err := logging.NewLogger(conf.LogLevel, conf.LogFormat)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	// TODO load from env config
-	var pgConf postgres.Config
-	db, err := postgres.NewDB(pgConf)
+	db, err := postgres.NewDB(postgres.Config{
+		Host:         conf.Database.Host,
+		Port:         conf.Database.Port,
+		Username:     conf.Database.Username,
+		Password:     conf.Database.Password,
+		DatabaseName: conf.Database.Name,
+		SSLMode:      postgres.NewSSLMode(conf.Database.SSLMode),
+	})
 	if err != nil {
 		logger.WithError(err).Fatalf("failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
-	// TODO load from env config
-	var filename string
-	file, err := os.Open(filename)
+	file, err := os.Open(conf.CSVFile)
 	if err != nil {
 		logger.WithError(err).Fatalf("failed to read csv file: %v", err)
 	}
@@ -37,11 +44,9 @@ func main() {
 
 	start := time.Now()
 
-	// TODO load from env config
-	var batchSize int
 	spots, err := importing.ImportSpots(
 		csv.NewSpotEntries(file),
-		postgres.NewSpotImporter(db, batchSize),
+		postgres.NewSpotImporter(db, conf.BatchSize),
 	)
 	if err != nil {
 		logger.WithError(err).Fatalf("failed to read import spots: %v", err)
