@@ -266,14 +266,14 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry,
 
 		ss, err := si.importSpots(tx, entries[b.I:b.J+1])
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return nil, fmt.Errorf("failed to import spots: %w", err)
 		}
 
 		spots = append(spots, ss...)
 	}
 
-	tx.Commit()
+	_ = tx.Commit()
 	return spots, nil
 }
 
