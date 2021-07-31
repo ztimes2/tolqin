@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/ztimes2/tolqin/internal/config"
-	"github.com/ztimes2/tolqin/internal/csv"
 	"github.com/ztimes2/tolqin/internal/importing"
+	"github.com/ztimes2/tolqin/internal/importing/csv"
+	"github.com/ztimes2/tolqin/internal/importing/psql"
 	"github.com/ztimes2/tolqin/internal/logging"
-	"github.com/ztimes2/tolqin/internal/postgres"
+	"github.com/ztimes2/tolqin/internal/psqlutil"
 )
 
 func main() {
@@ -23,13 +24,13 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	db, err := postgres.NewDB(postgres.Config{
+	db, err := psqlutil.NewDB(psqlutil.Config{
 		Host:         conf.Database.Host,
 		Port:         conf.Database.Port,
 		Username:     conf.Database.Username,
 		Password:     conf.Database.Password,
 		DatabaseName: conf.Database.Name,
-		SSLMode:      postgres.NewSSLMode(conf.Database.SSLMode),
+		SSLMode:      psqlutil.NewSSLMode(conf.Database.SSLMode),
 	})
 	if err != nil {
 		logger.WithError(err).Fatalf("failed to connect to database: %v", err)
@@ -44,9 +45,9 @@ func main() {
 
 	start := time.Now()
 
-	spots, err := importing.ImportSpots(
+	count, err := importing.ImportSpots(
 		csv.NewSpotEntries(file),
-		postgres.NewSpotImporter(db, conf.BatchSize),
+		psql.NewSpotImporter(db, conf.BatchSize),
 	)
 	if err != nil {
 		logger.WithError(err).Fatalf("failed to read import spots: %v", err)
@@ -54,5 +55,5 @@ func main() {
 
 	duration := time.Since(start)
 
-	logger.Infof("%d spot(s) were imported in %v", len(spots), duration)
+	logger.Infof("%d spot(s) were imported in %v", count, duration)
 }

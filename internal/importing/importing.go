@@ -3,8 +3,6 @@ package importing
 import (
 	"errors"
 	"fmt"
-
-	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
 var (
@@ -12,7 +10,7 @@ var (
 )
 
 type SpotImporter interface {
-	ImportSpots([]SpotEntry) ([]surfing.Spot, error)
+	ImportSpots([]SpotEntry) (int, error)
 }
 
 type SpotEntry struct {
@@ -25,16 +23,16 @@ type SpotEntrySource interface {
 	SpotEntries() ([]SpotEntry, error)
 }
 
-func ImportSpots(src SpotEntrySource, importer SpotImporter) ([]surfing.Spot, error) {
+func ImportSpots(src SpotEntrySource, importer SpotImporter) (int, error) {
 	entries, err := src.SpotEntries()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read spot entries from source: %w", err)
+		return 0, fmt.Errorf("failed to read spot entries from source: %w", err)
 	}
 
-	spots, err := importer.ImportSpots(entries)
+	count, err := importer.ImportSpots(entries)
 	if err != nil {
-		return nil, fmt.Errorf("failed to import spots: %w", err)
+		return 0, fmt.Errorf("failed to import spots: %w", err)
 	}
 
-	return spots, nil
+	return count, nil
 }

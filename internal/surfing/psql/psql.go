@@ -1,81 +1,15 @@
-package postgres
+package psql
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/ztimes2/tolqin/internal/batch"
-	"github.com/ztimes2/tolqin/internal/importing"
 	"github.com/ztimes2/tolqin/internal/surfing"
 )
-
-const (
-	driverName = "postgres"
-
-	sslModeNameDisable = "disable"
-)
-
-type Config struct {
-	Host         string
-	Port         string
-	Username     string
-	Password     string
-	DatabaseName string
-	SSLMode      SSLMode
-}
-
-func (c Config) String() string {
-	entries := []string{
-		"host=" + c.Host,
-		"port=" + c.Port,
-		"dbname=" + c.DatabaseName,
-	}
-	if c.SSLMode != SSLModeUndefined {
-		entries = append(entries, "sslmode="+c.SSLMode.String())
-	}
-	if c.Username != "" {
-		entries = append(entries, "user="+c.Username)
-	}
-	if c.Password != "" {
-		entries = append(entries, "password="+c.Password)
-	}
-	return strings.Join(entries, " ")
-}
-
-type SSLMode int
-
-const (
-	SSLModeUndefined SSLMode = iota
-	SSLModeDisabled
-)
-
-func NewSSLMode(s string) SSLMode {
-	switch s {
-	case sslModeNameDisable:
-		return SSLModeDisabled
-	default:
-		return SSLModeUndefined
-	}
-}
-
-func (s SSLMode) String() string {
-	switch s {
-	case SSLModeDisabled:
-		return sslModeNameDisable
-	default:
-		return ""
-	}
-}
-
-func NewDB(cfg Config) (*sqlx.DB, error) {
-	return sqlx.Open(driverName, cfg.String())
-}
 
 type spot struct {
 	ID        string    `db:"id"`
@@ -232,85 +166,4 @@ func (ss *SpotStore) DeleteSpot(id string) error {
 	}
 
 	return nil
-}
-
-type SpotImporter struct {
-	db        *sqlx.DB
-	builder   sq.StatementBuilderType
-	batchSize int
-}
-
-func NewSpotImporter(db *sqlx.DB, batchSize int) *SpotImporter {
-	return &SpotImporter{
-		db:        db,
-		builder:   sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
-		batchSize: batchSize,
-	}
-}
-
-func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry,
-) ([]surfing.Spot, error) {
-
-	if len(entries) == 0 {
-		return nil, importing.ErrNothingToImport
-	}
-
-	tx, err := si.db.Beginx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
-	var spots []surfing.Spot
-
-	coord := batch.New(len(entries), si.batchSize)
-	for coord.HasNext() {
-		b := coord.Batch()
-
-		ss, err := si.importSpots(tx, entries[b.I:b.J+1])
-		if err != nil {
-			_ = tx.Rollback()
-			return nil, fmt.Errorf("failed to import spots: %w", err)
-		}
-
-		spots = append(spots, ss...)
-	}
-
-	_ = tx.Commit()
-	return spots, nil
-}
-
-func (si *SpotImporter) importSpots(tx *sqlx.Tx, entries []importing.SpotEntry,
-) ([]surfing.Spot, error) {
-
-	builder := si.builder.
-		Insert("spots").
-		Columns("name", "latitude", "longitude")
-
-	for _, e := range entries {
-		builder = builder.Values(e.Name, e.Latitude, e.Longitude)
-	}
-
-	query, args, err := builder.
-		Suffix("RETURNING id, name, latitude, longitude, created_at").
-		ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build query: %w", err)
-	}
-
-	rows, err := tx.Queryx(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
-	}
-
-	var spots []surfing.Spot
-	defer rows.Close()
-	for rows.Next() {
-		var s spot
-		if err := rows.StructScan(&s); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
-		}
-		spots = append(spots, surfing.Spot(s))
-	}
-
-	return spots, nil
 }

@@ -11,9 +11,10 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/ztimes2/tolqin/internal/config"
 	"github.com/ztimes2/tolqin/internal/logging"
-	"github.com/ztimes2/tolqin/internal/postgres"
+	"github.com/ztimes2/tolqin/internal/psqlutil"
 	"github.com/ztimes2/tolqin/internal/router"
 	"github.com/ztimes2/tolqin/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/surfing/psql"
 )
 
 func main() {
@@ -27,20 +28,20 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	db, err := postgres.NewDB(postgres.Config{
+	db, err := psqlutil.NewDB(psqlutil.Config{
 		Host:         conf.Database.Host,
 		Port:         conf.Database.Port,
 		Username:     conf.Database.Username,
 		Password:     conf.Database.Password,
 		DatabaseName: conf.Database.Name,
-		SSLMode:      postgres.NewSSLMode(conf.Database.SSLMode),
+		SSLMode:      psqlutil.NewSSLMode(conf.Database.SSLMode),
 	})
 	if err != nil {
 		logger.WithError(err).Fatalf("failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
-	spotStore := postgres.NewSpotStore(db)
+	spotStore := psql.NewSpotStore(db)
 	validate := validator.New()
 	service := surfing.NewService(validate, spotStore)
 
