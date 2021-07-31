@@ -2,21 +2,12 @@ package psql
 
 import (
 	"fmt"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/internal/batch"
 	"github.com/ztimes2/tolqin/internal/importing"
 )
-
-type spot struct {
-	ID        string    `db:"id"`
-	Name      string    `db:"name"`
-	Latitude  float64   `db:"latitude"`
-	Longitude float64   `db:"longitude"`
-	CreatedAt time.Time `db:"created_at"`
-}
 
 type SpotImporter struct {
 	db        *sqlx.DB
