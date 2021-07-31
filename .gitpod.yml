@@ -1,0 +1,4 @@
+tasks:
+  # Install PostreSQL CLI
+  - command: sudo apt-get update
+  - command: sudo apt-get install postgresql-client
