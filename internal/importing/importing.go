@@ -3,24 +3,25 @@ package importing
 import (
 	"errors"
 	"fmt"
+
+	"github.com/ztimes2/tolqin/internal/geo"
 )
 
 var (
 	ErrNothingToImport = errors.New("nothing to import")
 )
 
+type SpotEntrySource interface {
+	SpotEntries() ([]SpotEntry, error)
+}
+
 type SpotImporter interface {
 	ImportSpots([]SpotEntry) (int, error)
 }
 
 type SpotEntry struct {
-	Name      string
-	Latitude  float64
-	Longitude float64
-}
-
-type SpotEntrySource interface {
-	SpotEntries() ([]SpotEntry, error)
+	geo.Location
+	Name string
 }
 
 func ImportSpots(src SpotEntrySource, importer SpotImporter) (int, error) {

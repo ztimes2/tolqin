@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"time"
 
 	"github.com/heetch/confita"
 	"github.com/heetch/confita/backend/env"
@@ -31,6 +32,7 @@ type Logger struct {
 type API struct {
 	Database
 	Logger
+	Nominatim
 
 	ServerPort string `config:"SERVER_PORT,required"`
 }
@@ -61,6 +63,11 @@ type Importer struct {
 
 	BatchSize int    `config:"BATCH_SIZE"`
 	CSVFile   string `config:"CSV_FILE"`
+}
+
+type Nominatim struct {
+	BaseURL string        `config:"NOMINATIM_BASE_URL,required"`
+	Timeout time.Duration `config:"NOMINATIM_TIMEOUT"`
 }
 
 func LoadImporter() (Importer, error) {

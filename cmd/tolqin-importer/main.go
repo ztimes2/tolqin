@@ -24,6 +24,12 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
+	file, err := os.Open(conf.CSVFile)
+	if err != nil {
+		logger.WithError(err).Fatalf("failed to read csv file: %v", err)
+	}
+	defer file.Close()
+
 	db, err := psqlutil.NewDB(psqlutil.Config{
 		Host:         conf.Database.Host,
 		Port:         conf.Database.Port,
@@ -37,20 +43,14 @@ func main() {
 	}
 	defer db.Close()
 
-	file, err := os.Open(conf.CSVFile)
-	if err != nil {
-		logger.WithError(err).Fatalf("failed to read csv file: %v", err)
-	}
-	defer file.Close()
-
 	start := time.Now()
 
 	count, err := importing.ImportSpots(
-		csv.NewSpotEntries(file),
+		csv.NewSpotEntrySource(file),
 		psql.NewSpotImporter(db, conf.BatchSize),
 	)
 	if err != nil {
-		logger.WithError(err).Fatalf("failed to read import spots: %v", err)
+		logger.WithError(err).Fatalf("failed to import spots: %v", err)
 	}
 
 	duration := time.Since(start)

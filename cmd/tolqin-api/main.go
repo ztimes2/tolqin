@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/ztimes2/tolqin/internal/config"
+	"github.com/ztimes2/tolqin/internal/geo/nominatim"
 	"github.com/ztimes2/tolqin/internal/logging"
 	"github.com/ztimes2/tolqin/internal/psqlutil"
 	"github.com/ztimes2/tolqin/internal/router"
@@ -43,7 +44,10 @@ func main() {
 
 	spotStore := psql.NewSpotStore(db)
 	validate := validator.New()
-	service := surfing.NewService(validate, spotStore)
+	service := surfing.NewService(validate, spotStore, nominatim.New(nominatim.Config{
+		BaseURL: conf.Nominatim.BaseURL,
+		Timeout: conf.Nominatim.Timeout,
+	}))
 
 	router := router.New(service, logger)
 

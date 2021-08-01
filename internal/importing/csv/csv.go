@@ -7,28 +7,33 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/importing"
 )
 
-type SpotEntries struct {
+type SpotEntrySource struct {
 	reader io.Reader
 }
 
-func NewSpotEntries(r io.Reader) SpotEntries {
-	return SpotEntries{
+func NewSpotEntrySource(r io.Reader) SpotEntrySource {
+	return SpotEntrySource{
 		reader: r,
 	}
 }
 
-func (se SpotEntries) SpotEntries() ([]importing.SpotEntry, error) {
-	records, err := csv.NewReader(se.reader).ReadAll()
+func (ss SpotEntrySource) SpotEntries() ([]importing.SpotEntry, error) {
+	records, err := csv.NewReader(ss.reader).ReadAll()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read csv: %w", err)
 	}
 
+	if len(records) < 1 {
+		return []importing.SpotEntry{}, nil
+	}
+
 	var entries []importing.SpotEntry
-	for _, r := range records {
-		if len(r) != 3 {
+	for _, r := range records[1:] {
+		if len(r) != 5 {
 			return nil, errors.New("invalid csv record: must contain exactly 3 fields")
 		}
 
@@ -43,9 +48,15 @@ func (se SpotEntries) SpotEntries() ([]importing.SpotEntry, error) {
 		}
 
 		entries = append(entries, importing.SpotEntry{
-			Name:      r[0],
-			Latitude:  lat,
-			Longitude: long,
+			Name: r[0],
+			Location: geo.Location{
+				Locality:    r[3],
+				CountryCode: r[4],
+				Coordinates: geo.Coordinates{
+					Latitude:  lat,
+					Longitude: long,
+				},
+			},
 		})
 	}
 

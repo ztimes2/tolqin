@@ -1,12 +1,14 @@
 package psql
 
 import (
+	"database/sql"
 	"errors"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/importing"
 	"github.com/ztimes2/tolqin/internal/psqlutil"
 	"github.com/ztimes2/tolqin/internal/testutil"
@@ -38,29 +40,59 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 			},
 			entries: []importing.SpotEntry{
 				{
-					Name:      "Test 1",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 2",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 3",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 4",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 5",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 			},
 			expectedCount: 0,
@@ -74,12 +106,12 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3),($4,$5,$6)",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Test 1", 1.23, 3.21,
-						"Test 2", 1.23, 3.21,
+						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
+						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
 					).
 					WillReturnError(errors.New("something went wrong"))
 
@@ -87,29 +119,59 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 			},
 			entries: []importing.SpotEntry{
 				{
-					Name:      "Test 1",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 2",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 3",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 4",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 5",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 			},
 			expectedCount: 0,
@@ -123,12 +185,12 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3),($4,$5,$6)",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Test 1", 1.23, 3.21,
-						"Test 2", 1.23, 3.21,
+						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
+						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewErrorResult(
 						errors.New("something went wrong"),
@@ -138,29 +200,59 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 			},
 			entries: []importing.SpotEntry{
 				{
-					Name:      "Test 1",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 2",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 3",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 4",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 5",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 			},
 			expectedCount: 0,
@@ -174,12 +266,12 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3),($4,$5,$6)",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Test 1", 1.23, 3.21,
-						"Test 2", 1.23, 3.21,
+						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
+						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewResult(0, 0))
 
@@ -187,29 +279,59 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 			},
 			entries: []importing.SpotEntry{
 				{
-					Name:      "Test 1",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 2",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 3",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 4",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 5",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 			},
 			expectedCount: 0,
@@ -223,61 +345,93 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3),($4,$5,$6)",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Test 1", 1.23, 3.21,
-						"Test 2", 1.23, 3.21,
+						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
+						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewResult(0, 2))
 
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3),($4,$5,$6)",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Test 3", 1.23, 3.21,
-						"Test 4", 1.23, 3.21,
+						"Spot 3", 1.23, 3.21, sql.NullString{}, sql.NullString{String: "Country code 3", Valid: true},
+						"Spot 4", 1.23, 3.21, sql.NullString{}, sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewResult(0, 2))
 
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3)",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5)",
 					)).
-					WithArgs("Test 5", 1.23, 3.21).
+					WithArgs(
+						"Spot 5", 1.23, 3.21, sql.NullString{String: "Locality 5", Valid: true}, sql.NullString{String: "Country code 5", Valid: true},
+					).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 
 				m.ExpectCommit()
 			},
 			entries: []importing.SpotEntry{
 				{
-					Name:      "Test 1",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 2",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 3",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 4",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
-					Name:      "Test 5",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 			},
 			expectedCount: 5,

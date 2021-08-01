@@ -7,22 +7,27 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/julienschmidt/httprouter"
+	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
 type spotResponse struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	Locality    string  `json:"locality"`
+	CountryCode string  `json:"country_code"`
 }
 
 func toSpotResponse(s surfing.Spot) spotResponse {
 	return spotResponse{
-		ID:        s.ID,
-		Name:      s.Name,
-		Latitude:  s.Latitude,
-		Longitude: s.Longitude,
+		ID:          s.ID,
+		Name:        s.Name,
+		Latitude:    s.Latitude,
+		Longitude:   s.Longitude,
+		Locality:    s.Locality,
+		CountryCode: s.CountryCode,
 	}
 }
 
@@ -104,9 +109,11 @@ func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httproute
 	}
 
 	spot, err := h.service.CreateSpot(surfing.CreateSpotParams{
-		Name:      payload.Name,
-		Latitude:  payload.Latitude,
-		Longitude: payload.Longitude,
+		Name: payload.Name,
+		Coordinates: geo.Coordinates{
+			Latitude:  payload.Latitude,
+			Longitude: payload.Longitude,
+		},
 	})
 	if err != nil {
 		var vErr validator.ValidationErrors
@@ -136,12 +143,22 @@ func (h *handler) updateSpot(w http.ResponseWriter, r *http.Request, p httproute
 		return
 	}
 
-	spot, err := h.service.UpdateSpot(surfing.UpdateSpotParams{
-		ID:        spotID,
-		Name:      payload.Name,
-		Latitude:  payload.Latitude,
-		Longitude: payload.Longitude,
-	})
+	params := surfing.UpdateSpotParams{
+		ID:   spotID,
+		Name: payload.Name,
+	}
+	if payload.Latitude != nil || payload.Longitude != nil {
+		c := &geo.Coordinates{}
+		if payload.Latitude != nil {
+			c.Latitude = *payload.Latitude
+		}
+		if payload.Longitude != nil {
+			c.Longitude = *payload.Longitude
+		}
+		params.Coordinates = c
+	}
+
+	spot, err := h.service.UpdateSpot(params)
 	if err != nil {
 		if errors.Is(err, surfing.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")

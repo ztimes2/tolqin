@@ -9,6 +9,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/pconv"
 	"github.com/ztimes2/tolqin/internal/psqlutil"
 	"github.com/ztimes2/tolqin/internal/surfing"
@@ -28,11 +29,11 @@ func TestSpotStore_Spot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, created_at " +
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
 							"FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
-					WillReturnError(errors.New("unexpected error"))
+					WillReturnError(errors.New("something went wrong"))
 			},
 			id:            "1",
 			expectedSpot:  surfing.Spot{},
@@ -43,7 +44,7 @@ func TestSpotStore_Spot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, created_at " +
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
 							"FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
@@ -58,25 +59,31 @@ func TestSpotStore_Spot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, created_at " +
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
 							"FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
-							"id", "name", "latitude", "longitude", "created_at",
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
 						}).
-						AddRow("1", "Test", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "Country code 1", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
 			},
 			id: "1",
 			expectedSpot: surfing.Spot{
 				ID:        "1",
-				Name:      "Test",
-				Latitude:  1.23,
-				Longitude: 3.21,
+				Name:      "Spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				Location: geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  1.23,
+						Longitude: 3.21,
+					},
+				},
 			},
 			expectedErrFn: assert.NoError,
 		},
@@ -119,7 +126,7 @@ func TestSpotStore_Spots(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, created_at " +
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
 							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnError(errors.New("unexpected error"))
@@ -134,14 +141,14 @@ func TestSpotStore_Spots(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, created_at " +
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
 							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnRows(sqlmock.
 						NewRows([]string{
-							"id", "name", "latitude", "longitude", "created_at",
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
 						}).
-						AddRow(1, true, "1.23", "3.21", "Not-a-time"),
+						AddRow(1, true, "1.23", "3.21", "Locality 1", "Country code 1", "Not-a-time"),
 					).
 					RowsWillBeClosed()
 			},
@@ -155,12 +162,12 @@ func TestSpotStore_Spots(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, created_at " +
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
 							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnRows(sqlmock.
 						NewRows([]string{
-							"id", "name", "latitude", "longitude", "created_at",
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
 						}),
 					).
 					RowsWillBeClosed()
@@ -175,32 +182,44 @@ func TestSpotStore_Spots(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, created_at " +
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
 							"FROM spots LIMIT 10 OFFSET 0",
 					)).
 					WillReturnRows(sqlmock.
 						NewRows([]string{
-							"id", "name", "latitude", "longitude", "created_at",
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
 						}).
-						AddRow("1", "Test", 1.23, 3.21, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
-						AddRow("2", "Test", 2.34, 4.32, time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "Country code 1", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("2", "Spot 2", 2.34, 4.32, "Locality 2", "Country code 2", time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
 			},
 			expectedSpots: []surfing.Spot{
 				{
 					ID:        "1",
-					Name:      "Test",
-					Latitude:  1.23,
-					Longitude: 3.21,
+					Name:      "Spot 1",
 					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
 				},
 				{
 					ID:        "2",
-					Name:      "Test",
-					Latitude:  2.34,
-					Longitude: 4.32,
+					Name:      "Spot 2",
 					CreatedAt: time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "Country code 2",
+						Coordinates: geo.Coordinates{
+							Latitude:  2.34,
+							Longitude: 4.32,
+						},
+					},
 				},
 			},
 			expectedErrFn: assert.NoError,
@@ -232,7 +251,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
-		params        surfing.CreateSpotParams
+		params        surfing.CreateLocalizedSpotParams
 		expectedSpot  surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
@@ -241,17 +260,23 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3) "+
-							"RETURNING id, created_at",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5) "+
+							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Test", 1.23, 3.21).
+					WithArgs("Spot 1", 1.23, 3.21, "Locality 1", "Country code 1").
 					WillReturnError(errors.New("unexpected error"))
 			},
-			params: surfing.CreateSpotParams{
-				Name:      "Test",
-				Latitude:  1.23,
-				Longitude: 3.21,
+			params: surfing.CreateLocalizedSpotParams{
+				Name: "Spot 1",
+				Location: geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  1.23,
+						Longitude: 3.21,
+					},
+				},
 			},
 			expectedSpot:  surfing.Spot{},
 			expectedErrFn: assert.Error,
@@ -261,30 +286,42 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
-						"INSERT INTO spots (name,latitude,longitude) "+
-							"VALUES ($1,$2,$3) "+
-							"RETURNING id, created_at",
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5) "+
+							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Test", 1.23, 3.21).
+					WithArgs("Spot 1", 1.23, 3.21, "Locality 1", "Country code 1").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
-							"id", "created_at",
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
 						}).
-						AddRow("1", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "Country code 1", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
 			},
-			params: surfing.CreateSpotParams{
-				Name:      "Test",
-				Latitude:  1.23,
-				Longitude: 3.21,
+			params: surfing.CreateLocalizedSpotParams{
+				Name: "Spot 1",
+				Location: geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  1.23,
+						Longitude: 3.21,
+					},
+				},
 			},
 			expectedSpot: surfing.Spot{
 				ID:        "1",
-				Name:      "Test",
-				Latitude:  1.23,
-				Longitude: 3.21,
+				Name:      "Spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				Location: geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  1.23,
+						Longitude: 3.21,
+					},
+				},
 			},
 			expectedErrFn: assert.NoError,
 		},
@@ -314,7 +351,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
-		params        surfing.UpdateSpotParams
+		params        surfing.UpdateLocalizedSpotParams
 		expectedSpot  surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
@@ -324,18 +361,24 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
-							"SET latitude = $1, longitude = $2, name = $3 "+
-							"WHERE id = $4 "+
-							"RETURNING id, name, latitude, longitude, created_at",
+							"SET country_code = $1, latitude = $2, locality = $3, longitude = $4, name = $5 "+
+							"WHERE id = $6 "+
+							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs(2.34, 4.32, "Test updated", "1").
+					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnError(errors.New("unexpected error"))
 			},
-			params: surfing.UpdateSpotParams{
-				ID:        "1",
-				Name:      pconv.String("Test updated"),
-				Latitude:  pconv.Float64(2.34),
-				Longitude: pconv.Float64(4.32),
+			params: surfing.UpdateLocalizedSpotParams{
+				ID:   "1",
+				Name: pconv.String("Updated spot 1"),
+				Location: &geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  2.34,
+						Longitude: 4.32,
+					},
+				},
 			},
 			expectedSpot:  surfing.Spot{},
 			expectedErrFn: assert.Error,
@@ -346,18 +389,24 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
-							"SET latitude = $1, longitude = $2, name = $3 "+
-							"WHERE id = $4 "+
-							"RETURNING id, name, latitude, longitude, created_at",
+							"SET country_code = $1, latitude = $2, locality = $3, longitude = $4, name = $5 "+
+							"WHERE id = $6 "+
+							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs(2.34, 4.32, "Test updated", "1").
+					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnError(sql.ErrNoRows)
 			},
-			params: surfing.UpdateSpotParams{
-				ID:        "1",
-				Name:      pconv.String("Test updated"),
-				Latitude:  pconv.Float64(2.34),
-				Longitude: pconv.Float64(4.32),
+			params: surfing.UpdateLocalizedSpotParams{
+				ID:   "1",
+				Name: pconv.String("Updated spot 1"),
+				Location: &geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  2.34,
+						Longitude: 4.32,
+					},
+				},
 			},
 			expectedSpot:  surfing.Spot{},
 			expectedErrFn: testutil.IsError(surfing.ErrNotFound),
@@ -365,7 +414,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 		{
 			name:   "return error when nothing to update",
 			mockFn: func(m sqlmock.Sqlmock) {},
-			params: surfing.UpdateSpotParams{
+			params: surfing.UpdateLocalizedSpotParams{
 				ID: "1",
 			},
 			expectedSpot:  surfing.Spot{},
@@ -377,31 +426,43 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
-							"SET latitude = $1, longitude = $2, name = $3 "+
-							"WHERE id = $4 "+
-							"RETURNING id, name, latitude, longitude, created_at",
+							"SET country_code = $1, latitude = $2, locality = $3, longitude = $4, name = $5 "+
+							"WHERE id = $6 "+
+							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs(2.34, 4.32, "Test updated", "1").
+					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
-							"id", "name", "latitude", "longitude", "created_at",
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
 						}).
-						AddRow("1", "Test updated", 2.34, 4.32, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
+						AddRow("1", "Updated spot 1", 2.34, 4.32, "Locality 1", "Country code 1", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
 			},
-			params: surfing.UpdateSpotParams{
-				ID:        "1",
-				Name:      pconv.String("Test updated"),
-				Latitude:  pconv.Float64(2.34),
-				Longitude: pconv.Float64(4.32),
+			params: surfing.UpdateLocalizedSpotParams{
+				ID:   "1",
+				Name: pconv.String("Updated spot 1"),
+				Location: &geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  2.34,
+						Longitude: 4.32,
+					},
+				},
 			},
 			expectedSpot: surfing.Spot{
 				ID:        "1",
-				Name:      "Test updated",
-				Latitude:  2.34,
-				Longitude: 4.32,
+				Name:      "Updated spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				Location: geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  2.34,
+						Longitude: 4.32,
+					},
+				},
 			},
 			expectedErrFn: assert.NoError,
 		},
@@ -413,27 +474,33 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 						"UPDATE spots "+
 							"SET name = $1 "+
 							"WHERE id = $2 "+
-							"RETURNING id, name, latitude, longitude, created_at",
+							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Test updated", "1").
+					WithArgs("Updated spot 1", "1").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
-							"id", "name", "latitude", "longitude", "created_at",
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
 						}).
-						AddRow("1", "Test updated", 2.34, 4.32, time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
+						AddRow("1", "Updated spot 1", 2.34, 4.32, "Locality 1", "Country code 1", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)),
 					).
 					RowsWillBeClosed()
 			},
-			params: surfing.UpdateSpotParams{
+			params: surfing.UpdateLocalizedSpotParams{
 				ID:   "1",
-				Name: pconv.String("Test updated"),
+				Name: pconv.String("Updated spot 1"),
 			},
 			expectedSpot: surfing.Spot{
 				ID:        "1",
-				Name:      "Test updated",
-				Latitude:  2.34,
-				Longitude: 4.32,
+				Name:      "Updated spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+				Location: geo.Location{
+					Locality:    "Locality 1",
+					CountryCode: "Country code 1",
+					Coordinates: geo.Coordinates{
+						Latitude:  2.34,
+						Longitude: 4.32,
+					},
+				},
 			},
 			expectedErrFn: assert.NoError,
 		},
@@ -515,10 +582,7 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 						"DELETE FROM spots WHERE id = $1",
 					)).
 					WithArgs("1").
-					WillReturnResult(sqlmock.NewResult(
-						0, // Postgres driver does not support LastInsertId
-						1,
-					))
+					WillReturnResult(sqlmock.NewResult(0, 1))
 			},
 			id:            "1",
 			expectedErrFn: assert.NoError,

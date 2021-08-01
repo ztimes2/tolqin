@@ -8,15 +8,34 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
 type spot struct {
-	ID        string    `db:"id"`
-	Name      string    `db:"name"`
-	Latitude  float64   `db:"latitude"`
-	Longitude float64   `db:"longitude"`
-	CreatedAt time.Time `db:"created_at"`
+	ID          string         `db:"id"`
+	Name        string         `db:"name"`
+	Latitude    float64        `db:"latitude"`
+	Longitude   float64        `db:"longitude"`
+	Locality    sql.NullString `db:"locality"`
+	CountryCode sql.NullString `db:"country_code"`
+	CreatedAt   time.Time      `db:"created_at"`
+}
+
+func toSpot(s spot) surfing.Spot {
+	return surfing.Spot{
+		ID:        s.ID,
+		Name:      s.Name,
+		CreatedAt: s.CreatedAt,
+		Location: geo.Location{
+			Locality:    s.Locality.String,
+			CountryCode: s.CountryCode.String,
+			Coordinates: geo.Coordinates{
+				Latitude:  s.Latitude,
+				Longitude: s.Longitude,
+			},
+		},
+	}
 }
 
 type SpotStore struct {
@@ -33,7 +52,7 @@ func NewSpotStore(db *sqlx.DB) *SpotStore {
 
 func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 	query, args, err := ss.builder.
-		Select("id", "name", "latitude", "longitude", "created_at").
+		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
 		Where(sq.Eq{"id": id}).
 		ToSql()
@@ -49,12 +68,12 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	return surfing.Spot(s), nil
+	return toSpot(s), nil
 }
 
 func (ss *SpotStore) Spots(limit, offset int) ([]surfing.Spot, error) {
 	query, args, err := ss.builder.
-		Select("id", "name", "latitude", "longitude", "created_at").
+		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
 		Limit(uint64(limit)).
 		Offset(uint64(offset)).
@@ -75,18 +94,18 @@ func (ss *SpotStore) Spots(limit, offset int) ([]surfing.Spot, error) {
 		if err := rows.StructScan(&s); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-		spots = append(spots, surfing.Spot(s))
+		spots = append(spots, toSpot(s))
 	}
 
 	return spots, nil
 }
 
-func (ss *SpotStore) CreateSpot(p surfing.CreateSpotParams) (surfing.Spot, error) {
+func (ss *SpotStore) CreateSpot(p surfing.CreateLocalizedSpotParams) (surfing.Spot, error) {
 	query, args, err := ss.builder.
 		Insert("spots").
-		Columns("name", "latitude", "longitude").
-		Values(p.Name, p.Latitude, p.Longitude).
-		Suffix("RETURNING id, created_at").
+		Columns("name", "latitude", "longitude", "locality", "country_code").
+		Values(p.Name, p.Latitude, p.Longitude, p.Locality, p.CountryCode).
+		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
 		return surfing.Spot{}, fmt.Errorf("failed to build query: %w", err)
@@ -97,25 +116,19 @@ func (ss *SpotStore) CreateSpot(p surfing.CreateSpotParams) (surfing.Spot, error
 		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	return surfing.Spot{
-		Name:      p.Name,
-		Latitude:  p.Latitude,
-		Longitude: p.Longitude,
-		ID:        s.ID,
-		CreatedAt: s.CreatedAt,
-	}, nil
+	return toSpot(s), nil
 }
 
-func (ss *SpotStore) UpdateSpot(p surfing.UpdateSpotParams) (surfing.Spot, error) {
+func (ss *SpotStore) UpdateSpot(p surfing.UpdateLocalizedSpotParams) (surfing.Spot, error) {
 	values := make(map[string]interface{})
 	if p.Name != nil {
 		values["name"] = *p.Name
 	}
-	if p.Latitude != nil {
-		values["latitude"] = *p.Latitude
-	}
-	if p.Longitude != nil {
-		values["longitude"] = *p.Longitude
+	if p.Location != nil {
+		values["latitude"] = p.Latitude
+		values["longitude"] = p.Longitude
+		values["locality"] = p.Locality
+		values["country_code"] = p.CountryCode
 	}
 	if len(values) == 0 {
 		return surfing.Spot{}, surfing.ErrNothingToUpdate
@@ -125,7 +138,7 @@ func (ss *SpotStore) UpdateSpot(p surfing.UpdateSpotParams) (surfing.Spot, error
 		Update("spots").
 		SetMap(values).
 		Where(sq.Eq{"id": p.ID}).
-		Suffix("RETURNING id, name, latitude, longitude, created_at").
+		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
 		return surfing.Spot{}, fmt.Errorf("failed to build query: %w", err)
@@ -139,7 +152,7 @@ func (ss *SpotStore) UpdateSpot(p surfing.UpdateSpotParams) (surfing.Spot, error
 		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	return surfing.Spot(s), nil
+	return toSpot(s), nil
 }
 
 func (ss *SpotStore) DeleteSpot(id string) error {

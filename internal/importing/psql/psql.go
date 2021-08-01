@@ -1,6 +1,7 @@
 package psql
 
 import (
+	"database/sql"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -35,11 +36,11 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry) (int, error) 
 
 	var count int
 
-	coord := batch.New(len(entries), si.batchSize)
-	for coord.HasNext() {
-		b := coord.Batch()
+	b := batch.New(len(entries), si.batchSize)
+	for b.HasNext() {
+		batch := b.Batch()
 
-		n, err := si.importSpots(tx, entries[b.I:b.J+1])
+		n, err := si.importSpots(tx, entries[batch.I:batch.J+1])
 		if err != nil {
 			_ = tx.Rollback()
 			return 0, fmt.Errorf("failed to import spots: %w", err)
@@ -52,13 +53,26 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry) (int, error) 
 	return count, nil
 }
 
-func (si *SpotImporter) importSpots(tx *sqlx.Tx, entries []importing.SpotEntry) (int, error) {
+func (si *SpotImporter) importSpots(
+	tx *sqlx.Tx,
+	entries []importing.SpotEntry,
+) (int, error) {
+
 	builder := si.builder.
 		Insert("spots").
-		Columns("name", "latitude", "longitude")
+		Columns("name", "latitude", "longitude", "locality", "country_code")
 
 	for _, e := range entries {
-		builder = builder.Values(e.Name, e.Latitude, e.Longitude)
+		var locality, countryCode sql.NullString
+
+		if e.Locality != "" {
+			locality = sql.NullString{String: e.Locality, Valid: true}
+		}
+		if e.CountryCode != "" {
+			countryCode = sql.NullString{String: e.CountryCode, Valid: true}
+		}
+
+		builder = builder.Values(e.Name, e.Latitude, e.Longitude, locality, countryCode)
 	}
 
 	query, args, err := builder.ToSql()
