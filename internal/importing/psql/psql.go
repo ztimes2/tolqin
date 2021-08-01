@@ -1,13 +1,13 @@
 package psql
 
 import (
-	"database/sql"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/internal/batch"
 	"github.com/ztimes2/tolqin/internal/importing"
+	"github.com/ztimes2/tolqin/internal/psqlutil"
 )
 
 type SpotImporter struct {
@@ -19,7 +19,7 @@ type SpotImporter struct {
 func NewSpotImporter(db *sqlx.DB, batchSize int) *SpotImporter {
 	return &SpotImporter{
 		db:        db,
-		builder:   sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		builder:   psqlutil.NewQueryBuilder(),
 		batchSize: batchSize,
 	}
 }
@@ -63,16 +63,13 @@ func (si *SpotImporter) importSpots(
 		Columns("name", "latitude", "longitude", "locality", "country_code")
 
 	for _, e := range entries {
-		var locality, countryCode sql.NullString
-
-		if e.Locality != "" {
-			locality = sql.NullString{String: e.Locality, Valid: true}
-		}
-		if e.CountryCode != "" {
-			countryCode = sql.NullString{String: e.CountryCode, Valid: true}
-		}
-
-		builder = builder.Values(e.Name, e.Latitude, e.Longitude, locality, countryCode)
+		builder = builder.Values(
+			e.Name,
+			e.Latitude,
+			e.Longitude,
+			psqlutil.String(e.Locality),
+			psqlutil.String(e.CountryCode),
+		)
 	}
 
 	query, args, err := builder.ToSql()

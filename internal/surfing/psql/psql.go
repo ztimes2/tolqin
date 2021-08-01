@@ -9,6 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/internal/geo"
+	"github.com/ztimes2/tolqin/internal/psqlutil"
 	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
@@ -46,7 +47,7 @@ type SpotStore struct {
 func NewSpotStore(db *sqlx.DB) *SpotStore {
 	return &SpotStore{
 		db:      db,
-		builder: sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		builder: psqlutil.NewQueryBuilder(),
 	}
 }
 
@@ -104,7 +105,7 @@ func (ss *SpotStore) CreateSpot(p surfing.CreateLocalizedSpotParams) (surfing.Sp
 	query, args, err := ss.builder.
 		Insert("spots").
 		Columns("name", "latitude", "longitude", "locality", "country_code").
-		Values(p.Name, p.Latitude, p.Longitude, p.Locality, p.CountryCode).
+		Values(p.Name, p.Latitude, p.Longitude, psqlutil.String(p.Locality), psqlutil.String(p.CountryCode)).
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
@@ -127,8 +128,8 @@ func (ss *SpotStore) UpdateSpot(p surfing.UpdateLocalizedSpotParams) (surfing.Sp
 	if p.Location != nil {
 		values["latitude"] = p.Latitude
 		values["longitude"] = p.Longitude
-		values["locality"] = p.Locality
-		values["country_code"] = p.CountryCode
+		values["locality"] = psqlutil.String(p.Locality)
+		values["country_code"] = psqlutil.String(p.CountryCode)
 	}
 	if len(values) == 0 {
 		return surfing.Spot{}, surfing.ErrNothingToUpdate

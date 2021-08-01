@@ -110,8 +110,8 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
-						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
+						"Spot 1", 1.23, 3.21, psqlutil.String("Locality 1"), psqlutil.String("Country code 1"),
+						"Spot 2", 1.23, 3.21, psqlutil.String("Locality 2"), sql.NullString{},
 					).
 					WillReturnError(errors.New("something went wrong"))
 
@@ -189,8 +189,8 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
-						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
+						"Spot 1", 1.23, 3.21, psqlutil.String("Locality 1"), psqlutil.String("Country code 1"),
+						"Spot 2", 1.23, 3.21, psqlutil.String("Locality 2"), sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewErrorResult(
 						errors.New("something went wrong"),
@@ -270,8 +270,8 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
-						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
+						"Spot 1", 1.23, 3.21, psqlutil.String("Locality 1"), psqlutil.String("Country code 1"),
+						"Spot 2", 1.23, 3.21, psqlutil.String("Locality 2"), sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewResult(0, 0))
 
@@ -349,8 +349,8 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Spot 1", 1.23, 3.21, sql.NullString{String: "Locality 1", Valid: true}, sql.NullString{String: "Country code 1", Valid: true},
-						"Spot 2", 1.23, 3.21, sql.NullString{String: "Locality 2", Valid: true}, sql.NullString{},
+						"Spot 1", 1.23, 3.21, psqlutil.String("Locality 1"), psqlutil.String("Country code 1"),
+						"Spot 2", 1.23, 3.21, psqlutil.String("Locality 2"), sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewResult(0, 2))
 
@@ -360,7 +360,7 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
 					)).
 					WithArgs(
-						"Spot 3", 1.23, 3.21, sql.NullString{}, sql.NullString{String: "Country code 3", Valid: true},
+						"Spot 3", 1.23, 3.21, sql.NullString{}, psqlutil.String("Country code 3"),
 						"Spot 4", 1.23, 3.21, sql.NullString{}, sql.NullString{},
 					).
 					WillReturnResult(sqlmock.NewResult(0, 2))
@@ -371,7 +371,7 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5)",
 					)).
 					WithArgs(
-						"Spot 5", 1.23, 3.21, sql.NullString{String: "Locality 5", Valid: true}, sql.NullString{String: "Country code 5", Valid: true},
+						"Spot 5", 1.23, 3.21, psqlutil.String("Locality 5"), psqlutil.String("Country code 5"),
 					).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 

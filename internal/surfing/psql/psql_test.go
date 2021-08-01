@@ -264,7 +264,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5) "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Spot 1", 1.23, 3.21, "Locality 1", "Country code 1").
+					WithArgs("Spot 1", 1.23, 3.21, psqlutil.String("Locality 1"), psqlutil.String("Country code 1")).
 					WillReturnError(errors.New("unexpected error"))
 			},
 			params: surfing.CreateLocalizedSpotParams{
@@ -290,7 +290,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 							"VALUES ($1,$2,$3,$4,$5) "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Spot 1", 1.23, 3.21, "Locality 1", "Country code 1").
+					WithArgs("Spot 1", 1.23, 3.21, psqlutil.String("Locality 1"), psqlutil.String("Country code 1")).
 					WillReturnRows(sqlmock.
 						NewRows([]string{
 							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
@@ -365,7 +365,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 							"WHERE id = $6 "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
+					WithArgs(psqlutil.String("Country code 1"), 2.34, psqlutil.String("Locality 1"), 4.32, "Updated spot 1", "1").
 					WillReturnError(errors.New("unexpected error"))
 			},
 			params: surfing.UpdateLocalizedSpotParams{
@@ -393,7 +393,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 							"WHERE id = $6 "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
+					WithArgs(psqlutil.String("Country code 1"), 2.34, psqlutil.String("Locality 1"), 4.32, "Updated spot 1", "1").
 					WillReturnError(sql.ErrNoRows)
 			},
 			params: surfing.UpdateLocalizedSpotParams{
@@ -430,7 +430,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 							"WHERE id = $6 "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
-					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
+					WithArgs(psqlutil.String("Country code 1"), 2.34, psqlutil.String("Locality 1"), 4.32, "Updated spot 1", "1").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
 							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",

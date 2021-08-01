@@ -78,3 +78,13 @@ func WrapDB(db *sql.DB) *sqlx.DB {
 func NewQueryBuilder() sq.StatementBuilderType {
 	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 }
+
+func String(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{}
+	}
+	return sql.NullString{
+		String: s,
+		Valid: true,
+	}
+}
