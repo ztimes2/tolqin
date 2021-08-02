@@ -76,12 +76,12 @@ func TestCoord(t *testing.T) {
 				entries []int
 			)
 
-			coord := New(len(test.entries), test.size)
-			for coord.HasNext() {
-				b := coord.Batch()
+			b := New(len(test.entries), test.size)
+			for b.HasNext() {
+				batch := b.Batch()
 
-				batches = append(batches, b)
-				entries = append(entries, test.entries[b.I:b.J+1]...)
+				batches = append(batches, batch)
+				entries = append(entries, test.entries[batch.I:batch.J+1]...)
 			}
 
 			assert.Equal(t, test.expectedBatches, batches)
