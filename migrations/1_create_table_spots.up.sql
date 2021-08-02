@@ -1,5 +1,5 @@
 CREATE TABLE spots (
-	id SERIAL PRIMARY KEY,
+	id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
 	name TEXT NOT NULL,
 	latitude NUMERIC NOT NULL,
 	longitude NUMERIC NOT NULL,
