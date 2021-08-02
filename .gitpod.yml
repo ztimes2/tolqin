@@ -1,9 +1,6 @@
 tasks:
   # Install golang-migrate CLI
-  - command: curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash && \
-        sudo apt-get update && \
-        sudo apt-get -y install migrate
+  - command: curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash && sudo apt-get update && sudo apt-get -y install migrate
 
   # Install PostreSQL CLI
-  - command: sudo apt-get update && \
-        sudo apt-get -y install postgresql-client
+  - command: sudo apt-get update && sudo apt-get -y install postgresql-client
