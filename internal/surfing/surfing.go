@@ -7,6 +7,15 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/ztimes2/tolqin/internal/geo"
+	"github.com/ztimes2/tolqin/internal/p8n"
+)
+
+const (
+	minLimit     = 1
+	maxLimit     = 100
+	defaultLimit = 10
+
+	minOffset = 0
 )
 
 var (
@@ -63,7 +72,10 @@ func (s *Service) Spot(id string) (Spot, error) {
 }
 
 func (s *Service) Spots(limit, offset int) ([]Spot, error) {
-	return s.spotStore.Spots(limit, offset)
+	return s.spotStore.Spots(
+		p8n.Limit(limit, minLimit, maxLimit, defaultLimit),
+		p8n.Offset(offset, minOffset),
+	)
 }
 
 type CreateSpotParams struct {
