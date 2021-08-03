@@ -76,10 +76,6 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	spots, err := h.service.Spots(limit, offset)
 	if err != nil {
-		if errors.Is(err, surfing.ErrNotFound) {
-			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
-			return
-		}
 		writeUnexpectedError(w, r, err)
 		return
 	}
