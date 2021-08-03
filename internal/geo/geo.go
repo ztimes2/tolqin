@@ -28,10 +28,10 @@ type Coordinates struct {
 }
 
 func (c Coordinates) Validate() error {
-	if minLatitude < c.Latitude || c.Latitude > maxLatitude {
+	if c.Latitude < minLatitude || c.Latitude > maxLatitude {
 		return validation.NewError("latitude")
 	}
-	if minLongitude < c.Longitude || c.Longitude > maxLongitude {
+	if c.Longitude < minLongitude || c.Longitude > maxLongitude {
 		return validation.NewError("longitude")
 	}
 	return nil

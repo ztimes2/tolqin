@@ -64,7 +64,7 @@ func NewService(s SpotStore, l geo.LocationSource) *Service {
 }
 
 func (s *Service) Spot(id string) (Spot, error) {
-	return s.spotStore.Spot(id)
+	return s.spotStore.Spot(strings.TrimSpace(id))
 }
 
 func (s *Service) Spots(limit, offset int) ([]Spot, error) {
@@ -116,11 +116,14 @@ type UpdateSpotParams struct {
 }
 
 func (p UpdateSpotParams) sanitize() UpdateSpotParams {
-	return UpdateSpotParams{
+	sanitized := UpdateSpotParams{
 		Coordinates: p.Coordinates,
 		ID:          strings.TrimSpace(p.ID),
-		Name:        pconv.String(strings.TrimSpace(*p.Name)),
 	}
+	if p.Name != nil {
+		sanitized.Name = pconv.String(strings.TrimSpace(*p.Name))
+	}
+	return sanitized
 }
 
 func (p UpdateSpotParams) validate() error {
@@ -159,7 +162,7 @@ func (s *Service) UpdateSpot(p UpdateSpotParams) (Spot, error) {
 }
 
 func (s *Service) DeleteSpot(id string) error {
-	return s.spotStore.DeleteSpot(id)
+	return s.spotStore.DeleteSpot(strings.TrimSpace(id))
 }
 
 func findLocation(src geo.LocationSource, c geo.Coordinates) (geo.Location, error) {
