@@ -56,10 +56,7 @@ type Service struct {
 	locationSource geo.LocationSource
 }
 
-func NewService(
-	s SpotStore,
-	l geo.LocationSource,
-) *Service {
+func NewService(s SpotStore, l geo.LocationSource) *Service {
 	return &Service{
 		spotStore:      s,
 		locationSource: l,
