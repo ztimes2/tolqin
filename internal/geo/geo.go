@@ -1,6 +1,18 @@
 package geo
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/ztimes2/tolqin/internal/validation"
+)
+
+const (
+	minLatitude float64 = -90
+	maxLatitude float64 = 90
+
+	minLongitude float64 = -180
+	maxLongitude float64 = 180
+)
 
 var (
 	ErrLocationNotFound = errors.New("location not found")
@@ -13,6 +25,16 @@ type LocationSource interface {
 type Coordinates struct {
 	Latitude  float64
 	Longitude float64
+}
+
+func (c Coordinates) Validate() error {
+	if minLatitude < c.Latitude || c.Latitude > maxLatitude {
+		return validation.NewError("latitude")
+	}
+	if minLongitude < c.Longitude || c.Longitude > maxLongitude {
+		return validation.NewError("longitude")
+	}
+	return nil
 }
 
 type Location struct {

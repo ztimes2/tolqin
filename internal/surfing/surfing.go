@@ -3,11 +3,13 @@ package surfing
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
-	"github.com/go-playground/validator"
 	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/p8n"
+	"github.com/ztimes2/tolqin/internal/pagination"
+	"github.com/ztimes2/tolqin/internal/pconv"
+	"github.com/ztimes2/tolqin/internal/validation"
 )
 
 const (
@@ -50,18 +52,15 @@ type UpdateLocalizedSpotParams struct {
 }
 
 type Service struct {
-	validate       *validator.Validate
 	spotStore      SpotStore
 	locationSource geo.LocationSource
 }
 
 func NewService(
-	v *validator.Validate,
 	s SpotStore,
 	l geo.LocationSource,
 ) *Service {
 	return &Service{
-		validate:       v,
 		spotStore:      s,
 		locationSource: l,
 	}
@@ -73,8 +72,8 @@ func (s *Service) Spot(id string) (Spot, error) {
 
 func (s *Service) Spots(limit, offset int) ([]Spot, error) {
 	return s.spotStore.Spots(
-		p8n.Limit(limit, minLimit, maxLimit, defaultLimit),
-		p8n.Offset(offset, minOffset),
+		pagination.Limit(limit, minLimit, maxLimit, defaultLimit),
+		pagination.Offset(offset, minOffset),
 	)
 }
 
@@ -83,19 +82,28 @@ type CreateSpotParams struct {
 	Name string
 }
 
+func (p CreateSpotParams) sanitize() CreateSpotParams {
+	p.Name = strings.TrimSpace(p.Name)
+	return p
+}
+
+func (p CreateSpotParams) validate() error {
+	if p.Name == "" {
+		return validation.NewError("name")
+	}
+	return p.Coordinates.Validate()
+}
+
 func (s *Service) CreateSpot(p CreateSpotParams) (Spot, error) {
-	if err := s.validate.Struct(&p); err != nil {
-		return Spot{}, fmt.Errorf("invalid params: %w", err)
+	p = p.sanitize()
+
+	if err := p.validate(); err != nil {
+		return Spot{}, err
 	}
 
-	l, err := s.locationSource.Location(p.Coordinates)
+	l, err := findLocation(s.locationSource, p.Coordinates)
 	if err != nil {
-		if !errors.Is(err, geo.ErrLocationNotFound) {
-			return Spot{}, fmt.Errorf("failed to fetch location: %w", err)
-		}
-		l = geo.Location{
-			Coordinates: p.Coordinates,
-		}
+		return Spot{}, err
 	}
 
 	return s.spotStore.CreateSpot(CreateLocalizedSpotParams{
@@ -110,8 +118,31 @@ type UpdateSpotParams struct {
 	Name *string
 }
 
+func (p UpdateSpotParams) sanitize() UpdateSpotParams {
+	return UpdateSpotParams{
+		Coordinates: p.Coordinates,
+		ID:          strings.TrimSpace(p.ID),
+		Name:        pconv.String(strings.TrimSpace(*p.Name)),
+	}
+}
+
+func (p UpdateSpotParams) validate() error {
+	if p.ID == "" {
+		return validation.NewError("id")
+	}
+	if p.Name != nil && *p.Name == "" {
+		return validation.NewError("name")
+	}
+	if p.Coordinates != nil {
+		return p.Coordinates.Validate()
+	}
+	return nil
+}
+
 func (s *Service) UpdateSpot(p UpdateSpotParams) (Spot, error) {
-	if err := s.validate.Struct(&p); err != nil {
+	p = p.sanitize()
+
+	if err := p.validate(); err != nil {
 		return Spot{}, err
 	}
 
@@ -120,16 +151,10 @@ func (s *Service) UpdateSpot(p UpdateSpotParams) (Spot, error) {
 		Name: p.Name,
 	}
 	if p.Coordinates != nil {
-		l, err := s.locationSource.Location(*p.Coordinates)
+		l, err := findLocation(s.locationSource, *p.Coordinates)
 		if err != nil {
-			if !errors.Is(err, geo.ErrLocationNotFound) {
-				return Spot{}, fmt.Errorf("failed to fetch location: %w", err)
-			}
-			l = geo.Location{
-				Coordinates: *p.Coordinates,
-			}
+			return Spot{}, err
 		}
-
 		localized.Location = &l
 	}
 
@@ -138,4 +163,17 @@ func (s *Service) UpdateSpot(p UpdateSpotParams) (Spot, error) {
 
 func (s *Service) DeleteSpot(id string) error {
 	return s.spotStore.DeleteSpot(id)
+}
+
+func findLocation(src geo.LocationSource, c geo.Coordinates) (geo.Location, error) {
+	l, err := src.Location(c)
+	if err != nil {
+		if !errors.Is(err, geo.ErrLocationNotFound) {
+			return geo.Location{}, fmt.Errorf("failed to fetch location: %w", err)
+		}
+		return geo.Location{
+			Coordinates: c,
+		}, nil
+	}
+	return l, nil
 }

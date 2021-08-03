@@ -1,4 +1,4 @@
-package p8n
+package pagination
 
 func Limit(limit, min, max, dflt int) int {
 	if limit < min {

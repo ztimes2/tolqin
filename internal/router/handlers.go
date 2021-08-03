@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-playground/validator"
 	"github.com/julienschmidt/httprouter"
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/validation"
 )
 
 type spotResponse struct {
@@ -112,9 +112,9 @@ func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httproute
 		},
 	})
 	if err != nil {
-		var vErr validator.ValidationErrors
+		var vErr *validation.Error
 		if errors.As(err, &vErr) {
-			writeError(w, r, http.StatusBadRequest, humanizeValidationErrors(vErr))
+			writeError(w, r, http.StatusBadRequest, humanizeValidationError(vErr))
 			return
 		}
 		writeUnexpectedError(w, r, err)
@@ -164,9 +164,9 @@ func (h *handler) updateSpot(w http.ResponseWriter, r *http.Request, p httproute
 			writeError(w, r, http.StatusBadRequest, "Nothing to update.")
 			return
 		}
-		var vErr validator.ValidationErrors
+		var vErr *validation.Error
 		if errors.As(err, &vErr) {
-			writeError(w, r, http.StatusBadRequest, humanizeValidationErrors(vErr))
+			writeError(w, r, http.StatusBadRequest, humanizeValidationError(vErr))
 			return
 		}
 		writeUnexpectedError(w, r, err)

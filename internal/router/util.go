@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-playground/validator"
 	"github.com/ztimes2/tolqin/internal/logging"
+	"github.com/ztimes2/tolqin/internal/validation"
 )
 
 func write(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
@@ -49,11 +49,8 @@ type errorResponse struct {
 	Description string `json:"error_description"`
 }
 
-func humanizeValidationErrors(errs validator.ValidationErrors) string {
-	if len(errs) == 0 {
-		return "Invalid input."
-	}
-	return fmt.Sprintf("Invalid %q field.", errs[0].Field())
+func humanizeValidationError(err *validation.Error) string {
+	return fmt.Sprintf("Invalid %q field.", err.Field)
 }
 
 func queryParamInt(r *http.Request, key string) (int, error) {
