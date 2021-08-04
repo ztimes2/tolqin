@@ -27,8 +27,8 @@ func (ss SpotEntrySource) SpotEntries() ([]importing.SpotEntry, error) {
 		return nil, fmt.Errorf("failed to read csv: %w", err)
 	}
 
-	if len(records) < 1 {
-		return []importing.SpotEntry{}, nil
+	if len(records) <= 1 {
+		return nil, nil
 	}
 
 	var entries []importing.SpotEntry
