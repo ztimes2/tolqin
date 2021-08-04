@@ -50,7 +50,7 @@ type errorResponse struct {
 }
 
 func humanizeValidationError(err *validation.Error) string {
-	return fmt.Sprintf("Invalid %q field.", err.Field)
+	return fmt.Sprintf("Invalid %s.", err.Field)
 }
 
 func queryParamInt(r *http.Request, key string) (int, error) {

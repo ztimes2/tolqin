@@ -49,5 +49,9 @@ func ContextWith(ctx context.Context, l *logrus.Entry) context.Context {
 }
 
 func FromContext(ctx context.Context) *logrus.Entry {
-	return ctx.Value(keyLogEntry).(*logrus.Entry)
+	l, ok := ctx.Value(keyLogEntry).(*logrus.Entry)
+	if !ok {
+		return nil
+	}
+	return l
 }

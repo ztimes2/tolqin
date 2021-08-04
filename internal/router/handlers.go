@@ -36,10 +36,10 @@ type spotsResponse struct {
 }
 
 type handler struct {
-	service *surfing.Service
+	service service
 }
 
-func newHandler(s *surfing.Service) *handler {
+func newHandler(s service) *handler {
 	return &handler{
 		service: s,
 	}
