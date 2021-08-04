@@ -98,7 +98,7 @@ func (s *Service) CreateSpot(p CreateSpotParams) (Spot, error) {
 		return Spot{}, err
 	}
 
-	l, err := findLocation(s.locationSource, p.Coordinates)
+	l, err := localize(s.locationSource, p.Coordinates)
 	if err != nil {
 		return Spot{}, err
 	}
@@ -151,7 +151,7 @@ func (s *Service) UpdateSpot(p UpdateSpotParams) (Spot, error) {
 		Name: p.Name,
 	}
 	if p.Coordinates != nil {
-		l, err := findLocation(s.locationSource, *p.Coordinates)
+		l, err := localize(s.locationSource, *p.Coordinates)
 		if err != nil {
 			return Spot{}, err
 		}
@@ -165,7 +165,7 @@ func (s *Service) DeleteSpot(id string) error {
 	return s.spotStore.DeleteSpot(strings.TrimSpace(id))
 }
 
-func findLocation(src geo.LocationSource, c geo.Coordinates) (geo.Location, error) {
+func localize(src geo.LocationSource, c geo.Coordinates) (geo.Location, error) {
 	l, err := src.Location(c)
 	if err != nil {
 		if !errors.Is(err, geo.ErrLocationNotFound) {
