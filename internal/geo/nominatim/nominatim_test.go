@@ -25,7 +25,7 @@ func TestNominatim_Location(t *testing.T) {
 					assert.Equal(t, "1.23", r.URL.Query().Get(queryParamLatitude))
 					assert.Equal(t, "3.21", r.URL.Query().Get(queryParamLongitude))
 					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte(`{"error":"Something went wrong."}`))
+					_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
 				}
 			},
 			coord: geo.Coordinates{
@@ -42,7 +42,7 @@ func TestNominatim_Location(t *testing.T) {
 					assert.Equal(t, "1.23", r.URL.Query().Get(queryParamLatitude))
 					assert.Equal(t, "3.21", r.URL.Query().Get(queryParamLongitude))
 					w.WriteHeader(http.StatusOK)
-					w.Write(nil)
+					_, _ = w.Write(nil)
 				}
 			},
 			coord: geo.Coordinates{
@@ -59,7 +59,7 @@ func TestNominatim_Location(t *testing.T) {
 					assert.Equal(t, "1.23", r.URL.Query().Get(queryParamLatitude))
 					assert.Equal(t, "3.21", r.URL.Query().Get(queryParamLongitude))
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(`{"error":"Location not found."}`))
+					_, _ = w.Write([]byte(`{"error":"Location not found."}`))
 				}
 			},
 			coord: geo.Coordinates{
@@ -76,7 +76,7 @@ func TestNominatim_Location(t *testing.T) {
 					assert.Equal(t, "1.23", r.URL.Query().Get(queryParamLatitude))
 					assert.Equal(t, "3.21", r.URL.Query().Get(queryParamLongitude))
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(
+					_, _ = w.Write([]byte(
 						`{
 							"address": {
 								"country_code": "Country code",
