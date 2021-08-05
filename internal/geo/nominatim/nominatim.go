@@ -15,10 +15,14 @@ import (
 const (
 	endpointReverseGeocoding = "/reverse"
 
-	formatJSON = "json"
-
 	headerAcceptLanguage = "Accept-Language"
-	languageCodeEnglish  = "en"
+
+	queryParamLatitude  = "latitude"
+	queryParamLongitude = "longitude"
+	queryParamFormat    = "format"
+
+	formatJSON          = "json"
+	languageCodeEnglish = "en"
 )
 
 type Nominatim struct {
@@ -47,9 +51,9 @@ func (n *Nominatim) Location(c geo.Coordinates) (geo.Location, error) {
 	}
 
 	q := url.Values{
-		"lat":    []string{floatToString(c.Latitude)},
-		"lon":    []string{floatToString(c.Longitude)},
-		"format": []string{formatJSON},
+		queryParamLatitude:  []string{floatToString(c.Latitude)},
+		queryParamLongitude: []string{floatToString(c.Longitude)},
+		queryParamFormat:    []string{formatJSON},
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -60,11 +64,11 @@ func (n *Nominatim) Location(c geo.Coordinates) (geo.Location, error) {
 		return geo.Location{}, fmt.Errorf("failed to send request: %w", err)
 	}
 
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return geo.Location{}, fmt.Errorf("failed to read response body: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return geo.Location{}, fmt.Errorf("unsuccessful response: %s %s", resp.Status, string(body))
@@ -73,11 +77,6 @@ func (n *Nominatim) Location(c geo.Coordinates) (geo.Location, error) {
 	var r reverseGeocodingResponse
 	if err := json.Unmarshal(body, &r); err != nil {
 		return geo.Location{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-
-	l := r.locality()
-	if l == "" {
-		fmt.Println(string(body))
 	}
 
 	if r.hasError() {
@@ -92,20 +91,8 @@ func floatToString(f float64) string {
 }
 
 type reverseGeocodingResponse struct {
-	Error   string `json:"error"`
-	Address struct {
-		CountryCode  string `json:"country_code"`
-		Region       string `json:"region"`
-		Territory    string `json:"territory"`
-		State        string `json:"state"`
-		County       string `json:"county"`
-		Municipality string `json:"municipality"`
-		CityDistrict string `json:"city_district"`
-		City         string `json:"city"`
-		Town         string `json:"town"`
-		Village      string `json:"village"`
-		Hamlet       string `json:"hamlet"`
-	} `json:"address"`
+	Error   string                          `json:"error"`
+	Address reverseGeocodingAddressResponse `json:"address"`
 }
 
 func (r reverseGeocodingResponse) hasError() bool {
@@ -115,41 +102,55 @@ func (r reverseGeocodingResponse) hasError() bool {
 func (r reverseGeocodingResponse) toLocation(c geo.Coordinates) geo.Location {
 	return geo.Location{
 		CountryCode: r.Address.CountryCode,
-		Locality:    r.locality(),
+		Locality:    r.Address.locality(),
 		Coordinates: c,
 	}
 }
 
-func (r reverseGeocodingResponse) locality() string {
-	if r.Address.Hamlet != "" {
-		return r.Address.Hamlet
+type reverseGeocodingAddressResponse struct {
+	CountryCode  string `json:"country_code"`
+	Region       string `json:"region"`
+	Territory    string `json:"territory"`
+	State        string `json:"state"`
+	County       string `json:"county"`
+	Municipality string `json:"municipality"`
+	CityDistrict string `json:"city_district"`
+	City         string `json:"city"`
+	Town         string `json:"town"`
+	Village      string `json:"village"`
+	Hamlet       string `json:"hamlet"`
+}
+
+func (r reverseGeocodingAddressResponse) locality() string {
+	if r.Hamlet != "" {
+		return r.Hamlet
 	}
-	if r.Address.Village != "" {
-		return r.Address.Village
+	if r.Village != "" {
+		return r.Village
 	}
-	if r.Address.Town != "" {
-		return r.Address.Town
+	if r.Town != "" {
+		return r.Town
 	}
-	if r.Address.City != "" {
-		return r.Address.City
+	if r.City != "" {
+		return r.City
 	}
-	if r.Address.CityDistrict != "" {
-		return r.Address.CityDistrict
+	if r.CityDistrict != "" {
+		return r.CityDistrict
 	}
-	if r.Address.Municipality != "" {
-		return r.Address.Municipality
+	if r.Municipality != "" {
+		return r.Municipality
 	}
-	if r.Address.County != "" {
-		return r.Address.County
+	if r.County != "" {
+		return r.County
 	}
-	if r.Address.State != "" {
-		return r.Address.State
+	if r.State != "" {
+		return r.State
 	}
-	if r.Address.Territory != "" {
-		return r.Address.Territory
+	if r.Territory != "" {
+		return r.Territory
 	}
-	if r.Address.Region != "" {
-		return r.Address.Region
+	if r.Region != "" {
+		return r.Region
 	}
 	return ""
 }
