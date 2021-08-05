@@ -13,7 +13,7 @@ const (
 	formatText = "text"
 )
 
-func NewLogger(level, format string) (*logrus.Logger, error) {
+func New(level, format string) (*logrus.Logger, error) {
 	logger := logrus.New()
 
 	lvl, err := logrus.ParseLevel(level)
@@ -49,9 +49,6 @@ func ContextWith(ctx context.Context, l *logrus.Entry) context.Context {
 }
 
 func FromContext(ctx context.Context) *logrus.Entry {
-	l, ok := ctx.Value(keyLogEntry).(*logrus.Entry)
-	if !ok {
-		return nil
-	}
+	l, _ := ctx.Value(keyLogEntry).(*logrus.Entry)
 	return l
 }

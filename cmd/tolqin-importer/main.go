@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	logger, err := logging.NewLogger(conf.LogLevel, conf.LogFormat)
+	logger, err := logging.New(conf.LogLevel, conf.LogFormat)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
