@@ -85,6 +85,6 @@ func String(s string) sql.NullString {
 	}
 	return sql.NullString{
 		String: s,
-		Valid: true,
+		Valid:  true,
 	}
 }
