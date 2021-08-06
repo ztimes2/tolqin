@@ -27,7 +27,7 @@ var (
 
 type SpotStore interface {
 	Spot(id string) (Spot, error)
-	Spots(limit, offset int) ([]Spot, error)
+	Spots(SpotsParams) ([]Spot, error)
 	CreateSpot(CreateLocalizedSpotParams) (Spot, error)
 	UpdateSpot(UpdateLocalizedSpotParams) (Spot, error)
 	DeleteSpot(id string) error
@@ -38,6 +38,30 @@ type Spot struct {
 	ID        string
 	Name      string
 	CreatedAt time.Time
+}
+
+type SpotsParams struct {
+	Limit           int
+	Offset          int
+	CountryCode     string
+	CoordinateRange *geo.CoordinateRange
+}
+
+func (p SpotsParams) sanitize() SpotsParams {
+	p.Limit = pagination.Limit(p.Limit, minLimit, maxLimit, defaultLimit)
+	p.Offset = pagination.Offset(p.Offset, minOffset)
+	p.CountryCode = strings.TrimSpace(p.CountryCode)
+	return p
+}
+
+func (p SpotsParams) validate() error {
+	// TODO validate country code
+	if p.CoordinateRange != nil {
+		if err := p.CoordinateRange.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type CreateLocalizedSpotParams struct {
@@ -67,11 +91,14 @@ func (s *Service) Spot(id string) (Spot, error) {
 	return s.spotStore.Spot(strings.TrimSpace(id))
 }
 
-func (s *Service) Spots(limit, offset int) ([]Spot, error) {
-	return s.spotStore.Spots(
-		pagination.Limit(limit, minLimit, maxLimit, defaultLimit),
-		pagination.Offset(offset, minOffset),
-	)
+func (s *Service) Spots(p SpotsParams) ([]Spot, error) {
+	p = p.sanitize()
+
+	if err := p.validate(); err != nil {
+		return nil, err
+	}
+
+	return s.spotStore.Spots(p)
 }
 
 type CreateSpotParams struct {

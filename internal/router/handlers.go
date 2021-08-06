@@ -74,7 +74,10 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		return
 	}
 
-	spots, err := h.service.Spots(limit, offset)
+	spots, err := h.service.Spots(surfing.SpotsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
 	if err != nil {
 		writeUnexpectedError(w, r, err)
 		return

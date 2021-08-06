@@ -37,6 +37,23 @@ func (c Coordinates) Validate() error {
 	return nil
 }
 
+type CoordinateRange struct {
+	NorthWest Coordinates
+	SouthEast Coordinates
+}
+
+func (cr CoordinateRange) Validate() error {
+	if err := cr.NorthWest.Validate(); err != nil {
+		vErr := (err).(*validation.Error)
+		return validation.NewError("north west " + vErr.Field())
+	}
+	if err := cr.SouthEast.Validate(); err != nil {
+		vErr := (err).(*validation.Error)
+		return validation.NewError("south east " + vErr.Field())
+	}
+	return nil
+}
+
 type Location struct {
 	Coordinates
 	Locality    string

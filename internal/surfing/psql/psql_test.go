@@ -113,16 +113,17 @@ func TestSpotStore_Spot(t *testing.T) {
 func TestSpotStore_Spots(t *testing.T) {
 	tests := []struct {
 		name          string
-		limit         int
-		offset        int
+		params surfing.SpotsParams
 		mockFn        func(sqlmock.Sqlmock)
 		expectedSpots []surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name:   "return error during query execution",
-			limit:  10,
-			offset: 0,
+			params: surfing.SpotsParams{
+				Limit: 10,
+				Offset: 0,
+			},
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
@@ -136,8 +137,10 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name:   "return error during row scanning",
-			limit:  10,
-			offset: 0,
+			params: surfing.SpotsParams{
+				Limit: 10,
+				Offset: 0,
+			},
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
@@ -157,8 +160,10 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name:   "return 0 spots without error",
-			limit:  10,
-			offset: 0,
+			params: surfing.SpotsParams{
+				Limit: 10,
+				Offset: 0,
+			},
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
@@ -177,8 +182,10 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name:   "return spots without error",
-			limit:  10,
-			offset: 0,
+			params: surfing.SpotsParams{
+				Limit: 10,
+				Offset: 0,
+			},
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
@@ -238,7 +245,7 @@ func TestSpotStore_Spots(t *testing.T) {
 
 			store := NewSpotStore(psqlutil.WrapDB(db))
 
-			spots, err := store.Spots(test.limit, test.offset)
+			spots, err := store.Spots(test.params)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpots, spots)
 

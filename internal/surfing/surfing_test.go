@@ -25,8 +25,8 @@ func (m *mockSpotStore) Spot(id string) (Spot, error) {
 	return args.Get(0).(Spot), args.Error(1)
 }
 
-func (m *mockSpotStore) Spots(limit, offset int) ([]Spot, error) {
-	args := m.Called(limit, offset)
+func (m *mockSpotStore) Spots(p SpotsParams) ([]Spot, error) {
+	args := m.Called(p)
 	return args.Get(0).([]Spot), args.Error(1)
 }
 
@@ -181,8 +181,7 @@ func TestService_Spots(t *testing.T) {
 		name           string
 		spotStore      SpotStore
 		locationSource geo.LocationSource
-		limit          int
-		offset         int
+		params         SpotsParams
 		expectedSpots  []Spot
 		expectedErrFn  assert.ErrorAssertionFunc
 	}{
@@ -191,22 +190,30 @@ func TestService_Spots(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("Spots", 20, 0).
+					On("Spots", SpotsParams{
+						Limit:  20,
+						Offset: 0,
+					}).
 					Return(([]Spot)(nil), errors.New("something went wrong"))
 				return m
 			}(),
 			locationSource: newMockLocationSource(),
-			limit:          20,
-			offset:         0,
-			expectedSpots:  nil,
-			expectedErrFn:  assert.Error,
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+			},
+			expectedSpots: nil,
+			expectedErrFn: assert.Error,
 		},
 		{
 			name: "return spots using sanitized limit and offset without error",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("Spots", 10, 0).
+					On("Spots", SpotsParams{
+						Limit:  10,
+						Offset: 0,
+					}).
 					Return(
 						[]Spot{
 							{
@@ -241,8 +248,10 @@ func TestService_Spots(t *testing.T) {
 				return m
 			}(),
 			locationSource: newMockLocationSource(),
-			limit:          0,
-			offset:         -1,
+			params: SpotsParams{
+				Limit:  0,
+				Offset: -1,
+			},
 			expectedSpots: []Spot{
 				{
 					Location: geo.Location{
@@ -278,7 +287,10 @@ func TestService_Spots(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("Spots", 100, 0).
+					On("Spots", SpotsParams{
+						Limit:  100,
+						Offset: 0,
+					}).
 					Return(
 						[]Spot{
 							{
@@ -313,8 +325,10 @@ func TestService_Spots(t *testing.T) {
 				return m
 			}(),
 			locationSource: newMockLocationSource(),
-			limit:          101,
-			offset:         -1,
+			params: SpotsParams{
+				Limit:  101,
+				Offset: -1,
+			},
 			expectedSpots: []Spot{
 				{
 					Location: geo.Location{
@@ -350,7 +364,10 @@ func TestService_Spots(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("Spots", 20, 3).
+					On("Spots", SpotsParams{
+						Limit:  20,
+						Offset: 3,
+					}).
 					Return(
 						[]Spot{
 							{
@@ -385,8 +402,10 @@ func TestService_Spots(t *testing.T) {
 				return m
 			}(),
 			locationSource: newMockLocationSource(),
-			limit:          20,
-			offset:         3,
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 3,
+			},
 			expectedSpots: []Spot{
 				{
 					Location: geo.Location{
@@ -423,7 +442,7 @@ func TestService_Spots(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := NewService(test.spotStore, test.locationSource)
 
-			spots, err := s.Spots(test.limit, test.offset)
+			spots, err := s.Spots(test.params)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpots, spots)
 		})

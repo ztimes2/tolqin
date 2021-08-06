@@ -32,8 +32,8 @@ func (m *mockService) Spot(id string) (surfing.Spot, error) {
 	return args.Get(0).(surfing.Spot), args.Error(1)
 }
 
-func (m *mockService) Spots(limit, offset int) ([]surfing.Spot, error) {
-	args := m.Called(limit, offset)
+func (m *mockService) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
+	args := m.Called(p)
 	return args.Get(0).([]surfing.Spot), args.Error(1)
 }
 
@@ -238,7 +238,10 @@ func TestHandler_Spots(t *testing.T) {
 			service: func() service {
 				m := newMockService()
 				m.
-					On("Spots", 10, 0).
+					On("Spots", surfing.SpotsParams{
+						Limit:  10,
+						Offset: 0,
+					}).
 					Return(([]surfing.Spot)(nil), errors.New("something went wrong"))
 				return m
 			}(),
@@ -269,7 +272,10 @@ func TestHandler_Spots(t *testing.T) {
 			service: func() service {
 				m := newMockService()
 				m.
-					On("Spots", 0, 0).
+					On("Spots", surfing.SpotsParams{
+						Limit:  0,
+						Offset: 0,
+					}).
 					Return(([]surfing.Spot)(nil), nil)
 				return m
 			}(),
@@ -296,7 +302,10 @@ func TestHandler_Spots(t *testing.T) {
 			service: func() service {
 				m := newMockService()
 				m.
-					On("Spots", 10, 0).
+					On("Spots", surfing.SpotsParams{
+						Limit:  10,
+						Offset: 0,
+					}).
 					Return(
 						[]surfing.Spot{
 							{

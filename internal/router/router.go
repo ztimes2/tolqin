@@ -20,7 +20,7 @@ func New(s *surfing.Service, l *logrus.Logger) http.Handler {
 
 type service interface {
 	Spot(id string) (surfing.Spot, error)
-	Spots(limit, offset int) ([]surfing.Spot, error)
+	Spots(surfing.SpotsParams) ([]surfing.Spot, error)
 	CreateSpot(surfing.CreateSpotParams) (surfing.Spot, error)
 	UpdateSpot(surfing.UpdateSpotParams) (surfing.Spot, error)
 	DeleteSpot(id string) error
