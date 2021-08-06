@@ -206,90 +206,108 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
-			name: "return spots using sanitized limit and offset without error",
-			spotStore: func() SpotStore {
-				m := newMockSpotStore()
-				m.
-					On("Spots", SpotsParams{
-						Limit:  10,
-						Offset: 0,
-					}).
-					Return(
-						[]Spot{
-							{
-								Location: geo.Location{
-									Coordinates: geo.Coordinates{
-										Latitude:  1.23,
-										Longitude: 3.21,
-									},
-									Locality:    "Locality 1",
-									CountryCode: "Country code 1",
-								},
-								ID:        "1",
-								Name:      "Spot 1",
-								CreatedAt: time.Date(2021, 1, 1, 1, 1, 1, 1, time.UTC),
-							},
-							{
-								Location: geo.Location{
-									Coordinates: geo.Coordinates{
-										Latitude:  1.23,
-										Longitude: 3.21,
-									},
-									Locality:    "Locality 2",
-									CountryCode: "Country code 2",
-								},
-								ID:        "2",
-								Name:      "Spot 2",
-								CreatedAt: time.Date(2021, 1, 1, 1, 1, 1, 1, time.UTC),
-							},
-						},
-						nil,
-					)
-				return m
-			}(),
+			name:           "return error for invalid north west latitude",
+			spotStore:      newMockSpotStore(),
 			locationSource: newMockLocationSource(),
 			params: SpotsParams{
-				Limit:  0,
-				Offset: -1,
-			},
-			expectedSpots: []Spot{
-				{
-					Location: geo.Location{
-						Coordinates: geo.Coordinates{
-							Latitude:  1.23,
-							Longitude: 3.21,
-						},
-						Locality:    "Locality 1",
-						CountryCode: "Country code 1",
+				Limit:  20,
+				Offset: 0,
+				CoordinateRange: &geo.CoordinateRange{
+					NorthWest: geo.Coordinates{
+						Latitude:  -91,
+						Longitude: 180,
 					},
-					ID:        "1",
-					Name:      "Spot 1",
-					CreatedAt: time.Date(2021, 1, 1, 1, 1, 1, 1, time.UTC),
-				},
-				{
-					Location: geo.Location{
-						Coordinates: geo.Coordinates{
-							Latitude:  1.23,
-							Longitude: 3.21,
-						},
-						Locality:    "Locality 2",
-						CountryCode: "Country code 2",
+					SouthEast: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
 					},
-					ID:        "2",
-					Name:      "Spot 2",
-					CreatedAt: time.Date(2021, 1, 1, 1, 1, 1, 1, time.UTC),
 				},
 			},
-			expectedErrFn: assert.NoError,
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsValidationError("north west latitude"),
 		},
 		{
-			name: "return spots using sanitized limit and offset without error",
+			name:           "return error for invalid north west longitude",
+			spotStore:      newMockSpotStore(),
+			locationSource: newMockLocationSource(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+				CoordinateRange: &geo.CoordinateRange{
+					NorthWest: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 181,
+					},
+					SouthEast: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsValidationError("north west longitude"),
+		},
+		{
+			name:           "return error for invalid south east latitude",
+			spotStore:      newMockSpotStore(),
+			locationSource: newMockLocationSource(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+				CoordinateRange: &geo.CoordinateRange{
+					NorthWest: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+					SouthEast: geo.Coordinates{
+						Latitude:  91,
+						Longitude: 180,
+					},
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsValidationError("south east latitude"),
+		},
+		{
+			name:           "return error for invalid south east longitude",
+			spotStore:      newMockSpotStore(),
+			locationSource: newMockLocationSource(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+				CoordinateRange: &geo.CoordinateRange{
+					NorthWest: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+					SouthEast: geo.Coordinates{
+						Latitude:  90,
+						Longitude: -181,
+					},
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsValidationError("south east longitude"),
+		},
+		{
+			name: "return spots using sanitized params without error",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
 					On("Spots", SpotsParams{
-						Limit:  100,
-						Offset: 0,
+						Limit:       10,
+						Offset:      0,
+						CountryCode: "Country code 1",
+						CoordinateRange: &geo.CoordinateRange{
+							NorthWest: geo.Coordinates{
+								Latitude:  90,
+								Longitude: 180,
+							},
+							SouthEast: geo.Coordinates{
+								Latitude:  -90,
+								Longitude: -180,
+							},
+						},
 					}).
 					Return(
 						[]Spot{
@@ -313,7 +331,7 @@ func TestService_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 2",
-									CountryCode: "Country code 2",
+									CountryCode: "Country code 1",
 								},
 								ID:        "2",
 								Name:      "Spot 2",
@@ -326,8 +344,19 @@ func TestService_Spots(t *testing.T) {
 			}(),
 			locationSource: newMockLocationSource(),
 			params: SpotsParams{
-				Limit:  101,
-				Offset: -1,
+				Limit:       0,
+				Offset:      -1,
+				CountryCode: " Country code 1 ",
+				CoordinateRange: &geo.CoordinateRange{
+					NorthWest: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+					SouthEast: geo.Coordinates{
+						Latitude:  -90,
+						Longitude: -180,
+					},
+				},
 			},
 			expectedSpots: []Spot{
 				{
@@ -350,7 +379,7 @@ func TestService_Spots(t *testing.T) {
 							Longitude: 3.21,
 						},
 						Locality:    "Locality 2",
-						CountryCode: "Country code 2",
+						CountryCode: "Country code 1",
 					},
 					ID:        "2",
 					Name:      "Spot 2",
@@ -365,8 +394,19 @@ func TestService_Spots(t *testing.T) {
 				m := newMockSpotStore()
 				m.
 					On("Spots", SpotsParams{
-						Limit:  20,
-						Offset: 3,
+						Limit:       20,
+						Offset:      3,
+						CountryCode: "Country code 1",
+						CoordinateRange: &geo.CoordinateRange{
+							NorthWest: geo.Coordinates{
+								Latitude:  90,
+								Longitude: 180,
+							},
+							SouthEast: geo.Coordinates{
+								Latitude:  -90,
+								Longitude: -180,
+							},
+						},
 					}).
 					Return(
 						[]Spot{
@@ -390,7 +430,7 @@ func TestService_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 2",
-									CountryCode: "Country code 2",
+									CountryCode: "Country code 1",
 								},
 								ID:        "2",
 								Name:      "Spot 2",
@@ -403,8 +443,19 @@ func TestService_Spots(t *testing.T) {
 			}(),
 			locationSource: newMockLocationSource(),
 			params: SpotsParams{
-				Limit:  20,
-				Offset: 3,
+				Limit:       20,
+				Offset:      3,
+				CountryCode: "Country code 1",
+				CoordinateRange: &geo.CoordinateRange{
+					NorthWest: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+					SouthEast: geo.Coordinates{
+						Latitude:  -90,
+						Longitude: -180,
+					},
+				},
 			},
 			expectedSpots: []Spot{
 				{
@@ -427,7 +478,7 @@ func TestService_Spots(t *testing.T) {
 							Longitude: 3.21,
 						},
 						Locality:    "Locality 2",
-						CountryCode: "Country code 2",
+						CountryCode: "Country code 1",
 					},
 					ID:        "2",
 					Name:      "Spot 2",
