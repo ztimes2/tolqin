@@ -2,12 +2,10 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/ztimes2/tolqin/internal/logging"
-	"github.com/ztimes2/tolqin/internal/validation"
 )
 
 func write(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
@@ -47,10 +45,6 @@ func writeError(w http.ResponseWriter, r *http.Request, statusCode int, desc str
 
 type errorResponse struct {
 	Description string `json:"error_description"`
-}
-
-func humanizeValidationError(err *validation.Error) string {
-	return fmt.Sprintf("Invalid %s.", err.Field)
 }
 
 func queryParamInt(r *http.Request, key string) (int, error) {

@@ -17,6 +17,6 @@ func IsValidationError(field string) assert.ErrorAssertionFunc {
 		return assert.Error(t, err) &&
 			assert.ErrorAs(t, err, &vErr) &&
 			assert.NotNil(t, vErr) &&
-			assert.Equal(t, field, vErr.Field)
+			assert.Equal(t, field, vErr.Field())
 	}
 }

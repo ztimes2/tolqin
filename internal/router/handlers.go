@@ -114,7 +114,7 @@ func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httproute
 	if err != nil {
 		var vErr *validation.Error
 		if errors.As(err, &vErr) {
-			writeError(w, r, http.StatusBadRequest, humanizeValidationError(vErr))
+			writeError(w, r, http.StatusBadRequest, vErr.Description())
 			return
 		}
 		writeUnexpectedError(w, r, err)
@@ -166,7 +166,7 @@ func (h *handler) updateSpot(w http.ResponseWriter, r *http.Request, p httproute
 		}
 		var vErr *validation.Error
 		if errors.As(err, &vErr) {
-			writeError(w, r, http.StatusBadRequest, humanizeValidationError(vErr))
+			writeError(w, r, http.StatusBadRequest, vErr.Description())
 			return
 		}
 		writeUnexpectedError(w, r, err)
