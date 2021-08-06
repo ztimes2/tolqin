@@ -95,7 +95,7 @@ func TestService_Spot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							ID:        "1",
 							Name:      "Spot 1",
@@ -114,7 +114,7 @@ func TestService_Spot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				ID:        "1",
 				Name:      "Spot 1",
@@ -136,7 +136,7 @@ func TestService_Spot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							ID:        "1",
 							Name:      "Spot 1",
@@ -155,7 +155,7 @@ func TestService_Spot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				ID:        "1",
 				Name:      "Spot 1",
@@ -186,24 +186,16 @@ func TestService_Spots(t *testing.T) {
 		expectedErrFn  assert.ErrorAssertionFunc
 	}{
 		{
-			name: "return error during spot spore failure",
-			spotStore: func() SpotStore {
-				m := newMockSpotStore()
-				m.
-					On("Spots", SpotsParams{
-						Limit:  20,
-						Offset: 0,
-					}).
-					Return(([]Spot)(nil), errors.New("something went wrong"))
-				return m
-			}(),
+			name:           "return error for invalid country code",
+			spotStore:      newMockSpotStore(),
 			locationSource: newMockLocationSource(),
 			params: SpotsParams{
-				Limit:  20,
-				Offset: 0,
+				Limit:       20,
+				Offset:      0,
+				CountryCode: "invalid",
 			},
 			expectedSpots: nil,
-			expectedErrFn: assert.Error,
+			expectedErrFn: testutil.IsValidationError("country code"),
 		},
 		{
 			name:           "return error for invalid north west latitude",
@@ -290,6 +282,26 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.IsValidationError("south east longitude"),
 		},
 		{
+			name: "return error during spot spore failure",
+			spotStore: func() SpotStore {
+				m := newMockSpotStore()
+				m.
+					On("Spots", SpotsParams{
+						Limit:  20,
+						Offset: 0,
+					}).
+					Return(([]Spot)(nil), errors.New("something went wrong"))
+				return m
+			}(),
+			locationSource: newMockLocationSource(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+			},
+			expectedSpots: nil,
+			expectedErrFn: assert.Error,
+		},
+		{
 			name: "return spots using sanitized params without error",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
@@ -297,7 +309,7 @@ func TestService_Spots(t *testing.T) {
 					On("Spots", SpotsParams{
 						Limit:       10,
 						Offset:      0,
-						CountryCode: "Country code 1",
+						CountryCode: "kz",
 						CoordinateRange: &geo.CoordinateRange{
 							NorthWest: geo.Coordinates{
 								Latitude:  90,
@@ -318,7 +330,7 @@ func TestService_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 1",
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 								},
 								ID:        "1",
 								Name:      "Spot 1",
@@ -331,7 +343,7 @@ func TestService_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 2",
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 								},
 								ID:        "2",
 								Name:      "Spot 2",
@@ -346,7 +358,7 @@ func TestService_Spots(t *testing.T) {
 			params: SpotsParams{
 				Limit:       0,
 				Offset:      -1,
-				CountryCode: " Country code 1 ",
+				CountryCode: " kz ",
 				CoordinateRange: &geo.CoordinateRange{
 					NorthWest: geo.Coordinates{
 						Latitude:  90,
@@ -366,7 +378,7 @@ func TestService_Spots(t *testing.T) {
 							Longitude: 3.21,
 						},
 						Locality:    "Locality 1",
-						CountryCode: "Country code 1",
+						CountryCode: "kz",
 					},
 					ID:        "1",
 					Name:      "Spot 1",
@@ -379,7 +391,7 @@ func TestService_Spots(t *testing.T) {
 							Longitude: 3.21,
 						},
 						Locality:    "Locality 2",
-						CountryCode: "Country code 1",
+						CountryCode: "kz",
 					},
 					ID:        "2",
 					Name:      "Spot 2",
@@ -396,7 +408,7 @@ func TestService_Spots(t *testing.T) {
 					On("Spots", SpotsParams{
 						Limit:       20,
 						Offset:      3,
-						CountryCode: "Country code 1",
+						CountryCode: "kz",
 						CoordinateRange: &geo.CoordinateRange{
 							NorthWest: geo.Coordinates{
 								Latitude:  90,
@@ -417,7 +429,7 @@ func TestService_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 1",
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 								},
 								ID:        "1",
 								Name:      "Spot 1",
@@ -430,7 +442,7 @@ func TestService_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 2",
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 								},
 								ID:        "2",
 								Name:      "Spot 2",
@@ -445,7 +457,7 @@ func TestService_Spots(t *testing.T) {
 			params: SpotsParams{
 				Limit:       20,
 				Offset:      3,
-				CountryCode: "Country code 1",
+				CountryCode: "kz",
 				CoordinateRange: &geo.CoordinateRange{
 					NorthWest: geo.Coordinates{
 						Latitude:  90,
@@ -465,7 +477,7 @@ func TestService_Spots(t *testing.T) {
 							Longitude: 3.21,
 						},
 						Locality:    "Locality 1",
-						CountryCode: "Country code 1",
+						CountryCode: "kz",
 					},
 					ID:        "1",
 					Name:      "Spot 1",
@@ -478,7 +490,7 @@ func TestService_Spots(t *testing.T) {
 							Longitude: 3.21,
 						},
 						Locality:    "Locality 2",
-						CountryCode: "Country code 1",
+						CountryCode: "kz",
 					},
 					ID:        "2",
 					Name:      "Spot 2",
@@ -583,7 +595,7 @@ func TestService_CreateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						Name: "Spot 1",
 					}).
@@ -601,7 +613,7 @@ func TestService_CreateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						nil,
 					)
@@ -686,7 +698,7 @@ func TestService_CreateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						Name: "Spot 1",
 					}).
@@ -698,7 +710,7 @@ func TestService_CreateSpot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							Name:      "Spot 1",
 							ID:        "1",
@@ -719,7 +731,7 @@ func TestService_CreateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						nil,
 					)
@@ -739,7 +751,7 @@ func TestService_CreateSpot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				Name:      "Spot 1",
 				ID:        "1",
@@ -759,7 +771,7 @@ func TestService_CreateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						Name: "Spot 1",
 					}).
@@ -771,7 +783,7 @@ func TestService_CreateSpot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							Name:      "Spot 1",
 							ID:        "1",
@@ -792,7 +804,7 @@ func TestService_CreateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						nil,
 					)
@@ -812,7 +824,7 @@ func TestService_CreateSpot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				Name:      "Spot 1",
 				ID:        "1",
@@ -935,7 +947,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						Name: pconv.String("Spot 1"),
 						ID:   "1",
@@ -954,7 +966,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						nil,
 					)
@@ -988,7 +1000,7 @@ func TestService_UpdateSpot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							Name:      "Spot 1",
 							ID:        "1",
@@ -1010,7 +1022,7 @@ func TestService_UpdateSpot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				Name:      "Spot 1",
 				ID:        "1",
@@ -1031,7 +1043,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 					}).
 					Return(
@@ -1042,7 +1054,7 @@ func TestService_UpdateSpot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							Name:      "Spot 1",
 							ID:        "1",
@@ -1063,7 +1075,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						nil,
 					)
@@ -1083,7 +1095,7 @@ func TestService_UpdateSpot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				Name:      "Spot 1",
 				ID:        "1",
@@ -1104,7 +1116,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						Name: pconv.String("Spot 1"),
 					}).
@@ -1116,7 +1128,7 @@ func TestService_UpdateSpot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							Name:      "Spot 1",
 							ID:        "1",
@@ -1137,7 +1149,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						nil,
 					)
@@ -1158,7 +1170,7 @@ func TestService_UpdateSpot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				Name:      "Spot 1",
 				ID:        "1",
@@ -1179,7 +1191,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						Name: pconv.String("Spot 1"),
 					}).
@@ -1191,7 +1203,7 @@ func TestService_UpdateSpot(t *testing.T) {
 									Longitude: 3.21,
 								},
 								Locality:    "Locality 1",
-								CountryCode: "Country code 1",
+								CountryCode: "kz",
 							},
 							Name:      "Spot 1",
 							ID:        "1",
@@ -1212,7 +1224,7 @@ func TestService_UpdateSpot(t *testing.T) {
 								Longitude: 3.21,
 							},
 							Locality:    "Locality 1",
-							CountryCode: "Country code 1",
+							CountryCode: "kz",
 						},
 						nil,
 					)
@@ -1233,7 +1245,7 @@ func TestService_UpdateSpot(t *testing.T) {
 						Longitude: 3.21,
 					},
 					Locality:    "Locality 1",
-					CountryCode: "Country code 1",
+					CountryCode: "kz",
 				},
 				Name:      "Spot 1",
 				ID:        "1",
