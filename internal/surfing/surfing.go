@@ -41,10 +41,9 @@ type Spot struct {
 }
 
 type SpotsParams struct {
-	Limit           int
-	Offset          int
-	CountryCode     string
-	CoordinateRange *geo.CoordinateRange
+	Limit       int
+	Offset      int
+	CountryCode string
 }
 
 func (p SpotsParams) sanitize() SpotsParams {
@@ -57,11 +56,6 @@ func (p SpotsParams) sanitize() SpotsParams {
 func (p SpotsParams) validate() error {
 	if p.CountryCode != "" && !geo.IsCountry(p.CountryCode) {
 		return validation.NewError("country code")
-	}
-	if p.CoordinateRange != nil {
-		if err := p.CoordinateRange.Validate(); err != nil {
-			return err
-		}
 	}
 	return nil
 }

@@ -64,3 +64,10 @@ func queryParamInt(r *http.Request, key string) (int, error) {
 
 	return i, nil
 }
+
+func queryParam(r *http.Request, key string) string {
+	if r.Form == nil {
+		_ = r.ParseForm()
+	}
+	return r.FormValue(key)
+}

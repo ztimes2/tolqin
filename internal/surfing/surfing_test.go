@@ -198,90 +198,6 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.IsValidationError("country code"),
 		},
 		{
-			name:           "return error for invalid north west latitude",
-			spotStore:      newMockSpotStore(),
-			locationSource: newMockLocationSource(),
-			params: SpotsParams{
-				Limit:  20,
-				Offset: 0,
-				CoordinateRange: &geo.CoordinateRange{
-					NorthWest: geo.Coordinates{
-						Latitude:  -91,
-						Longitude: 180,
-					},
-					SouthEast: geo.Coordinates{
-						Latitude:  90,
-						Longitude: 180,
-					},
-				},
-			},
-			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("north west latitude"),
-		},
-		{
-			name:           "return error for invalid north west longitude",
-			spotStore:      newMockSpotStore(),
-			locationSource: newMockLocationSource(),
-			params: SpotsParams{
-				Limit:  20,
-				Offset: 0,
-				CoordinateRange: &geo.CoordinateRange{
-					NorthWest: geo.Coordinates{
-						Latitude:  90,
-						Longitude: 181,
-					},
-					SouthEast: geo.Coordinates{
-						Latitude:  90,
-						Longitude: 180,
-					},
-				},
-			},
-			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("north west longitude"),
-		},
-		{
-			name:           "return error for invalid south east latitude",
-			spotStore:      newMockSpotStore(),
-			locationSource: newMockLocationSource(),
-			params: SpotsParams{
-				Limit:  20,
-				Offset: 0,
-				CoordinateRange: &geo.CoordinateRange{
-					NorthWest: geo.Coordinates{
-						Latitude:  90,
-						Longitude: 180,
-					},
-					SouthEast: geo.Coordinates{
-						Latitude:  91,
-						Longitude: 180,
-					},
-				},
-			},
-			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("south east latitude"),
-		},
-		{
-			name:           "return error for invalid south east longitude",
-			spotStore:      newMockSpotStore(),
-			locationSource: newMockLocationSource(),
-			params: SpotsParams{
-				Limit:  20,
-				Offset: 0,
-				CoordinateRange: &geo.CoordinateRange{
-					NorthWest: geo.Coordinates{
-						Latitude:  90,
-						Longitude: 180,
-					},
-					SouthEast: geo.Coordinates{
-						Latitude:  90,
-						Longitude: -181,
-					},
-				},
-			},
-			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("south east longitude"),
-		},
-		{
 			name: "return error during spot spore failure",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
@@ -310,16 +226,6 @@ func TestService_Spots(t *testing.T) {
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",
-						CoordinateRange: &geo.CoordinateRange{
-							NorthWest: geo.Coordinates{
-								Latitude:  90,
-								Longitude: 180,
-							},
-							SouthEast: geo.Coordinates{
-								Latitude:  -90,
-								Longitude: -180,
-							},
-						},
 					}).
 					Return(
 						[]Spot{
@@ -359,16 +265,6 @@ func TestService_Spots(t *testing.T) {
 				Limit:       0,
 				Offset:      -1,
 				CountryCode: " kz ",
-				CoordinateRange: &geo.CoordinateRange{
-					NorthWest: geo.Coordinates{
-						Latitude:  90,
-						Longitude: 180,
-					},
-					SouthEast: geo.Coordinates{
-						Latitude:  -90,
-						Longitude: -180,
-					},
-				},
 			},
 			expectedSpots: []Spot{
 				{
@@ -409,16 +305,6 @@ func TestService_Spots(t *testing.T) {
 						Limit:       20,
 						Offset:      3,
 						CountryCode: "kz",
-						CoordinateRange: &geo.CoordinateRange{
-							NorthWest: geo.Coordinates{
-								Latitude:  90,
-								Longitude: 180,
-							},
-							SouthEast: geo.Coordinates{
-								Latitude:  -90,
-								Longitude: -180,
-							},
-						},
 					}).
 					Return(
 						[]Spot{
@@ -458,16 +344,6 @@ func TestService_Spots(t *testing.T) {
 				Limit:       20,
 				Offset:      3,
 				CountryCode: "kz",
-				CoordinateRange: &geo.CoordinateRange{
-					NorthWest: geo.Coordinates{
-						Latitude:  90,
-						Longitude: 180,
-					},
-					SouthEast: geo.Coordinates{
-						Latitude:  -90,
-						Longitude: -180,
-					},
-				},
 			},
 			expectedSpots: []Spot{
 				{
