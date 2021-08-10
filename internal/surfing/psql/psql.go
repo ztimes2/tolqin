@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/internal/geo"
@@ -81,7 +80,7 @@ func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
 		Offset(uint64(p.Offset))
 
 	if p.CountryCode != "" {
-		builder = builder.Where(squirrel.Eq{"country_code": p.CountryCode})
+		builder = builder.Where(sq.Eq{"country_code": p.CountryCode})
 	}
 
 	query, args, err := builder.ToSql()
