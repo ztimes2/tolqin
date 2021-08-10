@@ -113,15 +113,15 @@ func TestSpotStore_Spot(t *testing.T) {
 func TestSpotStore_Spots(t *testing.T) {
 	tests := []struct {
 		name          string
-		params surfing.SpotsParams
+		params        surfing.SpotsParams
 		mockFn        func(sqlmock.Sqlmock)
 		expectedSpots []surfing.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
-			name:   "return error during query execution",
+			name: "return error during query execution",
 			params: surfing.SpotsParams{
-				Limit: 10,
+				Limit:  10,
 				Offset: 0,
 			},
 			mockFn: func(m sqlmock.Sqlmock) {
@@ -136,9 +136,9 @@ func TestSpotStore_Spots(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
-			name:   "return error during row scanning",
+			name: "return error during row scanning",
 			params: surfing.SpotsParams{
-				Limit: 10,
+				Limit:  10,
 				Offset: 0,
 			},
 			mockFn: func(m sqlmock.Sqlmock) {
@@ -159,9 +159,9 @@ func TestSpotStore_Spots(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
-			name:   "return 0 spots without error",
+			name: "return 0 spots without error",
 			params: surfing.SpotsParams{
-				Limit: 10,
+				Limit:  10,
 				Offset: 0,
 			},
 			mockFn: func(m sqlmock.Sqlmock) {
@@ -181,9 +181,9 @@ func TestSpotStore_Spots(t *testing.T) {
 			expectedErrFn: assert.NoError,
 		},
 		{
-			name:   "return spots without error",
+			name: "return spots without error",
 			params: surfing.SpotsParams{
-				Limit: 10,
+				Limit:  10,
 				Offset: 0,
 			},
 			mockFn: func(m sqlmock.Sqlmock) {
@@ -222,6 +222,59 @@ func TestSpotStore_Spots(t *testing.T) {
 					Location: geo.Location{
 						Locality:    "Locality 2",
 						CountryCode: "Country code 2",
+						Coordinates: geo.Coordinates{
+							Latitude:  2.34,
+							Longitude: 4.32,
+						},
+					},
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
+		{
+			name: "return spots by country without error",
+			params: surfing.SpotsParams{
+				Limit:       10,
+				Offset:      0,
+				CountryCode: "kz",
+			},
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
+							"FROM spots WHERE country_code = $1 LIMIT 10 OFFSET 0",
+					)).
+					WithArgs("kz").
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
+						}).
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "kz", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("2", "Spot 2", 2.34, 4.32, "Locality 2", "kz", time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
+					).
+					RowsWillBeClosed()
+			},
+			expectedSpots: []surfing.Spot{
+				{
+					ID:        "1",
+					Name:      "Spot 1",
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					ID:        "2",
+					Name:      "Spot 2",
+					CreatedAt: time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "kz",
 						Coordinates: geo.Coordinates{
 							Latitude:  2.34,
 							Longitude: 4.32,

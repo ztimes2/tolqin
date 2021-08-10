@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/internal/geo"
@@ -73,12 +74,17 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 }
 
 func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
-	query, args, err := ss.builder.
+	builder := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
 		Limit(uint64(p.Limit)).
-		Offset(uint64(p.Offset)).
-		ToSql()
+		Offset(uint64(p.Offset))
+
+	if p.CountryCode != "" {
+		builder = builder.Where(squirrel.Eq{"country_code": p.CountryCode})
+	}
+
+	query, args, err := builder.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query: %w", err)
 	}
