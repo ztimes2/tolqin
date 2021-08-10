@@ -303,8 +303,9 @@ func TestHandler_Spots(t *testing.T) {
 				m := newMockService()
 				m.
 					On("Spots", surfing.SpotsParams{
-						Limit:  10,
-						Offset: 0,
+						Limit:       10,
+						Offset:      0,
+						CountryCode: "kz",
 					}).
 					Return(
 						[]surfing.Spot{
@@ -315,7 +316,7 @@ func TestHandler_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 1",
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 								},
 								ID:        "1",
 								Name:      "Spot 1",
@@ -328,7 +329,7 @@ func TestHandler_Spots(t *testing.T) {
 										Longitude: 3.21,
 									},
 									Locality:    "Locality 2",
-									CountryCode: "Country code 2",
+									CountryCode: "kz",
 								},
 								ID:        "2",
 								Name:      "Spot 2",
@@ -342,8 +343,9 @@ func TestHandler_Spots(t *testing.T) {
 			logger: nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
-					"limit":  []string{"10"},
-					"offset": []string{"0"},
+					"limit":   []string{"10"},
+					"offset":  []string{"0"},
+					"country": []string{"kz"},
 				}
 				r.URL.RawQuery = vals.Encode()
 			},
@@ -364,7 +366,7 @@ func TestHandler_Spots(t *testing.T) {
 								"latitude": 1.23,
 								"longitude": 3.21,
 								"locality": "Locality 1",
-								"country_code": "Country code 1"
+								"country_code": "kz"
 							},
 							{
 								"id": "2",
@@ -372,7 +374,7 @@ func TestHandler_Spots(t *testing.T) {
 								"latitude": 1.23,
 								"longitude": 3.21,
 								"locality": "Locality 2",
-								"country_code": "Country code 2"
+								"country_code": "kz"
 							}
 						]	
 					}`,
