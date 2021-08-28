@@ -145,3 +145,15 @@ func TestConfig_String(t *testing.T) {
 		})
 	}
 }
+
+func TestWildcard(t *testing.T) {
+	s := Wildcard("test")
+	assert.Equal(t, "%test%", s)
+}
+
+func TestBetween(t *testing.T) {
+	expr, args, err := Between("column", 1, 100).ToSql()
+	assert.NoError(t, err)
+	assert.Equal(t, "column BETWEEN ? AND ?", expr)
+	assert.Equal(t, []interface{}{1.0, 100.0}, args)
+}

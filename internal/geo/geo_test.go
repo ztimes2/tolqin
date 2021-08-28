@@ -62,3 +62,89 @@ func TestCoordinates_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestBounds_Validate(t *testing.T) {
+	tests := []struct {
+		name          string
+		bounds        Bounds
+		expectedErrFn assert.ErrorAssertionFunc
+	}{
+		{
+			name: "return error for invalid north-east latitude",
+			bounds: Bounds{
+				NorthEast: Coordinates{
+					Latitude:  91,
+					Longitude: 180,
+				},
+				SouthWest: Coordinates{
+					Latitude:  -90,
+					Longitude: -180,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("north-east coordinates"),
+		},
+		{
+			name: "return error for invalid north-east longitude",
+			bounds: Bounds{
+				NorthEast: Coordinates{
+					Latitude:  90,
+					Longitude: 181,
+				},
+				SouthWest: Coordinates{
+					Latitude:  -90,
+					Longitude: -180,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("north-east coordinates"),
+		},
+		{
+			name: "return error for invalid south-west latitude",
+			bounds: Bounds{
+				NorthEast: Coordinates{
+					Latitude:  90,
+					Longitude: 180,
+				},
+				SouthWest: Coordinates{
+					Latitude:  -91,
+					Longitude: -180,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("south-west coordinates"),
+		},
+		{
+			name: "return error for invalid south-west longitude",
+			bounds: Bounds{
+				NorthEast: Coordinates{
+					Latitude:  90,
+					Longitude: 180,
+				},
+				SouthWest: Coordinates{
+					Latitude:  -90,
+					Longitude: -181,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("south-west coordinates"),
+		},
+		{
+			name: "return no error",
+			bounds: Bounds{
+				NorthEast: Coordinates{
+					Latitude:  90,
+					Longitude: 180,
+				},
+				SouthWest: Coordinates{
+					Latitude:  -90,
+					Longitude: -180,
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.bounds.Validate()
+			test.expectedErrFn(t, err)
+		})
+	}
+}
