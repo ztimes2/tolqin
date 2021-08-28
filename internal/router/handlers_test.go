@@ -234,6 +234,42 @@ func TestHandler_Spots(t *testing.T) {
 			},
 		},
 		{
+			name: "respond with 400 status code and error body for validation error",
+			service: func() service {
+				m := newMockService()
+				m.
+					On("Spots", surfing.SpotsParams{
+						Limit:       10,
+						Offset:      0,
+						CountryCode: "zz",
+					}).
+					Return(([]surfing.Spot)(nil), validation.NewError("country"))
+				return m
+			}(),
+			logger: nil, // FIXME catch error logs
+			requestFn: func(r *http.Request) {
+				vals := url.Values{
+					"limit":  []string{"10"},
+					"offset": []string{"0"},
+					"country": []string{"zz"},
+				}
+				r.URL.RawQuery = vals.Encode()
+			},
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{"error_description":"Invalid country."}`,
+					string(body),
+				)
+			},
+		},
+		{
 			name: "respond with 500 status code and error body for expected error",
 			service: func() service {
 				m := newMockService()
@@ -306,6 +342,7 @@ func TestHandler_Spots(t *testing.T) {
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",
+						Query:       "query",
 					}).
 					Return(
 						[]surfing.Spot{
@@ -346,6 +383,7 @@ func TestHandler_Spots(t *testing.T) {
 					"limit":   []string{"10"},
 					"offset":  []string{"0"},
 					"country": []string{"kz"},
+					"q":       []string{"query"},
 				}
 				r.URL.RawQuery = vals.Encode()
 			},

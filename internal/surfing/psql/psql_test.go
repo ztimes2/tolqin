@@ -284,6 +284,113 @@ func TestSpotStore_Spots(t *testing.T) {
 			},
 			expectedErrFn: assert.NoError,
 		},
+		{
+			name: "return spots by query without error",
+			params: surfing.SpotsParams{
+				Limit:  10,
+				Offset: 0,
+				Query:  "query",
+			},
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
+							"FROM spots WHERE (name ILIKE $1 OR locality ILIKE $2) LIMIT 10 OFFSET 0",
+					)).
+					WithArgs("%query%", "%query%").
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
+						}).
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "kz", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("2", "Spot 2", 2.34, 4.32, "Locality 2", "kz", time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
+					).
+					RowsWillBeClosed()
+			},
+			expectedSpots: []surfing.Spot{
+				{
+					ID:        "1",
+					Name:      "Spot 1",
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					ID:        "2",
+					Name:      "Spot 2",
+					CreatedAt: time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  2.34,
+							Longitude: 4.32,
+						},
+					},
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
+		{
+			name: "return spots by country code and query without error",
+			params: surfing.SpotsParams{
+				Limit:       10,
+				Offset:      0,
+				CountryCode: "kz",
+				Query:       "query",
+			},
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
+							"FROM spots WHERE country_code = $1 AND (name ILIKE $2 OR locality ILIKE $3) LIMIT 10 OFFSET 0",
+					)).
+					WithArgs("kz", "%query%", "%query%").
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
+						}).
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "kz", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("2", "Spot 2", 2.34, 4.32, "Locality 2", "kz", time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
+					).
+					RowsWillBeClosed()
+			},
+			expectedSpots: []surfing.Spot{
+				{
+					ID:        "1",
+					Name:      "Spot 1",
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					ID:        "2",
+					Name:      "Spot 2",
+					CreatedAt: time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  2.34,
+							Longitude: 4.32,
+						},
+					},
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
 	}
 
 	for _, test := range tests {

@@ -76,12 +76,20 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	countryCode := queryParam(r, "country")
 
+	q := queryParam(r, "q")
+
 	spots, err := h.service.Spots(surfing.SpotsParams{
 		Limit:       limit,
 		Offset:      offset,
 		CountryCode: countryCode,
+		Query:       q,
 	})
 	if err != nil {
+		var vErr *validation.Error
+		if errors.As(err, &vErr) {
+			writeError(w, r, http.StatusBadRequest, vErr.Description())
+			return
+		}
 		writeUnexpectedError(w, r, err)
 		return
 	}

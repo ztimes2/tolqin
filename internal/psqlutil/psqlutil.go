@@ -88,3 +88,7 @@ func String(s string) sql.NullString {
 		Valid:  true,
 	}
 }
+
+func Wildcard(s string) string {
+	return "%" + s + "%"
+}

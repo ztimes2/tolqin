@@ -18,6 +18,8 @@ const (
 	defaultLimit = 10
 
 	minOffset = 0
+
+	maxQueryChars = 100
 )
 
 var (
@@ -44,18 +46,23 @@ type SpotsParams struct {
 	Limit       int
 	Offset      int
 	CountryCode string
+	Query       string
 }
 
 func (p SpotsParams) sanitize() SpotsParams {
 	p.Limit = pagination.Limit(p.Limit, minLimit, maxLimit, defaultLimit)
 	p.Offset = pagination.Offset(p.Offset, minOffset)
 	p.CountryCode = strings.ToLower(strings.TrimSpace(p.CountryCode))
+	p.Query = strings.TrimSpace(p.Query)
 	return p
 }
 
 func (p SpotsParams) validate() error {
 	if p.CountryCode != "" && !geo.IsCountry(p.CountryCode) {
 		return validation.NewError("country code")
+	}
+	if len(p.Query) > maxQueryChars {
+		return validation.NewError("query")
 	}
 	return nil
 }

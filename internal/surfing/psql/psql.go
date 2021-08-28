@@ -83,6 +83,13 @@ func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
 		builder = builder.Where(sq.Eq{"country_code": p.CountryCode})
 	}
 
+	if p.Query != "" {
+		builder = builder.Where(sq.Or{
+			sq.ILike{"name": psqlutil.Wildcard(p.Query)},
+			sq.ILike{"locality": psqlutil.Wildcard(p.Query)},
+		})
+	}
+
 	query, args, err := builder.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query: %w", err)

@@ -198,6 +198,19 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.IsValidationError("country code"),
 		},
 		{
+			name:           "return error for invalid query",
+			spotStore:      newMockSpotStore(),
+			locationSource: newMockLocationSource(),
+			params: SpotsParams{
+				Limit:       20,
+				Offset:      0,
+				CountryCode: "kz",
+				Query:       testutil.RepeatRune('a', 101),
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsValidationError("query"),
+		},
+		{
 			name: "return error during spot spore failure",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
@@ -226,6 +239,7 @@ func TestService_Spots(t *testing.T) {
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",
+						Query:       "query",
 					}).
 					Return(
 						[]Spot{
@@ -265,6 +279,7 @@ func TestService_Spots(t *testing.T) {
 				Limit:       0,
 				Offset:      -1,
 				CountryCode: " kz ",
+				Query:       " query ",
 			},
 			expectedSpots: []Spot{
 				{
