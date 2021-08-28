@@ -47,6 +47,7 @@ type SpotsParams struct {
 	Offset      int
 	CountryCode string
 	Query       string
+	Bounds      *geo.Bounds
 }
 
 func (p SpotsParams) sanitize() SpotsParams {
@@ -63,6 +64,11 @@ func (p SpotsParams) validate() error {
 	}
 	if len(p.Query) > maxQueryChars {
 		return validation.NewError("query")
+	}
+	if p.Bounds != nil {
+		if err := p.Bounds.Validate(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -164,7 +170,9 @@ func (p UpdateSpotParams) validate() error {
 		return validation.NewError("name")
 	}
 	if p.Coordinates != nil {
-		return p.Coordinates.Validate()
+		if err := p.Coordinates.Validate(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

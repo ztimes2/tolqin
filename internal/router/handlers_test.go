@@ -234,6 +234,122 @@ func TestHandler_Spots(t *testing.T) {
 			},
 		},
 		{
+			name:    "respond with 400 status code and error body for invalid north-east latitude",
+			service: newMockService(),
+			logger:  nil, // FIXME catch error logs
+			requestFn: func(r *http.Request) {
+				vals := url.Values{
+					"limit":  []string{"10"},
+					"offset": []string{"0"},
+					"ne_lat": []string{"a"},
+					"ne_lon": []string{"180"},
+					"sw_lat": []string{"-90"},
+					"sw_lon": []string{"-180"},
+				}
+				r.URL.RawQuery = vals.Encode()
+			},
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{"error_description":"Invalid coordinates."}`,
+					string(body),
+				)
+			},
+		},
+		{
+			name:    "respond with 400 status code and error body for invalid north-east longitude",
+			service: newMockService(),
+			logger:  nil, // FIXME catch error logs
+			requestFn: func(r *http.Request) {
+				vals := url.Values{
+					"limit":  []string{"10"},
+					"offset": []string{"0"},
+					"ne_lat": []string{"90"},
+					"ne_lon": []string{"a"},
+					"sw_lat": []string{"-90"},
+					"sw_lon": []string{"-180"},
+				}
+				r.URL.RawQuery = vals.Encode()
+			},
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{"error_description":"Invalid coordinates."}`,
+					string(body),
+				)
+			},
+		},
+		{
+			name:    "respond with 400 status code and error body for invalid south-west latitude",
+			service: newMockService(),
+			logger:  nil, // FIXME catch error logs
+			requestFn: func(r *http.Request) {
+				vals := url.Values{
+					"limit":  []string{"10"},
+					"offset": []string{"0"},
+					"ne_lat": []string{"90"},
+					"ne_lon": []string{"180"},
+					"sw_lat": []string{"a"},
+					"sw_lon": []string{"-180"},
+				}
+				r.URL.RawQuery = vals.Encode()
+			},
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{"error_description":"Invalid coordinates."}`,
+					string(body),
+				)
+			},
+		},
+		{
+			name:    "respond with 400 status code and error body for invalid south-west longitude",
+			service: newMockService(),
+			logger:  nil, // FIXME catch error logs
+			requestFn: func(r *http.Request) {
+				vals := url.Values{
+					"limit":  []string{"10"},
+					"offset": []string{"0"},
+					"ne_lat": []string{"90"},
+					"ne_lon": []string{"180"},
+					"sw_lat": []string{"-90"},
+					"sw_lon": []string{"a"},
+				}
+				r.URL.RawQuery = vals.Encode()
+			},
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{"error_description":"Invalid coordinates."}`,
+					string(body),
+				)
+			},
+		},
+		{
 			name: "respond with 400 status code and error body for validation error",
 			service: func() service {
 				m := newMockService()
@@ -249,8 +365,8 @@ func TestHandler_Spots(t *testing.T) {
 			logger: nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
-					"limit":  []string{"10"},
-					"offset": []string{"0"},
+					"limit":   []string{"10"},
+					"offset":  []string{"0"},
 					"country": []string{"zz"},
 				}
 				r.URL.RawQuery = vals.Encode()
@@ -343,6 +459,16 @@ func TestHandler_Spots(t *testing.T) {
 						Offset:      0,
 						CountryCode: "kz",
 						Query:       "query",
+						Bounds: &geo.Bounds{
+							NorthEast: geo.Coordinates{
+								Latitude:  90,
+								Longitude: 180,
+							},
+							SouthWest: geo.Coordinates{
+								Latitude:  -90,
+								Longitude: -180,
+							},
+						},
 					}).
 					Return(
 						[]surfing.Spot{
@@ -384,6 +510,10 @@ func TestHandler_Spots(t *testing.T) {
 					"offset":  []string{"0"},
 					"country": []string{"kz"},
 					"q":       []string{"query"},
+					"ne_lat":  []string{"90"},
+					"ne_lon":  []string{"180"},
+					"sw_lat":  []string{"-90"},
+					"sw_lon":  []string{"-180"},
 				}
 				r.URL.RawQuery = vals.Encode()
 			},

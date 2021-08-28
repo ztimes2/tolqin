@@ -29,10 +29,10 @@ type Coordinates struct {
 
 func (c Coordinates) Validate() error {
 	if c.Latitude < minLatitude || c.Latitude > maxLatitude {
-		return validation.NewError("latitude")
+		return validation.NewError("coordinates")
 	}
 	if c.Longitude < minLongitude || c.Longitude > maxLongitude {
-		return validation.NewError("longitude")
+		return validation.NewError("coordinates")
 	}
 	return nil
 }
@@ -41,4 +41,19 @@ type Location struct {
 	Locality    string
 	CountryCode string
 	Coordinates Coordinates
+}
+
+type Bounds struct {
+	NorthEast Coordinates
+	SouthWest Coordinates
+}
+
+func (b Bounds) Validate() error {
+	if err := b.NorthEast.Validate(); err != nil {
+		return validation.NewError("north-east coordinates")
+	}
+	if err := b.SouthWest.Validate(); err != nil {
+		return validation.NewError("south-west coordinates")
+	}
+	return nil
 }

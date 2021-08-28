@@ -2,6 +2,7 @@ package psqlutil
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -91,4 +92,8 @@ func String(s string) sql.NullString {
 
 func Wildcard(s string) string {
 	return "%" + s + "%"
+}
+
+func Between(key string, min, max float64) sq.Sqlizer {
+	return sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", key), min, max)
 }

@@ -89,6 +89,13 @@ func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
 			sq.ILike{"locality": psqlutil.Wildcard(p.Query)},
 		})
 	}
+ 
+	if p.Bounds != nil {
+		builder = builder.Where(sq.And{
+			psqlutil.Between("latitude", p.Bounds.SouthWest.Latitude, p.Bounds.NorthEast.Latitude),
+			psqlutil.Between("longitude", p.Bounds.SouthWest.Longitude, p.Bounds.NorthEast.Longitude),
+		})
+	}
 
 	query, args, err := builder.ToSql()
 	if err != nil {

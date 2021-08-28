@@ -338,6 +338,69 @@ func TestSpotStore_Spots(t *testing.T) {
 			expectedErrFn: assert.NoError,
 		},
 		{
+			name: "return spots by bounds without error",
+			params: surfing.SpotsParams{
+				Limit:  10,
+				Offset: 0,
+				Bounds: &geo.Bounds{
+					NorthEast: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+					SouthWest: geo.Coordinates{
+						Latitude:  -90,
+						Longitude: -180,
+					},
+				},
+			},
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
+							"FROM spots WHERE (latitude BETWEEN $1 AND $2 AND longitude BETWEEN $3 AND $4) "+
+							"LIMIT 10 OFFSET 0",
+					)).
+					WithArgs(-90.0, 90.0, -180.0, 180.0).
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
+						}).
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "kz", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("2", "Spot 2", 2.34, 4.32, "Locality 2", "kz", time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
+					).
+					RowsWillBeClosed()
+			},
+			expectedSpots: []surfing.Spot{
+				{
+					ID:        "1",
+					Name:      "Spot 1",
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					ID:        "2",
+					Name:      "Spot 2",
+					CreatedAt: time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  2.34,
+							Longitude: 4.32,
+						},
+					},
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
+		{
 			name: "return spots by country code and query without error",
 			params: surfing.SpotsParams{
 				Limit:       10,

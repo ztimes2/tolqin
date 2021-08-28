@@ -211,6 +211,48 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.IsValidationError("query"),
 		},
 		{
+			name:           "return error for invalid north-east coordinates",
+			spotStore:      newMockSpotStore(),
+			locationSource: newMockLocationSource(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+				Bounds: &geo.Bounds{
+					NorthEast: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 181,
+					},
+					SouthWest: geo.Coordinates{
+						Latitude:  -90,
+						Longitude: -180,
+					},
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsValidationError("north-east coordinates"),
+		},
+		{
+			name:           "return error for invalid south-west coordinates",
+			spotStore:      newMockSpotStore(),
+			locationSource: newMockLocationSource(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+				Bounds: &geo.Bounds{
+					NorthEast: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+					SouthWest: geo.Coordinates{
+						Latitude:  -90,
+						Longitude: -181,
+					},
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsValidationError("south-west coordinates"),
+		},
+		{
 			name: "return error during spot spore failure",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
@@ -438,7 +480,7 @@ func TestService_CreateSpot(t *testing.T) {
 				},
 			},
 			expectedSpot:  Spot{},
-			expectedErrFn: testutil.IsValidationError("latitude"),
+			expectedErrFn: testutil.IsValidationError("coordinates"),
 		},
 		{
 			name:           "return error for invalid longitide",
@@ -452,7 +494,7 @@ func TestService_CreateSpot(t *testing.T) {
 				},
 			},
 			expectedSpot:  Spot{},
-			expectedErrFn: testutil.IsValidationError("longitude"),
+			expectedErrFn: testutil.IsValidationError("coordinates"),
 		},
 		{
 			name:      "return error during location source failure",
@@ -788,7 +830,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				},
 			},
 			expectedSpot:  Spot{},
-			expectedErrFn: testutil.IsValidationError("latitude"),
+			expectedErrFn: testutil.IsValidationError("coordinates"),
 		},
 		{
 			name:           "return error for invalid longitude",
@@ -803,7 +845,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				},
 			},
 			expectedSpot:  Spot{},
-			expectedErrFn: testutil.IsValidationError("longitude"),
+			expectedErrFn: testutil.IsValidationError("coordinates"),
 		},
 		{
 			name:      "return error during location source failure",

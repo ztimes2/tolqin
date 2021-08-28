@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/ztimes2/tolqin/internal/geo"
@@ -76,13 +77,20 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	countryCode := queryParam(r, "country")
 
-	q := queryParam(r, "q")
+	query := queryParam(r, "q")
+
+	bounds, err := parseBounds(r)
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, "Invalid coordinates.")
+		return
+	}
 
 	spots, err := h.service.Spots(surfing.SpotsParams{
 		Limit:       limit,
 		Offset:      offset,
 		CountryCode: countryCode,
-		Query:       q,
+		Query:       query,
+		Bounds:      bounds,
 	})
 	if err != nil {
 		var vErr *validation.Error
@@ -103,6 +111,41 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	}
 
 	write(w, r, http.StatusOK, resp)
+}
+
+func parseBounds(r *http.Request) (*geo.Bounds, error) {
+	neLat := queryParam(r, "ne_lat")
+	neLon := queryParam(r, "ne_lon")
+	swLat := queryParam(r, "sw_lat")
+	swLon := queryParam(r, "sw_lon")
+
+	if neLat == "" && neLon == "" && swLat == "" && swLon == "" {
+		return nil, nil
+	}
+
+	var (
+		b   geo.Bounds
+		err error
+	)
+
+	b.NorthEast.Latitude, err = strconv.ParseFloat(neLat, 64)
+	if err != nil {
+		return nil, errors.New("invalid north-east latitude")
+	}
+	b.NorthEast.Longitude, err = strconv.ParseFloat(neLon, 64)
+	if err != nil {
+		return nil, errors.New("invalid north-east longitude")
+	}
+	b.SouthWest.Latitude, err = strconv.ParseFloat(swLat, 64)
+	if err != nil {
+		return nil, errors.New("invalid south-west latitude")
+	}
+	b.SouthWest.Longitude, err = strconv.ParseFloat(swLon, 64)
+	if err != nil {
+		return nil, errors.New("invalid south-west longitude")
+	}
+
+	return &b, nil
 }
 
 func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

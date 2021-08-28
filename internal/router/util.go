@@ -48,11 +48,7 @@ type errorResponse struct {
 }
 
 func queryParamInt(r *http.Request, key string) (int, error) {
-	if r.Form == nil {
-		_ = r.ParseForm()
-	}
-
-	v := r.FormValue(key)
+	v := queryParam(r, key)
 	if v == "" {
 		return 0, nil
 	}
