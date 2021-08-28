@@ -110,7 +110,13 @@ func (ss *SpotStore) CreateSpot(p surfing.CreateLocalizedSpotParams) (surfing.Sp
 	query, args, err := ss.builder.
 		Insert("spots").
 		Columns("name", "latitude", "longitude", "locality", "country_code").
-		Values(p.Name, p.Latitude, p.Longitude, psqlutil.String(p.Locality), psqlutil.String(p.CountryCode)).
+		Values(
+			p.Name,
+			p.Location.Coordinates.Latitude,
+			p.Location.Coordinates.Longitude,
+			psqlutil.String(p.Location.Locality),
+			psqlutil.String(p.Location.CountryCode),
+		).
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
@@ -131,10 +137,10 @@ func (ss *SpotStore) UpdateSpot(p surfing.UpdateLocalizedSpotParams) (surfing.Sp
 		values["name"] = *p.Name
 	}
 	if p.Location != nil {
-		values["latitude"] = p.Latitude
-		values["longitude"] = p.Longitude
-		values["locality"] = psqlutil.String(p.Locality)
-		values["country_code"] = psqlutil.String(p.CountryCode)
+		values["latitude"] = p.Location.Coordinates.Latitude
+		values["longitude"] = p.Location.Coordinates.Longitude
+		values["locality"] = psqlutil.String(p.Location.Locality)
+		values["country_code"] = psqlutil.String(p.Location.CountryCode)
 	}
 	if len(values) == 0 {
 		return surfing.Spot{}, surfing.ErrNothingToUpdate

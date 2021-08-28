@@ -24,10 +24,10 @@ func toSpotResponse(s surfing.Spot) spotResponse {
 	return spotResponse{
 		ID:          s.ID,
 		Name:        s.Name,
-		Latitude:    s.Latitude,
-		Longitude:   s.Longitude,
-		Locality:    s.Locality,
-		CountryCode: s.CountryCode,
+		Latitude:    s.Location.Coordinates.Latitude,
+		Longitude:   s.Location.Coordinates.Longitude,
+		Locality:    s.Location.Locality,
+		CountryCode: s.Location.CountryCode,
 	}
 }
 

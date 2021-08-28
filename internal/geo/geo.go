@@ -38,7 +38,7 @@ func (c Coordinates) Validate() error {
 }
 
 type Location struct {
-	Coordinates
 	Locality    string
 	CountryCode string
+	Coordinates Coordinates
 }

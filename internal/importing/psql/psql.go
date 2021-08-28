@@ -65,8 +65,8 @@ func (si *SpotImporter) importSpots(
 	for _, e := range entries {
 		builder = builder.Values(
 			e.Name,
-			e.Latitude,
-			e.Longitude,
+			e.Location.Coordinates.Latitude,
+			e.Location.Coordinates.Longitude,
 			psqlutil.String(e.Locality),
 			psqlutil.String(e.CountryCode),
 		)

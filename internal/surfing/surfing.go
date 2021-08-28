@@ -34,10 +34,10 @@ type SpotStore interface {
 }
 
 type Spot struct {
-	geo.Location
 	ID        string
 	Name      string
 	CreatedAt time.Time
+	Location  geo.Location
 }
 
 type SpotsParams struct {
@@ -61,14 +61,14 @@ func (p SpotsParams) validate() error {
 }
 
 type CreateLocalizedSpotParams struct {
-	geo.Location
-	Name string
+	Location geo.Location
+	Name     string
 }
 
 type UpdateLocalizedSpotParams struct {
-	*geo.Location
-	ID   string
-	Name *string
+	Location *geo.Location
+	ID       string
+	Name     *string
 }
 
 type Service struct {
@@ -98,8 +98,8 @@ func (s *Service) Spots(p SpotsParams) ([]Spot, error) {
 }
 
 type CreateSpotParams struct {
-	geo.Coordinates
-	Name string
+	Coordinates geo.Coordinates
+	Name        string
 }
 
 func (p CreateSpotParams) sanitize() CreateSpotParams {
@@ -133,9 +133,9 @@ func (s *Service) CreateSpot(p CreateSpotParams) (Spot, error) {
 }
 
 type UpdateSpotParams struct {
-	*geo.Coordinates
-	ID   string
-	Name *string
+	Coordinates *geo.Coordinates
+	ID          string
+	Name        *string
 }
 
 func (p UpdateSpotParams) sanitize() UpdateSpotParams {
