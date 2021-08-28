@@ -57,6 +57,146 @@ func TestImportSpots(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
+			name: "return error for entry with invalid country code",
+			source: func() SpotEntrySource {
+				m := newMockSpotEntrySource()
+				m.
+					On("SpotEntries").
+					Return(
+						[]SpotEntry{
+							{
+								Location: geo.Location{
+									Coordinates: geo.Coordinates{
+										Latitude:  1.23,
+										Longitude: 3.21,
+									},
+									CountryCode: "zz",
+									Locality:    "Locality 1",
+								},
+								Name: "Spot 1",
+							},
+						},
+						nil,
+					)
+				return m
+			}(),
+			importer:      newMockSpotImporter(),
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name: "return error for entry with empty locality",
+			source: func() SpotEntrySource {
+				m := newMockSpotEntrySource()
+				m.
+					On("SpotEntries").
+					Return(
+						[]SpotEntry{
+							{
+								Location: geo.Location{
+									Coordinates: geo.Coordinates{
+										Latitude:  1.23,
+										Longitude: 3.21,
+									},
+									CountryCode: "kz",
+									Locality:    "",
+								},
+								Name: "Spot 1",
+							},
+						},
+						nil,
+					)
+				return m
+			}(),
+			importer:      newMockSpotImporter(),
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name: "return error for entry with empty name",
+			source: func() SpotEntrySource {
+				m := newMockSpotEntrySource()
+				m.
+					On("SpotEntries").
+					Return(
+						[]SpotEntry{
+							{
+								Location: geo.Location{
+									Coordinates: geo.Coordinates{
+										Latitude:  1.23,
+										Longitude: 3.21,
+									},
+									CountryCode: "kz",
+									Locality:    "Locality 1",
+								},
+								Name: "",
+							},
+						},
+						nil,
+					)
+				return m
+			}(),
+			importer:      newMockSpotImporter(),
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name: "return error for entry with invalid latitude",
+			source: func() SpotEntrySource {
+				m := newMockSpotEntrySource()
+				m.
+					On("SpotEntries").
+					Return(
+						[]SpotEntry{
+							{
+								Location: geo.Location{
+									Coordinates: geo.Coordinates{
+										Latitude:  -91,
+										Longitude: 3.21,
+									},
+									CountryCode: "kz",
+									Locality:    "Locality 1",
+								},
+								Name: "Spot 1",
+							},
+						},
+						nil,
+					)
+				return m
+			}(),
+			importer:      newMockSpotImporter(),
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name: "return error for entry with invalid longitude",
+			source: func() SpotEntrySource {
+				m := newMockSpotEntrySource()
+				m.
+					On("SpotEntries").
+					Return(
+						[]SpotEntry{
+							{
+								Location: geo.Location{
+									Coordinates: geo.Coordinates{
+										Latitude:  -90,
+										Longitude: 181,
+									},
+									CountryCode: "kz",
+									Locality:    "Locality 1",
+								},
+								Name: "Spot 1",
+							},
+						},
+						nil,
+					)
+				return m
+			}(),
+			importer:      newMockSpotImporter(),
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
 			name: "return error during spot importer failure",
 			source: func() SpotEntrySource {
 				m := newMockSpotEntrySource()
@@ -70,7 +210,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 									Locality:    "Locality 1",
 								},
 								Name: "Spot 1",
@@ -81,7 +221,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 2",
+									CountryCode: "kz",
 									Locality:    "Locality 2",
 								},
 								Name: "Spot 2",
@@ -103,7 +243,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 									Locality:    "Locality 1",
 								},
 								Name: "Spot 1",
@@ -114,7 +254,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 2",
+									CountryCode: "kz",
 									Locality:    "Locality 2",
 								},
 								Name: "Spot 2",
@@ -160,7 +300,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 									Locality:    "Locality 1",
 								},
 								Name: "Spot 1",
@@ -171,7 +311,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 2",
+									CountryCode: "kz",
 									Locality:    "Locality 2",
 								},
 								Name: "Spot 2",
@@ -193,7 +333,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 1",
+									CountryCode: "kz",
 									Locality:    "Locality 1",
 								},
 								Name: "Spot 1",
@@ -204,7 +344,7 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "Country code 2",
+									CountryCode: "kz",
 									Locality:    "Locality 2",
 								},
 								Name: "Spot 2",
