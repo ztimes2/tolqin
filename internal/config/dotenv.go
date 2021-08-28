@@ -7,23 +7,23 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// dotEnv implements Backend interface of the github.com/heetch/confita/backend
+// DotEnv implements Backend interface of the github.com/heetch/confita/backend
 // package and provides functionality for loading and fetching configuration
 // variables from a .env file.
-type dotEnv struct {
+type DotEnv struct {
 	values map[string]string
 }
 
-// newDotEnv initializes a new dotEnv.
-func newDotEnv() *dotEnv {
+// NewDotEnv initializes a new dotEnv.
+func NewDotEnv() *DotEnv {
 	values, _ := godotenv.Read()
-	return &dotEnv{
+	return &DotEnv{
 		values: values,
 	}
 }
 
 // Get fetches a configuration variable by its key from a .env file.
-func (d dotEnv) Get(ctx context.Context, key string) ([]byte, error) {
+func (d DotEnv) Get(ctx context.Context, key string) ([]byte, error) {
 	if d.values == nil {
 		return nil, backend.ErrNotFound
 	}
@@ -37,6 +37,6 @@ func (d dotEnv) Get(ctx context.Context, key string) ([]byte, error) {
 }
 
 // Name returns a name of this specific Backend's implementation.
-func (d dotEnv) Name() string {
+func (d DotEnv) Name() string {
 	return ".env"
 }

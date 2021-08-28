@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ztimes2/tolqin/internal/config"
+	configapi "github.com/ztimes2/tolqin/internal/config/api"
 	"github.com/ztimes2/tolqin/internal/geo/nominatim"
 	"github.com/ztimes2/tolqin/internal/logging"
 	"github.com/ztimes2/tolqin/internal/psqlutil"
@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	conf, err := config.LoadAPI()
+	conf, err := configapi.Load()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
