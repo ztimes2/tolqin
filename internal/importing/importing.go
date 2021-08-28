@@ -3,6 +3,7 @@ package importing
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/validation"
@@ -23,6 +24,13 @@ type SpotImporter interface {
 type SpotEntry struct {
 	Location geo.Location
 	Name     string
+}
+
+func (se SpotEntry) sanitize() SpotEntry {
+	se.Name = strings.TrimSpace(se.Name)
+	se.Location.CountryCode = strings.TrimSpace(se.Location.CountryCode)
+	se.Location.Locality = strings.TrimSpace(se.Location.Locality)
+	return se
 }
 
 func (se SpotEntry) validate() error {
@@ -47,8 +55,10 @@ func ImportSpots(src SpotEntrySource, importer SpotImporter) (int, error) {
 		return 0, fmt.Errorf("failed to read spot entries from source: %w", err)
 	}
 
-	for i, e := range entries {
-		if err := e.validate(); err != nil {
+	for i := range entries {
+		entries[i] = entries[i].sanitize()
+
+		if err := entries[i].validate(); err != nil {
 			return 0, fmt.Errorf("invalid entry #%d: %w", i+1, err)
 		}
 	}

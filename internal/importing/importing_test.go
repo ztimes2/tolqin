@@ -300,10 +300,10 @@ func TestImportSpots(t *testing.T) {
 										Latitude:  1.23,
 										Longitude: 3.21,
 									},
-									CountryCode: "kz",
-									Locality:    "Locality 1",
+									CountryCode: " kz ",
+									Locality:    " Locality 1 ",
 								},
-								Name: "Spot 1",
+								Name: " Spot 1 ",
 							},
 							{
 								Location: geo.Location{
