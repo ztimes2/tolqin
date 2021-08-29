@@ -11,6 +11,11 @@ import (
 	"github.com/ztimes2/tolqin/internal/validation"
 )
 
+type surfingService interface {
+	Spot(id string) (surfing.Spot, error)
+	Spots(surfing.SpotsParams) ([]surfing.Spot, error)
+}
+
 func fromSurfingSpot(s surfing.Spot) spotResponse {
 	return spotResponse{
 		ID:          s.ID,
@@ -50,13 +55,13 @@ func (h *surfingHandler) spot(w http.ResponseWriter, r *http.Request, p httprout
 
 func (h *surfingHandler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	limit, err := queryParamInt(r, "limit")
-	if err != nil {
+	if err != nil && !errors.Is(err, errEmptyParam) {
 		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
 		return
 	}
 
 	offset, err := queryParamInt(r, "offset")
-	if err != nil {
+	if err != nil && !errors.Is(err, errEmptyParam) {
 		writeError(w, r, http.StatusBadRequest, "Invalid offset.")
 		return
 	}

@@ -8,9 +8,17 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/management"
-	"github.com/ztimes2/tolqin/internal/surfing"
 	"github.com/ztimes2/tolqin/internal/validation"
 )
+
+type managementService interface {
+	Spot(id string) (management.Spot, error)
+	Spots(management.SpotsParams) ([]management.Spot, error)
+	CreateSpot(management.CreateSpotParams) (management.Spot, error)
+	UpdateSpot(management.UpdateSpotParams) (management.Spot, error)
+	DeleteSpot(id string) error
+	Location(geo.Coordinates) (geo.Location, error)
+}
 
 func fromManagementSpot(s management.Spot) spotResponse {
 	return spotResponse{
@@ -51,13 +59,13 @@ func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request, p httpr
 
 func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	limit, err := queryParamInt(r, "limit")
-	if err != nil {
+	if err != nil && !errors.Is(err, errEmptyParam) {
 		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
 		return
 	}
 
 	offset, err := queryParamInt(r, "offset")
-	if err != nil {
+	if err != nil && !errors.Is(err, errEmptyParam) {
 		writeError(w, r, http.StatusBadRequest, "Invalid offset.")
 		return
 	}
@@ -189,7 +197,7 @@ func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request, p
 	spotID := p.ByName(paramKeySpotID)
 
 	if err := h.service.DeleteSpot(spotID); err != nil {
-		if errors.Is(err, surfing.ErrNotFound) {
+		if errors.Is(err, management.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
 			return
 		}
@@ -198,4 +206,40 @@ func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request, p
 	}
 
 	write(w, r, http.StatusNoContent, nil)
+}
+
+func (h *managementHandler) location(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	latitude, err := queryParamFloat(r, "lat")
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, "Invalid latitude.")
+		return
+	}
+
+	longitude, err := queryParamFloat(r, "lon")
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, "Invalid longitude.")
+		return
+	}
+
+	l, err := h.service.Location(geo.Coordinates{
+		Latitude:  latitude,
+		Longitude: longitude,
+	})
+	if err != nil {
+		if errors.Is(err, management.ErrNotFound) {
+			writeError(w, r, http.StatusNotFound, "Location was not found.")
+			return
+		}
+		writeUnexpectedError(w, r, err)
+		return
+	}
+
+	resp := locationResponse{
+		Latitude:    l.Coordinates.Latitude,
+		Longitude:   l.Coordinates.Longitude,
+		Locality:    l.Locality,
+		CountryCode: l.CountryCode,
+	}
+
+	write(w, r, http.StatusOK, resp)
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/logging"
 	"github.com/ztimes2/tolqin/internal/management"
 	"github.com/ztimes2/tolqin/internal/surfing"
@@ -18,20 +17,6 @@ const (
 
 func New(ss *surfing.Service, ms *management.Service, l *logrus.Logger) http.Handler {
 	return newRouter(ss, ms, l)
-}
-
-type surfingService interface {
-	Spot(id string) (surfing.Spot, error)
-	Spots(surfing.SpotsParams) ([]surfing.Spot, error)
-}
-
-type managementService interface {
-	Spot(id string) (management.Spot, error)
-	Spots(management.SpotsParams) ([]management.Spot, error)
-	CreateSpot(management.CreateSpotParams) (management.Spot, error)
-	UpdateSpot(management.UpdateSpotParams) (management.Spot, error)
-	DeleteSpot(id string) error
-	Location(geo.Coordinates) (geo.Location, error)
 }
 
 func newRouter(ss surfingService, ms managementService, l *logrus.Logger) http.Handler {
@@ -54,6 +39,7 @@ func newRouter(ss surfingService, ms managementService, l *logrus.Logger) http.H
 	router.POST("/management/v1/spots", mh.createSpot)
 	router.PATCH("/management/v1/spots/:"+paramKeySpotID, mh.updateSpot)
 	router.DELETE("/management/v1/spots/:"+paramKeySpotID, mh.deleteSpot)
+	router.GET("/management/v1/geo/location", mh.location)
 
 	return withLogger(l, router)
 }

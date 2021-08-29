@@ -35,7 +35,7 @@ func (m *mockSurfingService) Spots(p surfing.SpotsParams) ([]surfing.Spot, error
 	return args.Get(0).([]surfing.Spot), args.Error(1)
 }
 
-func TestHandler_Spot(t *testing.T) {
+func TestSurfingHandler_Spot(t *testing.T) {
 	tests := []struct {
 		name               string
 		service            surfingService
@@ -158,7 +158,7 @@ func TestHandler_Spot(t *testing.T) {
 	}
 }
 
-func TestHandler_Spots(t *testing.T) {
+func TestSurfingHandler_Spots(t *testing.T) {
 	tests := []struct {
 		name               string
 		service            surfingService

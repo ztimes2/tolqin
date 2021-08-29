@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -47,10 +48,12 @@ type errorResponse struct {
 	Description string `json:"error_description"`
 }
 
+var errEmptyParam = errors.New("empty parameter")
+
 func queryParamInt(r *http.Request, key string) (int, error) {
 	v := queryParam(r, key)
 	if v == "" {
-		return 0, nil
+		return 0, errEmptyParam
 	}
 
 	i, err := strconv.Atoi(v)
@@ -59,6 +62,20 @@ func queryParamInt(r *http.Request, key string) (int, error) {
 	}
 
 	return i, nil
+}
+
+func queryParamFloat(r *http.Request, key string) (float64, error) {
+	v := queryParam(r, key)
+	if v == "" {
+		return 0, errEmptyParam
+	}
+
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return f, nil
 }
 
 func queryParam(r *http.Request, key string) string {
