@@ -28,19 +28,12 @@ type SpotEntry struct {
 
 func (se SpotEntry) sanitize() SpotEntry {
 	se.Name = strings.TrimSpace(se.Name)
-	se.Location.CountryCode = strings.TrimSpace(se.Location.CountryCode)
-	se.Location.Locality = strings.TrimSpace(se.Location.Locality)
+	se.Location = se.Location.Sanitize()
 	return se
 }
 
 func (se SpotEntry) validate() error {
-	if se.Location.Locality == "" {
-		return validation.NewError("locality")
-	}
-	if !geo.IsCountry(se.Location.CountryCode) {
-		return validation.NewError("country code")
-	}
-	if err := se.Location.Coordinates.Validate(); err != nil {
+	if err := se.Location.Validate(); err != nil {
 		return err
 	}
 	if se.Name == "" {
