@@ -11,10 +11,12 @@ import (
 	configapi "github.com/ztimes2/tolqin/internal/config/api"
 	"github.com/ztimes2/tolqin/internal/geo/nominatim"
 	"github.com/ztimes2/tolqin/internal/logging"
+	"github.com/ztimes2/tolqin/internal/management"
+	managementpsql "github.com/ztimes2/tolqin/internal/management/psql"
 	"github.com/ztimes2/tolqin/internal/psqlutil"
 	"github.com/ztimes2/tolqin/internal/router"
 	"github.com/ztimes2/tolqin/internal/surfing"
-	"github.com/ztimes2/tolqin/internal/surfing/psql"
+	surfingpsql "github.com/ztimes2/tolqin/internal/surfing/psql"
 )
 
 func main() {
@@ -41,13 +43,17 @@ func main() {
 	}
 	defer db.Close()
 
-	spotStore := psql.NewSpotStore(db)
-	service := surfing.NewService(spotStore, nominatim.New(nominatim.Config{
-		BaseURL: conf.Nominatim.BaseURL,
-		Timeout: conf.Nominatim.Timeout,
-	}))
-
-	router := router.New(service, logger)
+	router := router.New(
+		surfing.NewService(surfingpsql.NewSpotStore(db)),
+		management.NewService(
+			managementpsql.NewSpotStore(db),
+			nominatim.New(nominatim.Config{
+				BaseURL: conf.Nominatim.BaseURL,
+				Timeout: conf.Nominatim.Timeout,
+			}),
+		),
+		logger,
+	)
 
 	server := &http.Server{
 		Addr:    ":" + conf.ServerPort,
