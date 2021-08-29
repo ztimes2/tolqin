@@ -89,7 +89,7 @@ func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
 			sq.ILike{"locality": psqlutil.Wildcard(p.Query)},
 		})
 	}
- 
+
 	if p.Bounds != nil {
 		builder = builder.Where(sq.And{
 			psqlutil.Between("latitude", p.Bounds.SouthWest.Latitude, p.Bounds.NorthEast.Latitude),
@@ -118,91 +118,4 @@ func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
 	}
 
 	return spots, nil
-}
-
-func (ss *SpotStore) CreateSpot(p surfing.CreateLocalizedSpotParams) (surfing.Spot, error) {
-	query, args, err := ss.builder.
-		Insert("spots").
-		Columns("name", "latitude", "longitude", "locality", "country_code").
-		Values(
-			p.Name,
-			p.Location.Coordinates.Latitude,
-			p.Location.Coordinates.Longitude,
-			psqlutil.String(p.Location.Locality),
-			psqlutil.String(p.Location.CountryCode),
-		).
-		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
-		ToSql()
-	if err != nil {
-		return surfing.Spot{}, fmt.Errorf("failed to build query: %w", err)
-	}
-
-	var s spot
-	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
-	}
-
-	return toSpot(s), nil
-}
-
-func (ss *SpotStore) UpdateSpot(p surfing.UpdateLocalizedSpotParams) (surfing.Spot, error) {
-	values := make(map[string]interface{})
-	if p.Name != nil {
-		values["name"] = *p.Name
-	}
-	if p.Location != nil {
-		values["latitude"] = p.Location.Coordinates.Latitude
-		values["longitude"] = p.Location.Coordinates.Longitude
-		values["locality"] = psqlutil.String(p.Location.Locality)
-		values["country_code"] = psqlutil.String(p.Location.CountryCode)
-	}
-	if len(values) == 0 {
-		return surfing.Spot{}, surfing.ErrNothingToUpdate
-	}
-
-	query, args, err := ss.builder.
-		Update("spots").
-		SetMap(values).
-		Where(sq.Eq{"id": p.ID}).
-		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
-		ToSql()
-	if err != nil {
-		return surfing.Spot{}, fmt.Errorf("failed to build query: %w", err)
-	}
-
-	var s spot
-	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return surfing.Spot{}, surfing.ErrNotFound
-		}
-		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
-	}
-
-	return toSpot(s), nil
-}
-
-func (ss *SpotStore) DeleteSpot(id string) error {
-	query, args, err := ss.builder.
-		Delete("spots").
-		Where(sq.Eq{"id": id}).
-		ToSql()
-	if err != nil {
-		return fmt.Errorf("failed to build query: %w", err)
-	}
-
-	res, err := ss.db.Exec(query, args...)
-	if err != nil {
-		return fmt.Errorf("failed to execute query: %w", err)
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to read affected rows: %w", err)
-	}
-
-	if count == 0 {
-		return surfing.ErrNotFound
-	}
-
-	return nil
 }
