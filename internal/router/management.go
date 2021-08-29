@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/go-chi/chi"
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/management"
 	"github.com/ztimes2/tolqin/internal/validation"
@@ -41,8 +41,8 @@ func newManagementHandler(s managementService) *managementHandler {
 	}
 }
 
-func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	id := p.ByName(paramKeySpotID)
+func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, paramKeySpotID)
 
 	spot, err := h.service.Spot(id)
 	if err != nil {
@@ -57,7 +57,7 @@ func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request, p httpr
 	write(w, r, http.StatusOK, fromManagementSpot(spot))
 }
 
-func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request) {
 	limit, err := queryParamInt(r, "limit")
 	if err != nil && !errors.Is(err, errEmptyParam) {
 		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
@@ -108,7 +108,7 @@ func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request, _ http
 	write(w, r, http.StatusOK, resp)
 }
 
-func (h *managementHandler) createSpot(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *managementHandler) createSpot(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Name        string  `json:"name"`
 		Latitude    float64 `json:"latitude"`
@@ -147,8 +147,8 @@ func (h *managementHandler) createSpot(w http.ResponseWriter, r *http.Request, _
 	write(w, r, http.StatusCreated, fromManagementSpot(spot))
 }
 
-func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	spotID := p.ByName(paramKeySpotID)
+func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request) {
+	spotID := chi.URLParam(r, paramKeySpotID)
 
 	var payload struct {
 		Name        *string  `json:"name"`
@@ -193,8 +193,8 @@ func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request, p
 	write(w, r, http.StatusOK, fromManagementSpot(spot))
 }
 
-func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	spotID := p.ByName(paramKeySpotID)
+func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request) {
+	spotID := chi.URLParam(r, paramKeySpotID)
 
 	if err := h.service.DeleteSpot(spotID); err != nil {
 		if errors.Is(err, management.ErrNotFound) {
@@ -208,7 +208,7 @@ func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request, p
 	write(w, r, http.StatusNoContent, nil)
 }
 
-func (h *managementHandler) location(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *managementHandler) location(w http.ResponseWriter, r *http.Request) {
 	latitude, err := queryParamFloat(r, "lat")
 	if err != nil {
 		writeError(w, r, http.StatusBadRequest, "Invalid latitude.")

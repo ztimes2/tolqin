@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/go-chi/chi"
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/surfing"
 	"github.com/ztimes2/tolqin/internal/validation"
@@ -37,8 +37,8 @@ func newSurfingHandler(s surfingService) *surfingHandler {
 	}
 }
 
-func (h *surfingHandler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	id := p.ByName(paramKeySpotID)
+func (h *surfingHandler) spot(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, paramKeySpotID)
 
 	spot, err := h.service.Spot(id)
 	if err != nil {
@@ -53,7 +53,7 @@ func (h *surfingHandler) spot(w http.ResponseWriter, r *http.Request, p httprout
 	write(w, r, http.StatusOK, fromSurfingSpot(spot))
 }
 
-func (h *surfingHandler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *surfingHandler) spots(w http.ResponseWriter, r *http.Request) {
 	limit, err := queryParamInt(r, "limit")
 	if err != nil && !errors.Is(err, errEmptyParam) {
 		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
