@@ -1,7 +1,6 @@
 package psqlutil
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,32 +54,6 @@ func TestSSLMode_String(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := test.sslMode.String()
 			assert.Equal(t, test.expectedS, s)
-		})
-	}
-}
-
-func TestString(t *testing.T) {
-	tests := []struct {
-		name              string
-		s                 string
-		expectedSQLString sql.NullString
-	}{
-		{
-			name:              "return invalid sql string for empty string",
-			s:                 "",
-			expectedSQLString: sql.NullString{},
-		},
-		{
-			name:              "return valid sql string",
-			s:                 "test",
-			expectedSQLString: sql.NullString{String: "test", Valid: true},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			sqlString := String(test.s)
-			assert.Equal(t, test.expectedSQLString, sqlString)
 		})
 	}
 }

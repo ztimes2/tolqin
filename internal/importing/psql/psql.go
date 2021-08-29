@@ -67,8 +67,8 @@ func (si *SpotImporter) importSpots(
 			e.Name,
 			e.Location.Coordinates.Latitude,
 			e.Location.Coordinates.Longitude,
-			psqlutil.String(e.Location.Locality),
-			psqlutil.String(e.Location.CountryCode),
+			e.Location.Locality,
+			e.Location.CountryCode,
 		)
 	}
 

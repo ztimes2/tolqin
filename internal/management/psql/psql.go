@@ -128,8 +128,8 @@ func (ss *SpotStore) CreateSpot(p management.CreateSpotParams) (management.Spot,
 			p.Name,
 			p.Location.Coordinates.Latitude,
 			p.Location.Coordinates.Longitude,
-			psqlutil.String(p.Location.Locality),
-			psqlutil.String(p.Location.CountryCode),
+			p.Location.Locality,
+			p.Location.CountryCode,
 		).
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
