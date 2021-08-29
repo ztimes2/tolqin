@@ -4,24 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/ztimes2/tolqin/internal/geo"
+	"github.com/ztimes2/tolqin/internal/management"
 	"github.com/ztimes2/tolqin/internal/surfing"
 	"github.com/ztimes2/tolqin/internal/validation"
 )
 
-type spotResponse struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Latitude    float64 `json:"latitude"`
-	Longitude   float64 `json:"longitude"`
-	Locality    string  `json:"locality"`
-	CountryCode string  `json:"country_code"`
-}
-
-func toSpotResponse(s surfing.Spot) spotResponse {
+func fromManagementSpot(s management.Spot) spotResponse {
 	return spotResponse{
 		ID:          s.ID,
 		Name:        s.Name,
@@ -32,26 +23,22 @@ func toSpotResponse(s surfing.Spot) spotResponse {
 	}
 }
 
-type spotsResponse struct {
-	Items []spotResponse `json:"items"`
+type managementHandler struct {
+	service managementService
 }
 
-type handler struct {
-	service service
-}
-
-func newHandler(s service) *handler {
-	return &handler{
+func newManagementHandler(s managementService) *managementHandler {
+	return &managementHandler{
 		service: s,
 	}
 }
 
-func (h *handler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	id := p.ByName(paramKeySpotID)
 
 	spot, err := h.service.Spot(id)
 	if err != nil {
-		if errors.Is(err, surfing.ErrNotFound) {
+		if errors.Is(err, management.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
 			return
 		}
@@ -59,10 +46,10 @@ func (h *handler) spot(w http.ResponseWriter, r *http.Request, p httprouter.Para
 		return
 	}
 
-	write(w, r, http.StatusOK, toSpotResponse(spot))
+	write(w, r, http.StatusOK, fromManagementSpot(spot))
 }
 
-func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	limit, err := queryParamInt(r, "limit")
 	if err != nil {
 		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
@@ -85,7 +72,7 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		return
 	}
 
-	spots, err := h.service.Spots(surfing.SpotsParams{
+	spots, err := h.service.Spots(management.SpotsParams{
 		Limit:       limit,
 		Offset:      offset,
 		CountryCode: countryCode,
@@ -107,52 +94,19 @@ func (h *handler) spots(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	}
 
 	for i, s := range spots {
-		resp.Items[i] = toSpotResponse(s)
+		resp.Items[i] = fromManagementSpot(s)
 	}
 
 	write(w, r, http.StatusOK, resp)
 }
 
-func parseBounds(r *http.Request) (*geo.Bounds, error) {
-	neLat := queryParam(r, "ne_lat")
-	neLon := queryParam(r, "ne_lon")
-	swLat := queryParam(r, "sw_lat")
-	swLon := queryParam(r, "sw_lon")
-
-	if neLat == "" && neLon == "" && swLat == "" && swLon == "" {
-		return nil, nil
-	}
-
-	var (
-		b   geo.Bounds
-		err error
-	)
-
-	b.NorthEast.Latitude, err = strconv.ParseFloat(neLat, 64)
-	if err != nil {
-		return nil, errors.New("invalid north-east latitude")
-	}
-	b.NorthEast.Longitude, err = strconv.ParseFloat(neLon, 64)
-	if err != nil {
-		return nil, errors.New("invalid north-east longitude")
-	}
-	b.SouthWest.Latitude, err = strconv.ParseFloat(swLat, 64)
-	if err != nil {
-		return nil, errors.New("invalid south-west latitude")
-	}
-	b.SouthWest.Longitude, err = strconv.ParseFloat(swLon, 64)
-	if err != nil {
-		return nil, errors.New("invalid south-west longitude")
-	}
-
-	return &b, nil
-}
-
-func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *managementHandler) createSpot(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var payload struct {
-		Name      string  `json:"name"`
-		Latitude  float64 `json:"latitude"`
-		Longitude float64 `json:"longitude"`
+		Name        string  `json:"name"`
+		Latitude    float64 `json:"latitude"`
+		Longitude   float64 `json:"longitude"`
+		Locality    string  `json:"locality"`
+		CountryCode string  `json:"country_code"`
 	}
 
 	defer r.Body.Close()
@@ -161,11 +115,15 @@ func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httproute
 		return
 	}
 
-	spot, err := h.service.CreateSpot(surfing.CreateSpotParams{
+	spot, err := h.service.CreateSpot(management.CreateSpotParams{
 		Name: payload.Name,
-		Coordinates: geo.Coordinates{
-			Latitude:  payload.Latitude,
-			Longitude: payload.Longitude,
+		Location: geo.Location{
+			Coordinates: geo.Coordinates{
+				Latitude:  payload.Latitude,
+				Longitude: payload.Longitude,
+			},
+			Locality:    payload.Locality,
+			CountryCode: payload.CountryCode,
 		},
 	})
 	if err != nil {
@@ -178,16 +136,18 @@ func (h *handler) createSpot(w http.ResponseWriter, r *http.Request, _ httproute
 		return
 	}
 
-	write(w, r, http.StatusCreated, toSpotResponse(spot))
+	write(w, r, http.StatusCreated, fromManagementSpot(spot))
 }
 
-func (h *handler) updateSpot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	spotID := p.ByName(paramKeySpotID)
 
 	var payload struct {
-		Name      *string  `json:"name"`
-		Latitude  *float64 `json:"latitude"`
-		Longitude *float64 `json:"longitude"`
+		Name        *string  `json:"name"`
+		Latitude    *float64 `json:"latitude"`
+		Longitude   *float64 `json:"longitude"`
+		Locality    *string  `json:"locality"`
+		CountryCode *string  `json:"country_code"`
 	}
 
 	defer r.Body.Close()
@@ -196,28 +156,20 @@ func (h *handler) updateSpot(w http.ResponseWriter, r *http.Request, p httproute
 		return
 	}
 
-	params := surfing.UpdateSpotParams{
-		ID:   spotID,
-		Name: payload.Name,
-	}
-	if payload.Latitude != nil || payload.Longitude != nil {
-		c := &geo.Coordinates{}
-		if payload.Latitude != nil {
-			c.Latitude = *payload.Latitude
-		}
-		if payload.Longitude != nil {
-			c.Longitude = *payload.Longitude
-		}
-		params.Coordinates = c
-	}
-
-	spot, err := h.service.UpdateSpot(params)
+	spot, err := h.service.UpdateSpot(management.UpdateSpotParams{
+		ID:          spotID,
+		Name:        payload.Name,
+		Latitude:    payload.Latitude,
+		Longitude:   payload.Longitude,
+		Locality:    payload.Locality,
+		CountryCode: payload.CountryCode,
+	})
 	if err != nil {
-		if errors.Is(err, surfing.ErrNotFound) {
+		if errors.Is(err, management.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
 			return
 		}
-		if errors.Is(err, surfing.ErrNothingToUpdate) {
+		if errors.Is(err, management.ErrNothingToUpdate) {
 			writeError(w, r, http.StatusBadRequest, "Nothing to update.")
 			return
 		}
@@ -230,10 +182,10 @@ func (h *handler) updateSpot(w http.ResponseWriter, r *http.Request, p httproute
 		return
 	}
 
-	write(w, r, http.StatusOK, toSpotResponse(spot))
+	write(w, r, http.StatusOK, fromManagementSpot(spot))
 }
 
-func (h *handler) deleteSpot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	spotID := p.ByName(paramKeySpotID)
 
 	if err := h.service.DeleteSpot(spotID); err != nil {

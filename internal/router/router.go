@@ -6,7 +6,9 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
+	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/logging"
+	"github.com/ztimes2/tolqin/internal/management"
 	"github.com/ztimes2/tolqin/internal/surfing"
 )
 
@@ -14,19 +16,25 @@ const (
 	paramKeySpotID = "spot_id"
 )
 
-func New(s *surfing.Service, l *logrus.Logger) http.Handler {
-	return newRouter(s, l)
+func New(ss *surfing.Service, ms *management.Service, l *logrus.Logger) http.Handler {
+	return newRouter(ss, ms, l)
 }
 
-type service interface {
+type surfingService interface {
 	Spot(id string) (surfing.Spot, error)
 	Spots(surfing.SpotsParams) ([]surfing.Spot, error)
-	CreateSpot(surfing.CreateSpotParams) (surfing.Spot, error)
-	UpdateSpot(surfing.UpdateSpotParams) (surfing.Spot, error)
-	DeleteSpot(id string) error
 }
 
-func newRouter(s service, l *logrus.Logger) http.Handler {
+type managementService interface {
+	Spot(id string) (management.Spot, error)
+	Spots(management.SpotsParams) ([]management.Spot, error)
+	CreateSpot(management.CreateSpotParams) (management.Spot, error)
+	UpdateSpot(management.UpdateSpotParams) (management.Spot, error)
+	DeleteSpot(id string) error
+	Location(geo.Coordinates) (geo.Location, error)
+}
+
+func newRouter(ss surfingService, ms managementService, l *logrus.Logger) http.Handler {
 	router := httprouter.New()
 
 	router.PanicHandler = func(w http.ResponseWriter, r *http.Request, rcv interface{}) {
@@ -36,13 +44,16 @@ func newRouter(s service, l *logrus.Logger) http.Handler {
 		w.WriteHeader(http.StatusNotFound)
 	})
 
-	h := newHandler(s)
+	sh := newSurfingHandler(ss)
+	router.GET("/v1/spots", sh.spots)
+	router.GET("/v1/spots/:"+paramKeySpotID, sh.spot)
 
-	router.GET("/spots", h.spots)
-	router.GET("/spots/:"+paramKeySpotID, h.spot)
-	router.POST("/spots", h.createSpot)
-	router.PATCH("/spots/:"+paramKeySpotID, h.updateSpot)
-	router.DELETE("/spots/:"+paramKeySpotID, h.deleteSpot)
+	mh := newManagementHandler(ms)
+	router.GET("/management/v1/spots", mh.spots)
+	router.GET("/management/v1/spots/:"+paramKeySpotID, mh.spot)
+	router.POST("/management/v1/spots", mh.createSpot)
+	router.PATCH("/management/v1/spots/:"+paramKeySpotID, mh.updateSpot)
+	router.DELETE("/management/v1/spots/:"+paramKeySpotID, mh.deleteSpot)
 
 	return withLogger(l, router)
 }
