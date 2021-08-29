@@ -3,7 +3,7 @@ CREATE TABLE spots (
 	name TEXT NOT NULL,
 	latitude NUMERIC NOT NULL,
 	longitude NUMERIC NOT NULL,
-	locality TEXT,
-	country_code TEXT,
+	locality TEXT NOT NULL,
+	country_code TEXT NOT NULL,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
