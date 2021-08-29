@@ -148,3 +148,94 @@ func TestBounds_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestLocation_Sanitize(t *testing.T) {
+	l := Location{
+		CountryCode: " kz ",
+		Locality:    " Locality 1 ",
+	}
+	assert.Equal(
+		t,
+		Location{
+			CountryCode: "kz",
+			Locality:    "Locality 1",
+		},
+		l.Sanitize(),
+	)
+}
+
+func TestLocation_Validate(t *testing.T) {
+	tests := []struct {
+		name          string
+		location      Location
+		expectedErrFn assert.ErrorAssertionFunc
+	}{
+		{
+			name: "return error for empty locality",
+			location: Location{
+				Locality:    "",
+				CountryCode: "kz",
+				Coordinates: Coordinates{
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("locality"),
+		},
+		{
+			name: "return error for invalid country code",
+			location: Location{
+				Locality:    "Locality 1",
+				CountryCode: "zz",
+				Coordinates: Coordinates{
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("country code"),
+		},
+		{
+			name: "return error for invalid latitude",
+			location: Location{
+				Locality:    "Locality",
+				CountryCode: "kz",
+				Coordinates: Coordinates{
+					Latitude:  -91,
+					Longitude: 3.21,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("latitude"),
+		},
+		{
+			name: "return error for invalid longitude",
+			location: Location{
+				Locality:    "Locality",
+				CountryCode: "kz",
+				Coordinates: Coordinates{
+					Latitude:  1.23,
+					Longitude: 181,
+				},
+			},
+			expectedErrFn: testutil.IsValidationError("longitude"),
+		},
+		{
+			name: "return no error",
+			location: Location{
+				Locality:    "Locality",
+				CountryCode: "kz",
+				Coordinates: Coordinates{
+					Latitude:  1.23,
+					Longitude: 3.21,
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.location.Validate()
+			test.expectedErrFn(t, err)
+		})
+	}
+}
