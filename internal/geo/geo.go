@@ -2,6 +2,7 @@ package geo
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/ztimes2/tolqin/internal/validation"
 )
@@ -28,19 +29,46 @@ type Coordinates struct {
 }
 
 func (c Coordinates) Validate() error {
-	if c.Latitude < minLatitude || c.Latitude > maxLatitude {
-		return validation.NewError("coordinates")
+	if !IsLatitude(c.Latitude) {
+		return validation.NewError("latitude")
 	}
-	if c.Longitude < minLongitude || c.Longitude > maxLongitude {
-		return validation.NewError("coordinates")
+	if !IsLongitude(c.Longitude) {
+		return validation.NewError("longitude")
 	}
 	return nil
+}
+
+func IsLatitude(lat float64) bool {
+	return minLatitude <= lat && lat <= maxLatitude
+}
+
+func IsLongitude(lon float64) bool {
+	return minLongitude <= lon && lon <= maxLongitude
 }
 
 type Location struct {
 	Locality    string
 	CountryCode string
 	Coordinates Coordinates
+}
+
+func (l Location) Sanitize() Location {
+	l.CountryCode = strings.TrimSpace(l.CountryCode)
+	l.Locality = strings.TrimSpace(l.Locality)
+	return l
+}
+
+func (l Location) Validate() error {
+	if l.Locality == "" {
+		return validation.NewError("locality")
+	}
+	if !IsCountry(l.CountryCode) {
+		return validation.NewError("country code")
+	}
+	if err := l.Coordinates.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type Bounds struct {

@@ -19,7 +19,7 @@ func TestCoordinates_Validate(t *testing.T) {
 				Latitude:  -91,
 				Longitude: 0,
 			},
-			expectedErrFn: testutil.IsValidationError("coordinates"),
+			expectedErrFn: testutil.IsValidationError("latitude"),
 		},
 		{
 			name: "return error for invalid latitude",
@@ -27,7 +27,7 @@ func TestCoordinates_Validate(t *testing.T) {
 				Latitude:  91,
 				Longitude: 0,
 			},
-			expectedErrFn: testutil.IsValidationError("coordinates"),
+			expectedErrFn: testutil.IsValidationError("latitude"),
 		},
 		{
 			name: "return error for invalid longitude",
@@ -35,7 +35,7 @@ func TestCoordinates_Validate(t *testing.T) {
 				Latitude:  0,
 				Longitude: -181,
 			},
-			expectedErrFn: testutil.IsValidationError("coordinates"),
+			expectedErrFn: testutil.IsValidationError("longitude"),
 		},
 		{
 			name: "return error for invalid longitude",
@@ -43,7 +43,7 @@ func TestCoordinates_Validate(t *testing.T) {
 				Latitude:  0,
 				Longitude: 181,
 			},
-			expectedErrFn: testutil.IsValidationError("coordinates"),
+			expectedErrFn: testutil.IsValidationError("longitude"),
 		},
 		{
 			name: "return no error",
