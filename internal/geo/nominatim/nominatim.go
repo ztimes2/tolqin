@@ -17,8 +17,8 @@ const (
 
 	headerAcceptLanguage = "Accept-Language"
 
-	queryParamLatitude  = "latitude"
-	queryParamLongitude = "longitude"
+	queryParamLatitude  = "lat"
+	queryParamLongitude = "lon"
 	queryParamFormat    = "format"
 
 	formatJSON          = "json"
