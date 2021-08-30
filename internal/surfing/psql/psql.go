@@ -63,7 +63,7 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || psqlutil.IsInvalidTextRepresenationError(err) {
 			return surfing.Spot{}, surfing.ErrNotFound
 		}
 		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)

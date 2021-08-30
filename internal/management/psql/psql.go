@@ -63,7 +63,7 @@ func (ss *SpotStore) Spot(id string) (management.Spot, error) {
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || psqlutil.IsInvalidTextRepresenationError(err) {
 			return management.Spot{}, management.ErrNotFound
 		}
 		return management.Spot{}, fmt.Errorf("failed to execute query: %w", err)
@@ -178,7 +178,7 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || psqlutil.IsInvalidTextRepresenationError(err) {
 			return management.Spot{}, management.ErrNotFound
 		}
 		return management.Spot{}, fmt.Errorf("failed to execute query: %w", err)
@@ -198,6 +198,9 @@ func (ss *SpotStore) DeleteSpot(id string) error {
 
 	res, err := ss.db.Exec(query, args...)
 	if err != nil {
+		if psqlutil.IsInvalidTextRepresenationError(err) {
+			return management.ErrNotFound
+		}
 		return fmt.Errorf("failed to execute query: %w", err)
 	}
 

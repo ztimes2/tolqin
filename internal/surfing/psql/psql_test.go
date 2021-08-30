@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/psqlutil"
@@ -48,6 +49,21 @@ func TestSpotStore_Spot(t *testing.T) {
 					)).
 					WithArgs("1").
 					WillReturnError(sql.ErrNoRows)
+			},
+			id:            "1",
+			expectedSpot:  surfing.Spot{},
+			expectedErrFn: testutil.IsError(surfing.ErrNotFound),
+		},
+		{
+			name: "return error for unexisting resource",
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
+							"FROM spots WHERE id = $1",
+					)).
+					WithArgs("1").
+					WillReturnError(&pq.Error{Code: psqlutil.CodeInvalidTextRepresentation})
 			},
 			id:            "1",
 			expectedSpot:  surfing.Spot{},

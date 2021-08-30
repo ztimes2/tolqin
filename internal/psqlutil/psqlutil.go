@@ -2,12 +2,18 @@ package psqlutil
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
+)
+
+const (
+	CodeInvalidTextRepresentation = "22P02"
 )
 
 const (
@@ -86,4 +92,15 @@ func Wildcard(s string) string {
 
 func Between(key string, min, max float64) sq.Sqlizer {
 	return sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", key), min, max)
+}
+
+func IsInvalidTextRepresenationError(err error) bool {
+	var pqErr *pq.Error
+	if !errors.As(err, &pqErr) {
+		return false
+	}
+	if pqErr.Code != CodeInvalidTextRepresentation {
+		return false
+	}
+	return true
 }
