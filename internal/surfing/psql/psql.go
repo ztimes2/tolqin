@@ -55,7 +55,7 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
-		Where(sq.Eq{"CAST(id AS VARCHAR)": id}).
+		Where(sq.Eq{psqlutil.CastAsVarchar("id"): id}).
 		ToSql()
 	if err != nil {
 		return surfing.Spot{}, fmt.Errorf("failed to build query: %w", err)

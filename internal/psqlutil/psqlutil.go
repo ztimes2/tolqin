@@ -87,3 +87,7 @@ func Wildcard(s string) string {
 func Between(key string, min, max float64) sq.Sqlizer {
 	return sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", key), min, max)
 }
+
+func CastAsVarchar(key string) string {
+	return fmt.Sprintf("CAST(%s AS VARCHAR)", key)
+}

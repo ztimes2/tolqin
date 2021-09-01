@@ -130,3 +130,8 @@ func TestBetween(t *testing.T) {
 	assert.Equal(t, "column BETWEEN ? AND ?", expr)
 	assert.Equal(t, []interface{}{1.0, 100.0}, args)
 }
+
+func TestCastAsVarchar(t *testing.T) {
+	s := CastAsVarchar("test")
+	assert.Equal(t, "CAST(test AS VARCHAR)", s)
+}

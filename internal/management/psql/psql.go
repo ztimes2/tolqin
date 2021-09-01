@@ -55,7 +55,7 @@ func (ss *SpotStore) Spot(id string) (management.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
-		Where(sq.Eq{"CAST(id AS VARCHAR)": id}).
+		Where(sq.Eq{psqlutil.CastAsVarchar("id"): id}).
 		ToSql()
 	if err != nil {
 		return management.Spot{}, fmt.Errorf("failed to build query: %w", err)
@@ -87,7 +87,7 @@ func (ss *SpotStore) Spots(p management.SpotsParams) ([]management.Spot, error) 
 		builder = builder.Where(sq.Or{
 			sq.ILike{"name": psqlutil.Wildcard(p.Query)},
 			sq.ILike{"locality": psqlutil.Wildcard(p.Query)},
-			sq.ILike{"CAST(id AS VARCHAR)": psqlutil.Wildcard(p.Query)},
+			sq.ILike{psqlutil.CastAsVarchar("id"): psqlutil.Wildcard(p.Query)},
 		})
 	}
 
@@ -170,7 +170,7 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 	query, args, err := ss.builder.
 		Update("spots").
 		SetMap(values).
-		Where(sq.Eq{"CAST(id AS VARCHAR)": p.ID}).
+		Where(sq.Eq{psqlutil.CastAsVarchar("id"): p.ID}).
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
@@ -191,7 +191,7 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 func (ss *SpotStore) DeleteSpot(id string) error {
 	query, args, err := ss.builder.
 		Delete("spots").
-		Where(sq.Eq{"CAST(id AS VARCHAR)": id}).
+		Where(sq.Eq{psqlutil.CastAsVarchar("id"): id}).
 		ToSql()
 	if err != nil {
 		return fmt.Errorf("failed to build query: %w", err)
