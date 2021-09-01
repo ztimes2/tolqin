@@ -1,10 +1,8 @@
 package psqlutil
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -131,35 +129,4 @@ func TestBetween(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "column BETWEEN ? AND ?", expr)
 	assert.Equal(t, []interface{}{1.0, 100.0}, args)
-}
-
-func TestIsInvalidTextRepresentationError(t *testing.T) {
-	tests := []struct {
-		name         string
-		err          error
-		expectedBool bool
-	}{
-		{
-			name:         "return false for non-postgres error",
-			err:          errors.New("something went wrong"),
-			expectedBool: false,
-		},
-		{
-			name:         "return false for postgres error with unexpected code",
-			err:          &pq.Error{Code: "Some random code"},
-			expectedBool: false,
-		},
-		{
-			name:         "return true for postgres error with 22P02 code",
-			err:          &pq.Error{Code: CodeInvalidTextRepresentation},
-			expectedBool: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ok := IsInvalidTextRepresenationError(test.err)
-			assert.Equal(t, test.expectedBool, ok)
-		})
-	}
 }

@@ -55,7 +55,7 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
-		Where(sq.Eq{"id": id}).
+		Where(sq.Eq{"CAST(id AS VARCHAR)": id}).
 		ToSql()
 	if err != nil {
 		return surfing.Spot{}, fmt.Errorf("failed to build query: %w", err)
@@ -63,7 +63,7 @@ func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		if errors.Is(err, sql.ErrNoRows) || psqlutil.IsInvalidTextRepresenationError(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return surfing.Spot{}, surfing.ErrNotFound
 		}
 		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)

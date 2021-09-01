@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/management"
@@ -31,7 +30,7 @@ func TestSpotStore_Spot(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
-							"FROM spots WHERE id = $1",
+							"FROM spots WHERE CAST(id AS VARCHAR) = $1",
 					)).
 					WithArgs("1").
 					WillReturnError(errors.New("something went wrong"))
@@ -46,25 +45,10 @@ func TestSpotStore_Spot(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
-							"FROM spots WHERE id = $1",
+							"FROM spots WHERE CAST(id AS VARCHAR) = $1",
 					)).
 					WithArgs("1").
 					WillReturnError(sql.ErrNoRows)
-			},
-			id:            "1",
-			expectedSpot:  management.Spot{},
-			expectedErrFn: testutil.IsError(management.ErrNotFound),
-		},
-		{
-			name: "return error for unexisting resource",
-			mockFn: func(m sqlmock.Sqlmock) {
-				m.
-					ExpectQuery(regexp.QuoteMeta(
-						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
-							"FROM spots WHERE id = $1",
-					)).
-					WithArgs("1").
-					WillReturnError(&pq.Error{Code: psqlutil.CodeInvalidTextRepresentation})
 			},
 			id:            "1",
 			expectedSpot:  management.Spot{},
@@ -76,7 +60,7 @@ func TestSpotStore_Spot(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, locality, country_code, created_at " +
-							"FROM spots WHERE id = $1",
+							"FROM spots WHERE CAST(id AS VARCHAR) = $1",
 					)).
 					WithArgs("1").
 					WillReturnRows(sqlmock.
@@ -608,7 +592,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET country_code = $1, latitude = $2, locality = $3, longitude = $4, name = $5 "+
-							"WHERE id = $6 "+
+							"WHERE CAST(id AS VARCHAR) = $6 "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
 					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
@@ -632,35 +616,11 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET country_code = $1, latitude = $2, locality = $3, longitude = $4, name = $5 "+
-							"WHERE id = $6 "+
+							"WHERE CAST(id AS VARCHAR) = $6 "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
 					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnError(sql.ErrNoRows)
-			},
-			params: management.UpdateSpotParams{
-				ID:          "1",
-				Name:        pconv.String("Updated spot 1"),
-				Locality:    pconv.String("Locality 1"),
-				CountryCode: pconv.String("Country code 1"),
-				Latitude:    pconv.Float64(2.34),
-				Longitude:   pconv.Float64(4.32),
-			},
-			expectedSpot:  management.Spot{},
-			expectedErrFn: testutil.IsError(management.ErrNotFound),
-		},
-		{
-			name: "return error for unexisting resource",
-			mockFn: func(m sqlmock.Sqlmock) {
-				m.
-					ExpectQuery(regexp.QuoteMeta(
-						"UPDATE spots "+
-							"SET country_code = $1, latitude = $2, locality = $3, longitude = $4, name = $5 "+
-							"WHERE id = $6 "+
-							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
-					)).
-					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
-					WillReturnError(&pq.Error{Code: psqlutil.CodeInvalidTextRepresentation})
 			},
 			params: management.UpdateSpotParams{
 				ID:          "1",
@@ -689,7 +649,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET country_code = $1, latitude = $2, locality = $3, longitude = $4, name = $5 "+
-							"WHERE id = $6 "+
+							"WHERE CAST(id AS VARCHAR) = $6 "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
 					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
@@ -731,7 +691,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					ExpectQuery(regexp.QuoteMeta(
 						"UPDATE spots "+
 							"SET latitude = $1, name = $2 "+
-							"WHERE id = $3 "+
+							"WHERE CAST(id AS VARCHAR) = $3 "+
 							"RETURNING id, name, latitude, longitude, locality, country_code, created_at",
 					)).
 					WithArgs(2.34, "Updated spot 1", "1").
@@ -797,7 +757,7 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"DELETE FROM spots WHERE id = $1",
+						"DELETE FROM spots WHERE CAST(id AS VARCHAR) = $1",
 					)).
 					WithArgs("1").
 					WillReturnError(errors.New("unexpected error"))
@@ -806,24 +766,11 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
-			name: "return error for unexisting resource",
-			mockFn: func(m sqlmock.Sqlmock) {
-				m.
-					ExpectExec(regexp.QuoteMeta(
-						"DELETE FROM spots WHERE id = $1",
-					)).
-					WithArgs("1").
-					WillReturnError(&pq.Error{Code: psqlutil.CodeInvalidTextRepresentation})
-			},
-			id:            "1",
-			expectedErrFn: testutil.IsError(management.ErrNotFound),
-		},
-		{
 			name: "return error when reading affected rows",
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"DELETE FROM spots WHERE id = $1",
+						"DELETE FROM spots WHERE CAST(id AS VARCHAR) = $1",
 					)).
 					WithArgs("1").
 					WillReturnResult(sqlmock.NewErrorResult(
@@ -838,7 +785,7 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"DELETE FROM spots WHERE id = $1",
+						"DELETE FROM spots WHERE CAST(id AS VARCHAR) = $1",
 					)).
 					WithArgs("1").
 					WillReturnResult(sqlmock.NewResult(0, 0))
@@ -851,7 +798,7 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectExec(regexp.QuoteMeta(
-						"DELETE FROM spots WHERE id = $1",
+						"DELETE FROM spots WHERE CAST(id AS VARCHAR) = $1",
 					)).
 					WithArgs("1").
 					WillReturnResult(sqlmock.NewResult(0, 1))

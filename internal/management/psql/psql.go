@@ -55,7 +55,7 @@ func (ss *SpotStore) Spot(id string) (management.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
-		Where(sq.Eq{"id": id}).
+		Where(sq.Eq{"CAST(id AS VARCHAR)": id}).
 		ToSql()
 	if err != nil {
 		return management.Spot{}, fmt.Errorf("failed to build query: %w", err)
@@ -63,7 +63,7 @@ func (ss *SpotStore) Spot(id string) (management.Spot, error) {
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		if errors.Is(err, sql.ErrNoRows) || psqlutil.IsInvalidTextRepresenationError(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return management.Spot{}, management.ErrNotFound
 		}
 		return management.Spot{}, fmt.Errorf("failed to execute query: %w", err)
@@ -169,7 +169,7 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 	query, args, err := ss.builder.
 		Update("spots").
 		SetMap(values).
-		Where(sq.Eq{"id": p.ID}).
+		Where(sq.Eq{"CAST(id AS VARCHAR)": p.ID}).
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
@@ -178,7 +178,7 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		if errors.Is(err, sql.ErrNoRows) || psqlutil.IsInvalidTextRepresenationError(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return management.Spot{}, management.ErrNotFound
 		}
 		return management.Spot{}, fmt.Errorf("failed to execute query: %w", err)
@@ -190,7 +190,7 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 func (ss *SpotStore) DeleteSpot(id string) error {
 	query, args, err := ss.builder.
 		Delete("spots").
-		Where(sq.Eq{"id": id}).
+		Where(sq.Eq{"CAST(id AS VARCHAR)": id}).
 		ToSql()
 	if err != nil {
 		return fmt.Errorf("failed to build query: %w", err)
@@ -198,9 +198,6 @@ func (ss *SpotStore) DeleteSpot(id string) error {
 
 	res, err := ss.db.Exec(query, args...)
 	if err != nil {
-		if psqlutil.IsInvalidTextRepresenationError(err) {
-			return management.ErrNotFound
-		}
 		return fmt.Errorf("failed to execute query: %w", err)
 	}
 
