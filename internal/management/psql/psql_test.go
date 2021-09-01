@@ -295,9 +295,11 @@ func TestSpotStore_Spots(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
-							"FROM spots WHERE (name ILIKE $1 OR locality ILIKE $2) LIMIT 10 OFFSET 0",
+							"FROM spots "+
+							"WHERE (name ILIKE $1 OR locality ILIKE $2 OR CAST(id AS VARCHAR) ILIKE $3) "+
+							"LIMIT 10 OFFSET 0",
 					)).
-					WithArgs("%query%", "%query%").
+					WithArgs("%query%", "%query%", "%query%").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
 							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
@@ -412,9 +414,11 @@ func TestSpotStore_Spots(t *testing.T) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
-							"FROM spots WHERE country_code = $1 AND (name ILIKE $2 OR locality ILIKE $3) LIMIT 10 OFFSET 0",
+							"FROM spots WHERE country_code = $1 "+
+							"AND (name ILIKE $2 OR locality ILIKE $3 OR CAST(id AS VARCHAR) ILIKE $4) "+
+							"LIMIT 10 OFFSET 0",
 					)).
-					WithArgs("kz", "%query%", "%query%").
+					WithArgs("kz", "%query%", "%query%", "%query%").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
 							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",

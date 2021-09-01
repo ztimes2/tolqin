@@ -87,6 +87,7 @@ func (ss *SpotStore) Spots(p management.SpotsParams) ([]management.Spot, error) 
 		builder = builder.Where(sq.Or{
 			sq.ILike{"name": psqlutil.Wildcard(p.Query)},
 			sq.ILike{"locality": psqlutil.Wildcard(p.Query)},
+			sq.ILike{"CAST(id AS VARCHAR)": psqlutil.Wildcard(p.Query)},
 		})
 	}
 
