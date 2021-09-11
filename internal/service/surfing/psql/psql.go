@@ -14,13 +14,13 @@ import (
 )
 
 type spot struct {
-	ID          string         `db:"id"`
-	Name        string         `db:"name"`
-	Latitude    float64        `db:"latitude"`
-	Longitude   float64        `db:"longitude"`
-	Locality    sql.NullString `db:"locality"`
-	CountryCode sql.NullString `db:"country_code"`
-	CreatedAt   time.Time      `db:"created_at"`
+	ID          string    `db:"id"`
+	Name        string    `db:"name"`
+	Latitude    float64   `db:"latitude"`
+	Longitude   float64   `db:"longitude"`
+	Locality    string    `db:"locality"`
+	CountryCode string    `db:"country_code"`
+	CreatedAt   time.Time `db:"created_at"`
 }
 
 func toSpot(s spot) surfing.Spot {
@@ -29,8 +29,8 @@ func toSpot(s spot) surfing.Spot {
 		Name:      s.Name,
 		CreatedAt: s.CreatedAt,
 		Location: geo.Location{
-			Locality:    s.Locality.String,
-			CountryCode: s.CountryCode.String,
+			Locality:    s.Locality,
+			CountryCode: s.CountryCode,
 			Coordinates: geo.Coordinates{
 				Latitude:  s.Latitude,
 				Longitude: s.Longitude,
