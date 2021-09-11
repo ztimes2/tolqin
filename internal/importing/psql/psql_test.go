@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/ztimes2/tolqin/internal/geo"
 	"github.com/ztimes2/tolqin/internal/importing"
-	"github.com/ztimes2/tolqin/internal/psqlutil"
-	"github.com/ztimes2/tolqin/internal/testutil"
+	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
+	"github.com/ztimes2/tolqin/internal/pkg/testutil"
 )
 
 func TestSpotImporter_ImportSpots(t *testing.T) {

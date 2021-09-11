@@ -9,8 +9,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/psqlutil"
-	"github.com/ztimes2/tolqin/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
+	"github.com/ztimes2/tolqin/internal/service/surfing"
 )
 
 type spot struct {

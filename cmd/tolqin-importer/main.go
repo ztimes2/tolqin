@@ -9,8 +9,8 @@ import (
 	"github.com/ztimes2/tolqin/internal/importing"
 	"github.com/ztimes2/tolqin/internal/importing/csv"
 	"github.com/ztimes2/tolqin/internal/importing/psql"
-	"github.com/ztimes2/tolqin/internal/logging"
-	"github.com/ztimes2/tolqin/internal/psqlutil"
+	"github.com/ztimes2/tolqin/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
 )
 
 func main() {

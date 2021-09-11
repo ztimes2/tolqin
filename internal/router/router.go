@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
-	"github.com/ztimes2/tolqin/internal/logging"
-	"github.com/ztimes2/tolqin/internal/management"
-	"github.com/ztimes2/tolqin/internal/surfing"
+	"github.com/ztimes2/tolqin/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/internal/service/management"
+	"github.com/ztimes2/tolqin/internal/service/surfing"
 )
 
 const (

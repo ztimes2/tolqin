@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/management"
+	"github.com/ztimes2/tolqin/internal/service/management"
 	"github.com/ztimes2/tolqin/internal/validation"
 )
 

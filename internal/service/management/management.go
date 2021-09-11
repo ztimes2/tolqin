@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/pagination"
-	"github.com/ztimes2/tolqin/internal/pconv"
+	"github.com/ztimes2/tolqin/internal/pkg/pagination"
+	"github.com/ztimes2/tolqin/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/internal/validation"
 )
 

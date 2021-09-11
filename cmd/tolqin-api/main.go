@@ -10,13 +10,13 @@ import (
 
 	configapi "github.com/ztimes2/tolqin/internal/config/api"
 	"github.com/ztimes2/tolqin/internal/geo/nominatim"
-	"github.com/ztimes2/tolqin/internal/logging"
-	"github.com/ztimes2/tolqin/internal/management"
-	managementpsql "github.com/ztimes2/tolqin/internal/management/psql"
-	"github.com/ztimes2/tolqin/internal/psqlutil"
+	"github.com/ztimes2/tolqin/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/internal/router"
-	"github.com/ztimes2/tolqin/internal/surfing"
-	surfingpsql "github.com/ztimes2/tolqin/internal/surfing/psql"
+	"github.com/ztimes2/tolqin/internal/service/management"
+	managementpsql "github.com/ztimes2/tolqin/internal/service/management/psql"
+	"github.com/ztimes2/tolqin/internal/service/surfing"
+	surfingpsql "github.com/ztimes2/tolqin/internal/service/surfing/psql"
 )
 
 func main() {

@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/management"
-	"github.com/ztimes2/tolqin/internal/pconv"
+	"github.com/ztimes2/tolqin/internal/service/management"
+	"github.com/ztimes2/tolqin/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/internal/validation"
 )
 
