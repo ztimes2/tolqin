@@ -7,8 +7,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/importing"
+	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/importing"
 )
 
 type SpotEntrySource struct {

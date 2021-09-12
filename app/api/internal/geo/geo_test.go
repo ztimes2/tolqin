@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/ztimes2/tolqin/internal/pkg/testutil"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
 )
 
 func TestCoordinates_Validate(t *testing.T) {

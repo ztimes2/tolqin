@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ztimes2/tolqin/internal/validation"
+	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 const (

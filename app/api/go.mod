@@ -1,4 +1,4 @@
-module github.com/ztimes2/tolqin
+module github.com/ztimes2/tolqin/app/api
 
 go 1.16
 

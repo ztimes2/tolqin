@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/service/management"
-	"github.com/ztimes2/tolqin/internal/validation"
+	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/service/management"
+	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 type managementService interface {

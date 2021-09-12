@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ztimes2/tolqin/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/geo"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ztimes2/tolqin/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
 )
 
 func write(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {

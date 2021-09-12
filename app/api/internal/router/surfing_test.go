@@ -12,9 +12,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/service/surfing"
-	"github.com/ztimes2/tolqin/internal/validation"
+	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/service/surfing"
+	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 type mockSurfingService struct {

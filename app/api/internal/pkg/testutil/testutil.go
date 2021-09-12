@@ -2,7 +2,7 @@ package testutil
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/ztimes2/tolqin/internal/validation"
+	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 func IsError(target error) assert.ErrorAssertionFunc {

@@ -5,12 +5,12 @@ import (
 	"os"
 	"time"
 
-	configimporter "github.com/ztimes2/tolqin/internal/config/importer"
-	"github.com/ztimes2/tolqin/internal/importing"
-	"github.com/ztimes2/tolqin/internal/importing/csv"
-	"github.com/ztimes2/tolqin/internal/importing/psql"
-	"github.com/ztimes2/tolqin/internal/pkg/logging"
-	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
+	configimporter "github.com/ztimes2/tolqin/app/api/internal/config/importer"
+	"github.com/ztimes2/tolqin/app/api/internal/importing"
+	"github.com/ztimes2/tolqin/app/api/internal/importing/csv"
+	"github.com/ztimes2/tolqin/app/api/internal/importing/psql"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 )
 
 func main() {

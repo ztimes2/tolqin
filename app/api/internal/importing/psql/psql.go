@@ -5,9 +5,9 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/ztimes2/tolqin/internal/importing"
-	"github.com/ztimes2/tolqin/internal/pkg/batch"
-	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
+	"github.com/ztimes2/tolqin/app/api/internal/importing"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/batch"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 )
 
 type SpotImporter struct {

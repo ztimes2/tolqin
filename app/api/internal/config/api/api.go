@@ -5,7 +5,7 @@ import (
 
 	"github.com/heetch/confita"
 	"github.com/heetch/confita/backend/env"
-	"github.com/ztimes2/tolqin/internal/config"
+	"github.com/ztimes2/tolqin/app/api/internal/config"
 )
 
 type Config struct {

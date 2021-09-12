@@ -9,11 +9,11 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/ztimes2/tolqin/internal/geo"
-	"github.com/ztimes2/tolqin/internal/service/management"
-	"github.com/ztimes2/tolqin/internal/pkg/pconv"
-	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
-	"github.com/ztimes2/tolqin/internal/pkg/testutil"
+	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
+	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 )
 
 func TestSpotStore_Spot(t *testing.T) {

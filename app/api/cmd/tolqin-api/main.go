@@ -8,15 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	configapi "github.com/ztimes2/tolqin/internal/config/api"
-	"github.com/ztimes2/tolqin/internal/geo/nominatim"
-	"github.com/ztimes2/tolqin/internal/pkg/logging"
-	"github.com/ztimes2/tolqin/internal/pkg/psqlutil"
-	"github.com/ztimes2/tolqin/internal/router"
-	"github.com/ztimes2/tolqin/internal/service/management"
-	managementpsql "github.com/ztimes2/tolqin/internal/service/management/psql"
-	"github.com/ztimes2/tolqin/internal/service/surfing"
-	surfingpsql "github.com/ztimes2/tolqin/internal/service/surfing/psql"
+	configapi "github.com/ztimes2/tolqin/app/api/internal/config/api"
+	"github.com/ztimes2/tolqin/app/api/internal/geo/nominatim"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
+	"github.com/ztimes2/tolqin/app/api/internal/router"
+	"github.com/ztimes2/tolqin/app/api/internal/service/management"
+	managementpsql "github.com/ztimes2/tolqin/app/api/internal/service/management/psql"
+	"github.com/ztimes2/tolqin/app/api/internal/service/surfing"
+	surfingpsql "github.com/ztimes2/tolqin/app/api/internal/service/surfing/psql"
 )
 
 func main() {
