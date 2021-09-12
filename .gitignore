@@ -1,0 +1,5 @@
+# Terraform stuff
+infra/aws/terraform*
+infra/aws/.terraform*
+infra/aws/backend/terraform*
+infra/aws/backend/.terraform*

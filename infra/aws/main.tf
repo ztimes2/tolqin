@@ -1,23 +1,5 @@
-variable "aws_access_key" {
-  type = string
-}
-
-variable "aws_secret_key" {
-  type = string
-}
-
-variable "region" {
-  default = "ap-southeast-1"
-}
-
-variable "az_a" {
-  default = "ap-southeast-1a"
-}
-
 provider "aws" {
   region = var.region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
 }
 
 resource "aws_default_vpc" "vpc" {}
