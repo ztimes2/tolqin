@@ -8,7 +8,8 @@ on:
 
 jobs:
 
-  lint:
+  api-lint:
+    name: "api: Run linters"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -18,13 +19,17 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.16
+        
+    - name: Change directory
+      run: cd app/api
         
     - name: Run linters
       uses: golangci/golangci-lint-action@v2
       with:
         skip-go-installation: true
 
-  unit-test:
+  api-unit-test:
+    name: "api: Run unit tests"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -35,10 +40,14 @@ jobs:
       with:
         go-version: 1.16
         
+    - name: Change directory
+      run: cd app/api
+        
     - name: Run unit tests
       run: go test --covermode=count ./...
 
-  build:
+  api-build-test:
+    name: "api: Test build"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -48,6 +57,9 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.16
+        
+    - name: Change directory
+      run: cd app/api
         
     - name: Build
       run: go build cmd/tolqin-api/main.go
