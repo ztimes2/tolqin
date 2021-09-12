@@ -1,6 +1,7 @@
 tasks:
-  - name: Install migrate & psql
+  - name: Install migrate, psql, terraform
     command: >
       brew install golang-migrate &&
       sudo apt-get update &&
-      sudo apt-get -y install postgresql-client
+      sudo apt-get -y install postgresql-client &&
+      brew install terraform
