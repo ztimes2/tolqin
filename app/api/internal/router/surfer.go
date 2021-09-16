@@ -7,16 +7,16 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/service/surfing"
+	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
-type surfingService interface {
-	Spot(id string) (surfing.Spot, error)
-	Spots(surfing.SpotsParams) ([]surfing.Spot, error)
+type surferService interface {
+	Spot(id string) (surfer.Spot, error)
+	Spots(surfer.SpotsParams) ([]surfer.Spot, error)
 }
 
-func fromSurfingSpot(s surfing.Spot) spotResponse {
+func fromSurferSpot(s surfer.Spot) spotResponse {
 	return spotResponse{
 		ID:          s.ID,
 		Name:        s.Name,
@@ -27,22 +27,22 @@ func fromSurfingSpot(s surfing.Spot) spotResponse {
 	}
 }
 
-type surfingHandler struct {
-	service surfingService
+type surferHandler struct {
+	service surferService
 }
 
-func newSurfingHandler(s surfingService) *surfingHandler {
-	return &surfingHandler{
+func newSurferHandler(s surferService) *surferHandler {
+	return &surferHandler{
 		service: s,
 	}
 }
 
-func (h *surfingHandler) spot(w http.ResponseWriter, r *http.Request) {
+func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, paramKeySpotID)
 
 	spot, err := h.service.Spot(id)
 	if err != nil {
-		if errors.Is(err, surfing.ErrNotFound) {
+		if errors.Is(err, surfer.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
 			return
 		}
@@ -50,10 +50,10 @@ func (h *surfingHandler) spot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	write(w, r, http.StatusOK, fromSurfingSpot(spot))
+	write(w, r, http.StatusOK, fromSurferSpot(spot))
 }
 
-func (h *surfingHandler) spots(w http.ResponseWriter, r *http.Request) {
+func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 	limit, err := queryParamInt(r, "limit")
 	if err != nil && !errors.Is(err, errEmptyParam) {
 		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
@@ -76,7 +76,7 @@ func (h *surfingHandler) spots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spots, err := h.service.Spots(surfing.SpotsParams{
+	spots, err := h.service.Spots(surfer.SpotsParams{
 		Limit:       limit,
 		Offset:      offset,
 		CountryCode: countryCode,
@@ -98,7 +98,7 @@ func (h *surfingHandler) spots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i, s := range spots {
-		resp.Items[i] = fromSurfingSpot(s)
+		resp.Items[i] = fromSurferSpot(s)
 	}
 
 	write(w, r, http.StatusOK, resp)

@@ -166,7 +166,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurfingService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/management/v1/spots/"+test.id, nil)
@@ -559,7 +559,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurfingService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/management/v1/spots", nil)
@@ -763,7 +763,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurfingService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodPost, server.URL+"/management/v1/spots", nil)
@@ -1146,7 +1146,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurfingService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodPatch, server.URL+"/management/v1/spots/"+test.id, nil)
@@ -1245,7 +1245,7 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurfingService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodDelete, server.URL+"/management/v1/spots/"+test.id, nil)
@@ -1486,7 +1486,7 @@ func TestManagementHandler_Location(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurfingService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/management/v1/geo/location", nil)

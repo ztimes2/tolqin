@@ -12,7 +12,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
-	"github.com/ztimes2/tolqin/app/api/internal/service/surfing"
+	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 )
 
 func TestSpotStore_Spot(t *testing.T) {
@@ -20,7 +20,7 @@ func TestSpotStore_Spot(t *testing.T) {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
 		id            string
-		expectedSpot  surfing.Spot
+		expectedSpot  surfer.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -35,7 +35,7 @@ func TestSpotStore_Spot(t *testing.T) {
 					WillReturnError(errors.New("something went wrong"))
 			},
 			id:            "1",
-			expectedSpot:  surfing.Spot{},
+			expectedSpot:  surfer.Spot{},
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -50,8 +50,8 @@ func TestSpotStore_Spot(t *testing.T) {
 					WillReturnError(sql.ErrNoRows)
 			},
 			id:            "1",
-			expectedSpot:  surfing.Spot{},
-			expectedErrFn: testutil.IsError(surfing.ErrNotFound),
+			expectedSpot:  surfer.Spot{},
+			expectedErrFn: testutil.IsError(surfer.ErrNotFound),
 		},
 		{
 			name: "return spot without error",
@@ -71,7 +71,7 @@ func TestSpotStore_Spot(t *testing.T) {
 					RowsWillBeClosed()
 			},
 			id: "1",
-			expectedSpot: surfing.Spot{
+			expectedSpot: surfer.Spot{
 				ID:        "1",
 				Name:      "Spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
@@ -112,14 +112,14 @@ func TestSpotStore_Spot(t *testing.T) {
 func TestSpotStore_Spots(t *testing.T) {
 	tests := []struct {
 		name          string
-		params        surfing.SpotsParams
+		params        surfer.SpotsParams
 		mockFn        func(sqlmock.Sqlmock)
-		expectedSpots []surfing.Spot
+		expectedSpots []surfer.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name: "return error during query execution",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -136,7 +136,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return error during row scanning",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -159,7 +159,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return 0 spots without error",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -181,7 +181,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots without error",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -200,7 +200,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []surfing.Spot{
+			expectedSpots: []surfer.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -232,7 +232,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by country without error",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:       10,
 				Offset:      0,
 				CountryCode: "kz",
@@ -253,7 +253,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []surfing.Spot{
+			expectedSpots: []surfer.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -285,7 +285,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by query without error",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 				Query:  "query",
@@ -306,7 +306,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []surfing.Spot{
+			expectedSpots: []surfer.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -338,7 +338,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by bounds without error",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 				Bounds: &geo.Bounds{
@@ -369,7 +369,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []surfing.Spot{
+			expectedSpots: []surfer.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -401,7 +401,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by country code and query without error",
-			params: surfing.SpotsParams{
+			params: surfer.SpotsParams{
 				Limit:       10,
 				Offset:      0,
 				CountryCode: "kz",
@@ -423,7 +423,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []surfing.Spot{
+			expectedSpots: []surfer.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",

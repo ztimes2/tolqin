@@ -15,8 +15,8 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/router"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	managementpsql "github.com/ztimes2/tolqin/app/api/internal/service/management/psql"
-	"github.com/ztimes2/tolqin/app/api/internal/service/surfing"
-	surfingpsql "github.com/ztimes2/tolqin/app/api/internal/service/surfing/psql"
+	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
+	surferpsql "github.com/ztimes2/tolqin/app/api/internal/service/surfer/psql"
 )
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 	defer db.Close()
 
 	router := router.New(
-		surfing.NewService(surfingpsql.NewSpotStore(db)),
+		surfer.NewService(surferpsql.NewSpotStore(db)),
 		management.NewService(
 			managementpsql.NewSpotStore(db),
 			nominatim.New(nominatim.Config{
@@ -55,6 +55,7 @@ func main() {
 		logger,
 	)
 
+	// TODO move http server related code into a dedicated package
 	server := &http.Server{
 		Addr:    ":" + conf.ServerPort,
 		Handler: router,

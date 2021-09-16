@@ -8,18 +8,18 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
-	"github.com/ztimes2/tolqin/app/api/internal/service/surfing"
+	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 )
 
 const (
 	paramKeySpotID = "spot_id"
 )
 
-func New(ss *surfing.Service, ms *management.Service, l *logrus.Logger) http.Handler {
+func New(ss *surfer.Service, ms *management.Service, l *logrus.Logger) http.Handler {
 	return newRouter(ss, ms, l)
 }
 
-func newRouter(ss surfingService, ms managementService, l *logrus.Logger) http.Handler {
+func newRouter(ss surferService, ms managementService, l *logrus.Logger) http.Handler {
 	router := chi.NewRouter()
 
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func newRouter(ss surfingService, ms managementService, l *logrus.Logger) http.H
 		withPanicRecoverer,
 	)
 
-	sh := newSurfingHandler(ss)
+	sh := newSurferHandler(ss)
 	router.Get("/v1/spots", sh.spots)
 	router.Get("/v1/spots/{"+paramKeySpotID+"}", sh.spot)
 

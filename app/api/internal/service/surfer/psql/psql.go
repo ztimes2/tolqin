@@ -10,7 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
-	"github.com/ztimes2/tolqin/app/api/internal/service/surfing"
+	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 )
 
 type spot struct {
@@ -23,8 +23,8 @@ type spot struct {
 	CreatedAt   time.Time `db:"created_at"`
 }
 
-func toSpot(s spot) surfing.Spot {
-	return surfing.Spot{
+func toSpot(s spot) surfer.Spot {
+	return surfer.Spot{
 		ID:        s.ID,
 		Name:      s.Name,
 		CreatedAt: s.CreatedAt,
@@ -51,28 +51,28 @@ func NewSpotStore(db *sqlx.DB) *SpotStore {
 	}
 }
 
-func (ss *SpotStore) Spot(id string) (surfing.Spot, error) {
+func (ss *SpotStore) Spot(id string) (surfer.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
 		Where(sq.Eq{psqlutil.CastAsVarchar("id"): id}).
 		ToSql()
 	if err != nil {
-		return surfing.Spot{}, fmt.Errorf("failed to build query: %w", err)
+		return surfer.Spot{}, fmt.Errorf("failed to build query: %w", err)
 	}
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return surfing.Spot{}, surfing.ErrNotFound
+			return surfer.Spot{}, surfer.ErrNotFound
 		}
-		return surfing.Spot{}, fmt.Errorf("failed to execute query: %w", err)
+		return surfer.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	return toSpot(s), nil
 }
 
-func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
+func (ss *SpotStore) Spots(p surfer.SpotsParams) ([]surfer.Spot, error) {
 	builder := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
@@ -107,7 +107,7 @@ func (ss *SpotStore) Spots(p surfing.SpotsParams) ([]surfing.Spot, error) {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	var spots []surfing.Spot
+	var spots []surfer.Spot
 	defer rows.Close()
 	for rows.Next() {
 		var s spot

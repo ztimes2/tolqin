@@ -1,4 +1,4 @@
-package surfing
+package surfer
 
 import (
 	"errors"
