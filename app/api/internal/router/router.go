@@ -31,6 +31,8 @@ func newRouter(ss surferService, ms managementService, l *logrus.Logger) http.Ha
 		withPanicRecoverer,
 	)
 
+	router.Get("/health", handleHealthCheck)
+
 	sh := newSurferHandler(ss)
 	router.Get("/v1/spots", sh.spots)
 	router.Get("/v1/spots/{"+paramKeySpotID+"}", sh.spot)
