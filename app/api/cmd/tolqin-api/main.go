@@ -1,15 +1,11 @@
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 
 	config "github.com/ztimes2/tolqin/app/api/internal/config/api"
 	"github.com/ztimes2/tolqin/app/api/internal/geo/nominatim"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/httpserver"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/router"
@@ -55,25 +51,10 @@ func main() {
 		logger,
 	)
 
-	// TODO move http server related code into a dedicated package
-	server := &http.Server{
-		Addr:    ":" + conf.ServerPort,
-		Handler: router,
-		// TODO configure timeouts
-	}
+	server := httpserver.New(conf.ServerPort, router, httpserver.WithLogger(logger))
+	defer server.Close()
 
-	go func() {
-		logger.Infof("server listening on port %s", conf.ServerPort)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.WithError(err).Fatalf("server failed to listen: %v", err)
-		}
-	}()
-
-	stopCh := make(chan os.Signal, 2)
-	signal.Notify(stopCh, syscall.SIGTERM, syscall.SIGINT)
-	<-stopCh
-	logger.Info("shutting down server")
-	if err := server.Shutdown(context.Background()); err != nil {
-		logger.WithError(err).Errorf("failed to gracefully shut down server: %v", err)
+	if err := server.ListenAndServe(); err != nil {
+		logger.WithError(err).Fatalf("server failure: %v", err)
 	}
 }
