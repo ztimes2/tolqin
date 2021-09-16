@@ -1,12 +1,13 @@
 package config
 
 import (
+	"context"
 	"time"
-)
 
-const (
-	DefaultLogLevel  = "info"
-	DefaultLogFormat = "json"
+	"github.com/heetch/confita"
+	"github.com/heetch/confita/backend"
+	"github.com/heetch/confita/backend/env"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/dotenv"
 )
 
 type Database struct {
@@ -26,4 +27,13 @@ type Logger struct {
 type Nominatim struct {
 	BaseURL string        `config:"NOMINATIM_BASE_URL,required"`
 	Timeout time.Duration `config:"NOMINATIM_TIMEOUT"`
+}
+
+func Load(cfg interface{}) error {
+	backends := []backend.Backend{
+		env.NewBackend(),
+		dotenv.NewBackend(),
+	}
+
+	return confita.NewLoader(backends...).Load(context.Background(), cfg)
 }

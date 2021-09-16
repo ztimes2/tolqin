@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	configimporter "github.com/ztimes2/tolqin/app/api/internal/config/importer"
+	config "github.com/ztimes2/tolqin/app/api/internal/config/importer"
 	"github.com/ztimes2/tolqin/app/api/internal/importing"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/csv"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/psql"
@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	conf, err := configimporter.Load()
+	conf, err := config.New()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}

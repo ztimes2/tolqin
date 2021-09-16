@@ -1,11 +1,12 @@
 package api
 
 import (
-	"context"
-
-	"github.com/heetch/confita"
-	"github.com/heetch/confita/backend/env"
 	"github.com/ztimes2/tolqin/app/api/internal/config"
+)
+
+const (
+	defaultLogLevel  = "info"
+	defaultLogFormat = "json"
 )
 
 type Config struct {
@@ -16,20 +17,15 @@ type Config struct {
 	ServerPort string `config:"SERVER_PORT,required"`
 }
 
-func Load() (Config, error) {
-	loader := confita.NewLoader(
-		env.NewBackend(),
-		config.NewDotEnv(),
-	)
-
+func New() (Config, error) {
 	cfg := Config{
 		Logger: config.Logger{
-			LogLevel:  config.DefaultLogLevel,
-			LogFormat: config.DefaultLogFormat,
+			LogLevel:  defaultLogLevel,
+			LogFormat: defaultLogFormat,
 		},
 	}
 
-	if err := loader.Load(context.Background(), &cfg); err != nil {
+	if err := config.Load(&cfg); err != nil {
 		return Config{}, err
 	}
 

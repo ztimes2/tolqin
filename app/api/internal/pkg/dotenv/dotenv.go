@@ -1,4 +1,4 @@
-package config
+package dotenv
 
 import (
 	"context"
@@ -14,8 +14,8 @@ type DotEnv struct {
 	values map[string]string
 }
 
-// NewDotEnv initializes a new dotEnv.
-func NewDotEnv() *DotEnv {
+// NewBackend initializes a new DotEnv.
+func NewBackend() *DotEnv {
 	values, _ := godotenv.Read()
 	return &DotEnv{
 		values: values,
