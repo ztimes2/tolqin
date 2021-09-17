@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
-	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 type mockSurferService struct {
@@ -63,7 +63,12 @@ func TestSurferHandler_Spot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -88,7 +93,48 @@ func TestSurferHandler_Spot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Such spot doesn't exist."}`,
+					`{
+						"error": {
+							"code": "not_found",
+							"description": "Such spot doesn't exist."
+						}
+					}`,
+					string(body),
+				)
+			},
+		},
+		{
+			name: "respond with 400 status code and error body for invalid spot id",
+			service: func() surferService {
+				m := newMockSurferService()
+				m.
+					On("Spot", "invalid").
+					Return(surfer.Spot{}, valerra.NewErrors(surfer.ErrInvalidSpotID))
+				return m
+			}(),
+			logger: nil, // FIXME catch error logs
+			id:     "invalid",
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "spot_id",
+									"reason": "Must be a non empty string."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -186,7 +232,18 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid limit."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "limit",
+									"reason": "Must be a valid integer."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -211,7 +268,18 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid offset."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "offset",
+									"reason": "Must be a valid integer."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -240,7 +308,18 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "ne_lat",
+									"reason": "Must be a valid latitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -269,7 +348,18 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "ne_lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -298,7 +388,18 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "sw_lat",
+									"reason": "Must be a valid latitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -327,7 +428,18 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "sw_lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -342,7 +454,14 @@ func TestSurferHandler_Spots(t *testing.T) {
 						Offset:      0,
 						CountryCode: "zz",
 					}).
-					Return(([]surfer.Spot)(nil), validation.NewError("country"))
+					Return(([]surfer.Spot)(nil), valerra.NewErrors(
+						surfer.ErrInvalidSearchQuery,
+						surfer.ErrInvalidCountryCode,
+						surfer.ErrInvalidNorthEastLatitude,
+						surfer.ErrInvalidNorthEastLongitude,
+						surfer.ErrInvalidSouthWestLatitude,
+						surfer.ErrInvalidSouthWestLongitude,
+					))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -363,7 +482,38 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid country."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "query",
+									"reason": "Must not exceed character limit."
+								},
+								{
+									"key": "country",
+									"reason": "Must be a valid ISO-2 country code."
+								},
+								{
+									"key": "ne_lat",
+									"reason": "Must be a valid latitude."
+								},
+								{
+									"key": "ne_lon",
+									"reason": "Must be a valid longitude."
+								},
+								{
+									"key": "sw_lat",
+									"reason": "Must be a valid latitude."
+								},
+								{
+									"key": "sw_lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -397,7 +547,12 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -492,7 +647,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 					"limit":   []string{"10"},
 					"offset":  []string{"0"},
 					"country": []string{"kz"},
-					"q":       []string{"query"},
+					"query":       []string{"query"},
 					"ne_lat":  []string{"90"},
 					"ne_lon":  []string{"180"},
 					"sw_lat":  []string{"-90"},
@@ -527,7 +682,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 								"locality": "Locality 2",
 								"country_code": "kz"
 							}
-						]	
+						]
 					}`,
 					string(body),
 				)

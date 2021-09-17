@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
-	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 type mockManagementService struct {
@@ -85,7 +85,12 @@ func TestManagementHandler_Spot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -110,7 +115,48 @@ func TestManagementHandler_Spot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Such spot doesn't exist."}`,
+					`{
+						"error": {
+							"code": "not_found",
+							"description": "Such spot doesn't exist."
+						}
+					}`,
+					string(body),
+				)
+			},
+		},
+		{
+			name: "respond with 400 status code and error body for invalid spot id",
+			service: func() managementService {
+				m := newMockManagementService()
+				m.
+					On("Spot", "1").
+					Return(management.Spot{}, valerra.NewErrors(management.ErrInvalidSpotID))
+				return m
+			}(),
+			logger: nil, // FIXME catch error logs
+			id:     "1",
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "spot_id",
+									"reason": "Must be a non empty string."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -208,7 +254,18 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid limit."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "limit",
+									"reason": "Must be a valid integer."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -233,7 +290,18 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid offset."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "offset",
+									"reason": "Must be a valid integer."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -262,7 +330,18 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "ne_lat",
+									"reason": "Must be a valid latitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -291,7 +370,18 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "ne_lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -320,7 +410,18 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "sw_lat",
+									"reason": "Must be a valid latitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -349,7 +450,18 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid coordinates."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "sw_lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -364,7 +476,14 @@ func TestManagementHandler_Spots(t *testing.T) {
 						Offset:      0,
 						CountryCode: "zz",
 					}).
-					Return(([]management.Spot)(nil), validation.NewError("country"))
+					Return(([]management.Spot)(nil), valerra.NewErrors(
+						management.ErrInvalidSearchQuery,
+						management.ErrInvalidCountryCode,
+						management.ErrInvalidNorthEastLatitude,
+						management.ErrInvalidNorthEastLongitude,
+						management.ErrInvalidSouthWestLatitude,
+						management.ErrInvalidSouthWestLongitude,
+					))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -385,7 +504,38 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid country."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "query",
+									"reason": "Must not exceed character limit."
+								},
+								{
+									"key": "country",
+									"reason": "Must be a valid ISO-2 country code."
+								},
+								{
+									"key": "ne_lat",
+									"reason": "Must be a valid latitude."
+								},
+								{
+									"key": "ne_lon",
+									"reason": "Must be a valid longitude."
+								},
+								{
+									"key": "sw_lat",
+									"reason": "Must be a valid latitude."
+								},
+								{
+									"key": "sw_lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -419,7 +569,12 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -514,7 +669,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 					"limit":   []string{"10"},
 					"offset":  []string{"0"},
 					"country": []string{"kz"},
-					"q":       []string{"query"},
+					"query":   []string{"query"},
 					"ne_lat":  []string{"90"},
 					"ne_lon":  []string{"180"},
 					"sw_lat":  []string{"-90"},
@@ -549,7 +704,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 								"locality": "Locality 2",
 								"country_code": "kz"
 							}
-						]	
+						]
 					}`,
 					string(body),
 				)
@@ -599,7 +754,13 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid input."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid payload.",
+							"fields": []
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -619,7 +780,13 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 							CountryCode: "kz",
 						},
 					}).
-					Return(management.Spot{}, validation.NewError("name"))
+					Return(management.Spot{}, valerra.NewErrors(
+						management.ErrInvalidSpotName,
+						management.ErrInvalidCountryCode,
+						management.ErrInvalidLocality,
+						management.ErrInvalidLatitude,
+						management.ErrInvalidLongitude,
+					))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -629,7 +796,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 						"latitude": 1.23,
 						"longitude": 3.21,
 						"locality": "Locality 1",
-						"country_code": "kz" 
+						"country_code": "kz"
 					}`,
 				))
 			},
@@ -642,7 +809,34 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid name."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "name",
+									"reason": "Must be a non empty string."
+								},
+								{
+									"key": "country_code",
+									"reason": "Must be a valid ISO-2 country code."
+								},
+								{
+									"key": "locality",
+									"reason": "Must be a non empty string."
+								},
+								{
+									"key": "latitude",
+									"reason": "Must be a valid latitude."
+								},
+								{
+									"key": "longitude",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -687,7 +881,12 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -805,7 +1004,13 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid input."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid payload.",
+							"fields": []
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -821,7 +1026,14 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 						Name:      pconv.String(""),
 						ID:        "1",
 					}).
-					Return(management.Spot{}, validation.NewError("name"))
+					Return(management.Spot{}, valerra.NewErrors(
+						management.ErrInvalidSpotID,
+						management.ErrInvalidSpotName,
+						management.ErrInvalidCountryCode,
+						management.ErrInvalidLocality,
+						management.ErrInvalidLatitude,
+						management.ErrInvalidLongitude,
+					))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -844,7 +1056,38 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid name."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "spot_id",
+									"reason": "Must be a non empty string."
+								},
+								{
+									"key": "name",
+									"reason": "Must be a non empty string."
+								},
+								{
+									"key": "country_code",
+									"reason": "Must be a valid ISO-2 country code."
+								},
+								{
+									"key": "locality",
+									"reason": "Must be a non empty string."
+								},
+								{
+									"key": "latitude",
+									"reason": "Must be a valid latitude."
+								},
+								{
+									"key": "longitude",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -874,7 +1117,13 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Nothing to update."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Nothing to update.",
+							"fields": []
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -913,7 +1162,12 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Such spot doesn't exist."}`,
+					`{
+						"error": {
+							"code": "not_found",
+							"description": "Such spot doesn't exist."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -952,7 +1206,12 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1190,7 +1449,12 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1215,7 +1479,48 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Such spot doesn't exist."}`,
+					`{
+						"error": {
+							"code": "not_found",
+							"description": "Such spot doesn't exist."
+						}
+					}`,
+					string(body),
+				)
+			},
+		},
+		{
+			name: "respond with 400 status code and error body for invalid spot id",
+			service: func() managementService {
+				m := newMockManagementService()
+				m.
+					On("DeleteSpot", "1").
+					Return(valerra.NewErrors(management.ErrInvalidSpotID))
+				return m
+			}(),
+			logger: nil, // FIXME catch error logs
+			id:     "1",
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "spot_id",
+									"reason": "Must be a non empty string."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1287,7 +1592,18 @@ func TestManagementHandler_Location(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid latitude."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "lat",
+									"reason": "Must be a valid latitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1311,7 +1627,18 @@ func TestManagementHandler_Location(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid latitude."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "lat",
+									"reason": "Must be a valid latitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1336,7 +1663,18 @@ func TestManagementHandler_Location(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid longitude."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1360,7 +1698,70 @@ func TestManagementHandler_Location(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Invalid longitude."}`,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
+					string(body),
+				)
+			},
+		},
+		{
+			name: "respond with 400 status code and error body for validation error",
+			service: func() managementService {
+				m := newMockManagementService()
+				m.
+					On("Location", geo.Coordinates{
+						Latitude:  -91,
+						Longitude: -181,
+					}).
+					Return(geo.Location{}, valerra.NewErrors(
+						management.ErrInvalidLatitude,
+						management.ErrInvalidLongitude,
+					))
+				return m
+			}(),
+			logger: nil, // FIXME catch error logs
+			requestFn: func(r *http.Request) {
+				vals := url.Values{
+					"lat": []string{"-91"},
+					"lon": []string{"-181"},
+				}
+				r.URL.RawQuery = vals.Encode()
+			},
+			expectedResponseFn: func(t *testing.T, r *http.Response) {
+				assert.Equal(t, http.StatusBadRequest, r.StatusCode)
+
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+				assert.NoError(t, err)
+
+				assert.JSONEq(
+					t,
+					`{
+						"error": {
+							"code": "invalid_input",
+							"description": "Invalid input parameters.",
+							"fields": [
+								{
+									"key": "lat",
+									"reason": "Must be a valid latitude."
+								},
+								{
+									"key": "lon",
+									"reason": "Must be a valid longitude."
+								}
+							]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1394,7 +1795,12 @@ func TestManagementHandler_Location(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Something went wrong..."}`,
+					`{
+						"error": {
+							"code": "unexpected",
+							"description": "Something went wrong..."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1428,7 +1834,12 @@ func TestManagementHandler_Location(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"error_description":"Location was not found."}`,
+					`{
+						"error": {
+							"code": "not_found",
+							"description": "Location was not found."
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -1476,7 +1887,7 @@ func TestManagementHandler_Location(t *testing.T) {
 						"latitude": 1.23,
 						"longitude": 3.21,
 						"locality": "Locality 1",
-						"country_code": "kz"	
+						"country_code": "kz"
 					}`,
 					string(body),
 				)

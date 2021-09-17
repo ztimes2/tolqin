@@ -8,7 +8,8 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pagination"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
-	"github.com/ztimes2/tolqin/app/api/internal/validation"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
+	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
 )
 
 const (
@@ -24,6 +25,18 @@ const (
 var (
 	ErrNotFound        = errors.New("resource not found")
 	ErrNothingToUpdate = errors.New("nothing to update")
+
+	ErrInvalidSearchQuery        = errors.New("invalid search query")
+	ErrInvalidLocality           = errors.New("invalid locality")
+	ErrInvalidCountryCode        = errors.New("invalid country code")
+	ErrInvalidLatitude           = errors.New("invalid latitude")
+	ErrInvalidLongitude          = errors.New("invalid longitude")
+	ErrInvalidNorthEastLatitude  = errors.New("invalid north-east latitude")
+	ErrInvalidNorthEastLongitude = errors.New("invalid north-east longitude")
+	ErrInvalidSouthWestLatitude  = errors.New("invalid south-west latitude")
+	ErrInvalidSouthWestLongitude = errors.New("invalid south-west longitude")
+	ErrInvalidSpotName           = errors.New("invalid spot name")
+	ErrInvalidSpotID             = errors.New("invalid spot id")
 )
 
 type SpotStore interface {
@@ -58,18 +71,20 @@ func (p SpotsParams) sanitize() SpotsParams {
 }
 
 func (p SpotsParams) validate() error {
-	if p.CountryCode != "" && !geo.IsCountry(p.CountryCode) {
-		return validation.NewError("country code")
-	}
-	if len(p.Query) > maxQueryChars {
-		return validation.NewError("query")
+	v := valerra.New()
+
+	v.IfFalse(valerra.StringLessOrEqual(p.Query, maxQueryChars), ErrInvalidSearchQuery)
+	if p.CountryCode != "" {
+		v.IfFalse(valerrautil.IsCountry(p.CountryCode), ErrInvalidCountryCode)
 	}
 	if p.Bounds != nil {
-		if err := p.Bounds.Validate(); err != nil {
-			return err
-		}
+		v.IfFalse(valerrautil.IsLatitude(p.Bounds.NorthEast.Latitude), ErrInvalidNorthEastLatitude)
+		v.IfFalse(valerrautil.IsLongitude(p.Bounds.NorthEast.Longitude), ErrInvalidNorthEastLongitude)
+		v.IfFalse(valerrautil.IsLatitude(p.Bounds.SouthWest.Latitude), ErrInvalidSouthWestLatitude)
+		v.IfFalse(valerrautil.IsLongitude(p.Bounds.SouthWest.Longitude), ErrInvalidSouthWestLongitude)
 	}
-	return nil
+
+	return v.Validate()
 }
 
 type CreateSpotParams struct {
@@ -79,15 +94,21 @@ type CreateSpotParams struct {
 
 func (p CreateSpotParams) sanitize() CreateSpotParams {
 	p.Name = strings.TrimSpace(p.Name)
-	p.Location = p.Location.Sanitize()
+	p.Location.CountryCode = strings.TrimSpace(p.Location.CountryCode)
+	p.Location.Locality = strings.TrimSpace(p.Location.Locality)
 	return p
 }
 
 func (p CreateSpotParams) validate() error {
-	if p.Name == "" {
-		return validation.NewError("name")
-	}
-	return p.Location.Validate()
+	v := valerra.New()
+
+	v.IfFalse(valerra.StringNotEmpty(p.Name), ErrInvalidSpotName)
+	v.IfFalse(valerrautil.IsCountry(p.Location.CountryCode), ErrInvalidCountryCode)
+	v.IfFalse(valerra.StringNotEmpty(p.Location.Locality), ErrInvalidLocality)
+	v.IfFalse(valerrautil.IsLatitude(p.Location.Coordinates.Latitude), ErrInvalidLatitude)
+	v.IfFalse(valerrautil.IsLongitude(p.Location.Coordinates.Longitude), ErrInvalidLongitude)
+
+	return v.Validate()
 }
 
 type UpdateSpotParams struct {
@@ -118,25 +139,26 @@ func (p UpdateSpotParams) sanitize() UpdateSpotParams {
 }
 
 func (p UpdateSpotParams) validate() error {
-	if p.ID == "" {
-		return validation.NewError("id")
+	v := valerra.New()
+
+	v.IfFalse(valerra.StringNotEmpty(p.ID), ErrInvalidSpotID)
+	if p.Name != nil {
+		v.IfFalse(valerra.StringNotEmpty(*p.Name), ErrInvalidSpotName)
 	}
-	if p.Name != nil && *p.Name == "" {
-		return validation.NewError("name")
+	if p.Latitude != nil {
+		v.IfFalse(valerrautil.IsLatitude(*p.Latitude), ErrInvalidLatitude)
 	}
-	if p.Latitude != nil && !geo.IsLatitude(*p.Latitude) {
-		return validation.NewError("latitude")
+	if p.Longitude != nil {
+		v.IfFalse(valerrautil.IsLongitude(*p.Longitude), ErrInvalidLongitude)
 	}
-	if p.Longitude != nil && !geo.IsLongitude(*p.Longitude) {
-		return validation.NewError("longitude")
+	if p.Locality != nil {
+		v.IfFalse(valerra.StringNotEmpty(*p.Locality), ErrInvalidLocality)
 	}
-	if p.Locality != nil && *p.Locality == "" {
-		return validation.NewError("locality")
+	if p.CountryCode != nil {
+		v.IfFalse(valerrautil.IsCountry(*p.CountryCode), ErrInvalidCountryCode)
 	}
-	if p.CountryCode != nil && !geo.IsCountry(*p.CountryCode) {
-		return validation.NewError("country code")
-	}
-	return nil
+
+	return v.Validate()
 }
 
 type Service struct {
@@ -152,7 +174,13 @@ func NewService(s SpotStore, l geo.LocationSource) *Service {
 }
 
 func (s *Service) Spot(id string) (Spot, error) {
-	return s.spotStore.Spot(strings.TrimSpace(id))
+	id = strings.TrimSpace(id)
+
+	if err := valerra.IfFalse(valerra.StringNotEmpty(id), ErrInvalidSpotID); err != nil {
+		return Spot{}, err
+	}
+
+	return s.spotStore.Spot(id)
 }
 
 func (s *Service) Spots(p SpotsParams) ([]Spot, error) {
@@ -189,11 +217,20 @@ func (s *Service) UpdateSpot(p UpdateSpotParams) (Spot, error) {
 }
 
 func (s *Service) DeleteSpot(id string) error {
-	return s.spotStore.DeleteSpot(strings.TrimSpace(id))
+	id = strings.TrimSpace(id)
+
+	if err := valerra.IfFalse(valerra.StringNotEmpty(id), ErrInvalidSpotID); err != nil {
+		return err
+	}
+
+	return s.spotStore.DeleteSpot(id)
 }
 
 func (s *Service) Location(c geo.Coordinates) (geo.Location, error) {
-	if err := c.Validate(); err != nil {
+	v := valerra.New()
+	v.IfFalse(valerrautil.IsLatitude(c.Latitude), ErrInvalidLatitude)
+	v.IfFalse(valerrautil.IsLongitude(c.Longitude), ErrInvalidLongitude)
+	if err := v.Validate(); err != nil {
 		return geo.Location{}, err
 	}
 

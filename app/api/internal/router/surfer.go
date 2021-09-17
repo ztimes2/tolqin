@@ -3,12 +3,11 @@ package router
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
-	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 type surferService interface {
@@ -42,37 +41,60 @@ func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
 
 	spot, err := h.service.Spot(id)
 	if err != nil {
-		if errors.Is(err, surfer.ErrNotFound) {
-			writeError(w, r, http.StatusNotFound, "Such spot doesn't exist.")
+		var vErr *valerra.Errors
+		if errors.As(err, &vErr) {
+			f := httputil.NewFields()
+			for _, e := range vErr.Errors() {
+				f.Is(e, surfer.ErrInvalidSpotID, paramKeySpotID, "Must be a non empty string.")
+			}
+			httputil.WriteFieldErrors(w, r, f)
 			return
 		}
-		writeUnexpectedError(w, r, err)
+
+		if errors.Is(err, surfer.ErrNotFound) {
+			httputil.WriteNotFoundError(w, r, "Such spot doesn't exist.")
+			return
+		}
+
+		httputil.WriteUnexpectedError(w, r, err)
 		return
 	}
 
-	write(w, r, http.StatusOK, fromSurferSpot(spot))
+	httputil.WriteOK(w, r, fromSurferSpot(spot))
 }
 
 func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
-	limit, err := queryParamInt(r, "limit")
-	if err != nil && !errors.Is(err, errEmptyParam) {
-		writeError(w, r, http.StatusBadRequest, "Invalid limit.")
+	limit, err := httputil.QueryParamInt(r, "limit")
+	if err != nil && !errors.Is(err, httputil.ErrEmptyParam) {
+		httputil.WriteFieldError(w, r, "limit", "Must be a valid integer.")
 		return
 	}
 
-	offset, err := queryParamInt(r, "offset")
-	if err != nil && !errors.Is(err, errEmptyParam) {
-		writeError(w, r, http.StatusBadRequest, "Invalid offset.")
+	offset, err := httputil.QueryParamInt(r, "offset")
+	if err != nil && !errors.Is(err, httputil.ErrEmptyParam) {
+		httputil.WriteFieldError(w, r, "offset", "Must be a valid integer.")
 		return
 	}
 
-	countryCode := queryParam(r, "country")
+	countryCode := httputil.QueryParam(r, "country")
 
-	query := queryParam(r, "q")
+	query := httputil.QueryParam(r, "query")
 
-	bounds, err := parseBounds(r)
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "Invalid coordinates.")
+	bounds, vErr := parseBounds(
+		httputil.QueryParam(r, "ne_lat"),
+		httputil.QueryParam(r, "ne_lon"),
+		httputil.QueryParam(r, "sw_lat"),
+		httputil.QueryParam(r, "sw_lon"),
+	)
+	if vErr != nil {
+		f := httputil.NewFields()
+		for _, e := range vErr.Errors() {
+			f.Is(e, errInvalidNorthEastLatitude, "ne_lat", "Must be a valid latitude.")
+			f.Is(e, errInvalidNorthEastLongitude, "ne_lon", "Must be a valid longitude.")
+			f.Is(e, errInvalidSouthWestLatitude, "sw_lat", "Must be a valid latitude.")
+			f.Is(e, errInvalidSouthWestLongitude, "sw_lon", "Must be a valid longitude.")
+		}
+		httputil.WriteFieldErrors(w, r, f)
 		return
 	}
 
@@ -84,12 +106,22 @@ func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 		Bounds:      bounds,
 	})
 	if err != nil {
-		var vErr *validation.Error
+		var vErr *valerra.Errors
 		if errors.As(err, &vErr) {
-			writeError(w, r, http.StatusBadRequest, vErr.Description())
+			f := httputil.NewFields()
+			for _, e := range vErr.Errors() {
+				f.Is(e, surfer.ErrInvalidSearchQuery, "query", "Must not exceed character limit.")
+				f.Is(e, surfer.ErrInvalidCountryCode, "country", "Must be a valid ISO-2 country code.")
+				f.Is(e, surfer.ErrInvalidNorthEastLatitude, "ne_lat", "Must be a valid latitude.")
+				f.Is(e, surfer.ErrInvalidNorthEastLongitude, "ne_lon", "Must be a valid longitude.")
+				f.Is(e, surfer.ErrInvalidSouthWestLatitude, "sw_lat", "Must be a valid latitude.")
+				f.Is(e, surfer.ErrInvalidSouthWestLongitude, "sw_lon", "Must be a valid longitude.")
+			}
+			httputil.WriteFieldErrors(w, r, f)
 			return
 		}
-		writeUnexpectedError(w, r, err)
+
+		httputil.WriteUnexpectedError(w, r, err)
 		return
 	}
 
@@ -101,40 +133,5 @@ func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 		resp.Items[i] = fromSurferSpot(s)
 	}
 
-	write(w, r, http.StatusOK, resp)
-}
-
-func parseBounds(r *http.Request) (*geo.Bounds, error) {
-	neLat := queryParam(r, "ne_lat")
-	neLon := queryParam(r, "ne_lon")
-	swLat := queryParam(r, "sw_lat")
-	swLon := queryParam(r, "sw_lon")
-
-	if neLat == "" && neLon == "" && swLat == "" && swLon == "" {
-		return nil, nil
-	}
-
-	var (
-		b   geo.Bounds
-		err error
-	)
-
-	b.NorthEast.Latitude, err = strconv.ParseFloat(neLat, 64)
-	if err != nil {
-		return nil, errors.New("invalid north-east latitude")
-	}
-	b.NorthEast.Longitude, err = strconv.ParseFloat(neLon, 64)
-	if err != nil {
-		return nil, errors.New("invalid north-east longitude")
-	}
-	b.SouthWest.Latitude, err = strconv.ParseFloat(swLat, 64)
-	if err != nil {
-		return nil, errors.New("invalid south-west latitude")
-	}
-	b.SouthWest.Longitude, err = strconv.ParseFloat(swLon, 64)
-	if err != nil {
-		return nil, errors.New("invalid south-west longitude")
-	}
-
-	return &b, nil
+	httputil.WriteOK(w, r, resp)
 }

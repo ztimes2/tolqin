@@ -1,6 +1,8 @@
 package geo
 
-import "strings"
+import (
+	"strings"
+)
 
 var countries = map[string]string{
 	"BD": "Bangladesh",

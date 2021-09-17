@@ -38,6 +38,13 @@ func TestService_Spot(t *testing.T) {
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
+			name:          "return error for invalid spot id",
+			spotStore:     newMockSpotStore(),
+			id:            "",
+			expectedSpot:  Spot{},
+			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotID),
+		},
+		{
 			name: "return error during spot store failure",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
@@ -161,7 +168,7 @@ func TestService_Spots(t *testing.T) {
 				CountryCode: "invalid",
 			},
 			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("country code"),
+			expectedErrFn: testutil.AreValidationErrors(ErrInvalidCountryCode),
 		},
 		{
 			name:      "return error for invalid query",
@@ -173,10 +180,30 @@ func TestService_Spots(t *testing.T) {
 				Query:       testutil.RepeatRune('a', 101),
 			},
 			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("query"),
+			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSearchQuery),
 		},
 		{
-			name:      "return error for invalid north-east coordinates",
+			name:      "return error for invalid north-east latitude",
+			spotStore: newMockSpotStore(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+				Bounds: &geo.Bounds{
+					NorthEast: geo.Coordinates{
+						Latitude:  91,
+						Longitude: 180,
+					},
+					SouthWest: geo.Coordinates{
+						Latitude:  -90,
+						Longitude: -180,
+					},
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.AreValidationErrors(ErrInvalidNorthEastLatitude),
+		},
+		{
+			name:      "return error for invalid north-east longitude",
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:  20,
@@ -193,10 +220,30 @@ func TestService_Spots(t *testing.T) {
 				},
 			},
 			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("north-east coordinates"),
+			expectedErrFn: testutil.AreValidationErrors(ErrInvalidNorthEastLongitude),
 		},
 		{
-			name:      "return error for invalid south-west coordinates",
+			name:      "return error for invalid south-west latitude",
+			spotStore: newMockSpotStore(),
+			params: SpotsParams{
+				Limit:  20,
+				Offset: 0,
+				Bounds: &geo.Bounds{
+					NorthEast: geo.Coordinates{
+						Latitude:  90,
+						Longitude: 180,
+					},
+					SouthWest: geo.Coordinates{
+						Latitude:  -91,
+						Longitude: -180,
+					},
+				},
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSouthWestLatitude),
+		},
+		{
+			name:      "return error for invalid south-west longitude",
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:  20,
@@ -213,7 +260,7 @@ func TestService_Spots(t *testing.T) {
 				},
 			},
 			expectedSpots: nil,
-			expectedErrFn: testutil.IsValidationError("south-west coordinates"),
+			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSouthWestLongitude),
 		},
 		{
 			name: "return error during spot spore failure",

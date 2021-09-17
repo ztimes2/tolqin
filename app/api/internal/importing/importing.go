@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/validation"
 )
 
 var (
@@ -28,16 +27,26 @@ type SpotEntry struct {
 
 func (se SpotEntry) sanitize() SpotEntry {
 	se.Name = strings.TrimSpace(se.Name)
-	se.Location = se.Location.Sanitize()
+	se.Location.CountryCode = strings.TrimSpace(se.Location.CountryCode)
+	se.Location.Locality = strings.TrimSpace(se.Location.Locality)
 	return se
 }
 
 func (se SpotEntry) validate() error {
-	if err := se.Location.Validate(); err != nil {
-		return err
-	}
 	if se.Name == "" {
-		return validation.NewError("name")
+		return errors.New("invalid spot name")
+	}
+	if se.Location.CountryCode == "" || !geo.IsCountry(se.Location.CountryCode) {
+		return errors.New("invalid country code")
+	}
+	if se.Location.Locality == "" {
+		return errors.New("invalid locality")
+	}
+	if !geo.IsLatitude(se.Location.Coordinates.Latitude) {
+		return errors.New("invalid latitude")
+	}
+	if !geo.IsLongitude(se.Location.Coordinates.Longitude) {
+		return errors.New("invalid longitude")
 	}
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
@@ -65,7 +66,7 @@ func withPanicRecoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if rcv := recover(); rcv != nil && rcv != http.ErrAbortHandler {
 			// TODO add stack trace
-			writeUnexpectedError(w, r, fmt.Errorf("panic: %s", rcv))
+			httputil.WriteUnexpectedError(w, r, fmt.Errorf("panic: %s", rcv))
 			return
 		}
 
