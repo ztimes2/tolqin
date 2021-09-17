@@ -107,7 +107,7 @@ func (s *Server) shutdown() error {
 
 func (s *Server) Close() error {
 	if s.isClosed.get() {
-		return http.ErrServerClosed
+		return nil
 	}
 	s.closeCh <- struct{}{}
 	return nil
