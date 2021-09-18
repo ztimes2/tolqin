@@ -14,7 +14,7 @@ type DotEnv struct {
 	values map[string]string
 }
 
-// NewBackend initializes a new DotEnv.
+// NewBackend initializes a new *DotEnv backend.
 func NewBackend() *DotEnv {
 	values, _ := godotenv.Read()
 	return &DotEnv{
@@ -23,7 +23,7 @@ func NewBackend() *DotEnv {
 }
 
 // Get fetches a configuration variable by its key from a .env file.
-func (d DotEnv) Get(ctx context.Context, key string) ([]byte, error) {
+func (d *DotEnv) Get(ctx context.Context, key string) ([]byte, error) {
 	if d.values == nil {
 		return nil, backend.ErrNotFound
 	}
@@ -37,6 +37,6 @@ func (d DotEnv) Get(ctx context.Context, key string) ([]byte, error) {
 }
 
 // Name returns a name of this specific Backend's implementation.
-func (d DotEnv) Name() string {
+func (d *DotEnv) Name() string {
 	return ".env"
 }
