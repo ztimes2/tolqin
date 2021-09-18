@@ -10,7 +10,6 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/importing"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
 )
 
 func TestSpotImporter_ImportSpots(t *testing.T) {
@@ -28,7 +27,7 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 			mockFn:        func(m sqlmock.Sqlmock) {},
 			entries:       []importing.SpotEntry{},
 			expectedCount: 0,
-			expectedErrFn: testutil.IsError(importing.ErrNothingToImport),
+			expectedErrFn: assert.Error,
 		},
 		{
 			name:      "return error during tx init",

@@ -8,10 +8,6 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 )
 
-var (
-	ErrNothingToImport = errors.New("nothing to import")
-)
-
 type SpotEntrySource interface {
 	SpotEntries() ([]SpotEntry, error)
 }
@@ -67,9 +63,6 @@ func ImportSpots(src SpotEntrySource, importer SpotImporter) (int, error) {
 
 	count, err := importer.ImportSpots(entries)
 	if err != nil {
-		if errors.Is(err, ErrNothingToImport) {
-			return 0, nil
-		}
 		return 0, fmt.Errorf("failed to import spots: %w", err)
 	}
 

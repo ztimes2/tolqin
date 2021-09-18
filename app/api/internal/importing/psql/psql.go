@@ -1,6 +1,7 @@
 package psql
 
 import (
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -26,7 +27,7 @@ func NewSpotImporter(db *sqlx.DB, batchSize int) *SpotImporter {
 
 func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry) (int, error) {
 	if len(entries) == 0 {
-		return 0, importing.ErrNothingToImport
+		return 0, errors.New("no entries")
 	}
 
 	tx, err := si.db.Beginx()

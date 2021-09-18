@@ -268,25 +268,6 @@ func TestImportSpots(t *testing.T) {
 			expectedErrFn: assert.Error,
 		},
 		{
-			name: "return 0 count without error when there is nothing to import",
-			source: func() SpotEntrySource {
-				m := newMockSpotEntrySource()
-				m.
-					On("SpotEntries").
-					Return(([]SpotEntry)(nil), nil)
-				return m
-			}(),
-			importer: func() SpotImporter {
-				m := newMockSpotImporter()
-				m.
-					On("ImportSpots", ([]SpotEntry)(nil)).
-					Return(0, ErrNothingToImport)
-				return m
-			}(),
-			expectedCount: 0,
-			expectedErrFn: assert.NoError,
-		},
-		{
 			name: "return non-0 count without error",
 			source: func() SpotEntrySource {
 				m := newMockSpotEntrySource()
