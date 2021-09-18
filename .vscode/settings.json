@@ -1,0 +1,12 @@
+{
+    "go.lintTool": "golangci-lint",
+    "go.lintOnSave": "workspace",
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    },
+    "go.useLanguageServer": true,
+    "go.languageServerExperimentalFeatures": {
+        "diagnostics": true,
+        "documentLink": true
+    }
+}
