@@ -39,9 +39,9 @@ func (si *SpotImporter) ImportSpots(entries []importing.SpotEntry) (int, error) 
 
 	coord := batch.New(len(entries), si.batchSize)
 	for coord.HasNext() {
-		batch := coord.Batch()
+		b := coord.Batch()
 
-		n, err := si.importSpots(tx, entries[batch.I:batch.J+1])
+		n, err := si.importSpots(tx, entries[b.I:b.J+1])
 		if err != nil {
 			_ = tx.Rollback()
 			return 0, fmt.Errorf("failed to import spots: %w", err)
