@@ -12,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Server is a lightweight wrapper around a standard http.Server that additionally
+// enables automatic graceful shutdown during server errors and logging.
 type Server struct {
 	logger          *logrus.Logger
 	shutdownTimeout time.Duration
@@ -21,6 +23,10 @@ type Server struct {
 	closeCh  chan struct{}
 }
 
+// New returns a new *Server using the given port, HTTP handler, and other options.
+//
+// By default, the server is shipped without a shutdown timeout and a default
+// *logrus.Logger unless they are overwritten via opts.
 func New(port string, h http.Handler, opts ...Option) *Server {
 	s := &Server{
 		server: &http.Server{
@@ -40,20 +46,28 @@ func New(port string, h http.Handler, opts ...Option) *Server {
 	return s
 }
 
+// Option is an optional function for Server.
 type Option func(*Server)
 
+// WithShutdownTimeout sets a shutdown timeout for Server as long as the duration
+// is greater than 0. Values less than 1 are interpreted as if no shutdown is desired.
 func WithShutdownTimeout(d time.Duration) Option {
 	return func(s *Server) {
 		s.shutdownTimeout = d
 	}
 }
 
+// WithLogger sets a custom *logrus.Logger for Server.
 func WithLogger(l *logrus.Logger) Option {
 	return func(s *Server) {
 		s.logger = l
 	}
 }
 
+// ListenAndServe spins up a server and starts accepting/serving HTTP requests.
+//
+// It keeps running until a server error is caught, syscall.SIGTERM/syscall.SIGINT
+// signals are triggered, or Close() method is envoked.
 func (s *Server) ListenAndServe() error {
 	if s.isClosed.get() {
 		return http.ErrServerClosed
@@ -105,12 +119,12 @@ func (s *Server) shutdown() error {
 	return nil
 }
 
-func (s *Server) Close() error {
-	if s.isClosed.get() {
-		return nil
+// Close tells the server to gracefully shutdown if it's running. It's not mandatory
+// to envoke this method unless a manual shutdown is desired.
+func (s *Server) Close() {
+	if !s.isClosed.get() {
+		s.closeCh <- struct{}{}
 	}
-	s.closeCh <- struct{}{}
-	return nil
 }
 
 type syncBool struct {
