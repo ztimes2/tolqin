@@ -8,13 +8,13 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
 )
 
-func Write(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
-	if v == nil {
-		w.WriteHeader(statusCode)
-		return
-	}
+type response struct {
+	Data  interface{} `json:"data,omitempty"`
+	Error interface{} `json:"error,omitempty"`
+}
 
-	body, err := json.Marshal(v)
+func write(w http.ResponseWriter, r *http.Request, statusCode int, resp response) {
+	body, err := json.Marshal(resp)
 	if err != nil {
 		WriteUnexpectedError(w, r, err)
 		return
@@ -24,46 +24,53 @@ func Write(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}
 	_, _ = w.Write(body)
 }
 
+func writeData(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
+	write(w, r, statusCode, response{Data: v})
+}
+
+func writeError(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
+	write(w, r, statusCode, response{Error: v})
+}
+
+func WriteError(w http.ResponseWriter, r *http.Request, statusCode int, errCode, errDesc string) {
+	writeError(w, r, statusCode, newErrorResponse(errCode, errDesc))
+}
+
 func WriteUnexpectedError(w http.ResponseWriter, r *http.Request, err error) {
 	if logger := logging.FromContext(r.Context()); logger != nil {
 		logger.WithError(err).Errorf("unexpected error: %s", err)
 	}
 
-	body, _ := json.Marshal(NewErrorResponse("unexpected", "Something went wrong..."))
+	body, _ := json.Marshal(response{
+		Error: newErrorResponse("unexpected", "Something went wrong..."),
+	})
 
 	w.WriteHeader(http.StatusInternalServerError)
 	_, _ = w.Write(body)
 }
 
 func WriteNoContent(w http.ResponseWriter, r *http.Request) {
-	Write(w, r, http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func WriteOK(w http.ResponseWriter, r *http.Request, v interface{}) {
-	Write(w, r, http.StatusOK, v)
+	writeData(w, r, http.StatusOK, v)
 }
 
 func WriteCreated(w http.ResponseWriter, r *http.Request, v interface{}) {
-	Write(w, r, http.StatusCreated, v)
-}
-
-func WriteError(w http.ResponseWriter, r *http.Request, statusCode int, errCode, errDesc string) {
-	Write(w, r, statusCode, NewErrorResponse(errCode, errDesc))
+	writeData(w, r, http.StatusCreated, v)
 }
 
 func WriteValidationError(w http.ResponseWriter, r *http.Request, desc string) {
-	Write(w, r, http.StatusBadRequest, NewValidationErrorResponse(desc))
+	writeError(w, r, http.StatusBadRequest, newValidationErrorResponse(desc))
 }
 
 func WriteFieldErrors(w http.ResponseWriter, r *http.Request, f *Fields) {
-	Write(w, r, http.StatusBadRequest, NewFieldErrorResponse(f))
+	writeError(w, r, http.StatusBadRequest, newFieldErrorResponse(f))
 }
 
 func WriteFieldError(w http.ResponseWriter, r *http.Request, key, reason string) {
-	WriteFieldErrors(w, r, NewFields(Field{
-		key:    key,
-		reason: reason,
-	}))
+	WriteFieldErrors(w, r, NewFields(Field{key: key, reason: reason}))
 }
 
 func WritePayloadError(w http.ResponseWriter, r *http.Request) {
@@ -74,55 +81,40 @@ func WriteNotFoundError(w http.ResponseWriter, r *http.Request, desc string) {
 	WriteError(w, r, http.StatusNotFound, "not_found", desc)
 }
 
-type ErrorResponse struct {
-	Error ErrorResponseMeta `json:"error"`
-}
-
-type ErrorResponseMeta struct {
+type errorResponse struct {
 	Code        string `json:"code"`
 	Description string `json:"description"`
 }
 
-func NewErrorResponse(code, desc string) ErrorResponse {
-	return ErrorResponse{
-		Error: ErrorResponseMeta{
-			Code:        code,
-			Description: desc,
-		},
+func newErrorResponse(code, desc string) errorResponse {
+	return errorResponse{
+		Code:        code,
+		Description: desc,
 	}
 }
 
-type ValidationErrorResponse struct {
-	Error ValidationErrorResponseMeta `json:"error"`
+type validationErrorResponse struct {
+	errorResponse
+	Fields []validationErrorResponseField `json:"fields"`
 }
 
-type ValidationErrorResponseMeta struct {
-	ErrorResponseMeta
-	Fields []ValidationErrorResponseField `json:"fields"`
-}
-
-type ValidationErrorResponseField struct {
+type validationErrorResponseField struct {
 	Key    string `json:"key"`
 	Reason string `json:"reason"`
 }
 
-func NewValidationErrorResponse(desc string) ValidationErrorResponse {
-	return ValidationErrorResponse{
-		Error: ValidationErrorResponseMeta{
-			ErrorResponseMeta: ErrorResponseMeta{
-				Code:        "invalid_input",
-				Description: desc,
-			},
-			Fields: make([]ValidationErrorResponseField, 0),
-		},
+func newValidationErrorResponse(desc string) validationErrorResponse {
+	return validationErrorResponse{
+		errorResponse: newErrorResponse("invalid_input", desc),
+		Fields:        make([]validationErrorResponseField, 0),
 	}
 }
 
-func NewFieldErrorResponse(f *Fields) ValidationErrorResponse {
-	resp := NewValidationErrorResponse("Invalid input parameters.")
+func newFieldErrorResponse(f *Fields) validationErrorResponse {
+	resp := newValidationErrorResponse("Invalid input parameters.")
 
 	for _, field := range f.fields {
-		resp.Error.Fields = append(resp.Error.Fields, ValidationErrorResponseField{
+		resp.Fields = append(resp.Fields, validationErrorResponseField{
 			Key:    field.key,
 			Reason: field.reason,
 		})

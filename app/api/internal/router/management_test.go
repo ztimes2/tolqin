@@ -197,12 +197,14 @@ func TestManagementHandler_Spot(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"id": "1",
-						"name": "Spot 1",
-						"latitude": 1.23,
-						"longitude": 3.21,
-						"locality": "Locality 1",
-						"country_code": "Country code 1"
+						"data": {
+							"id": "1",
+							"name": "Spot 1",
+							"latitude": 1.23,
+							"longitude": 3.21,
+							"locality": "Locality 1",
+							"country_code": "Country code 1"
+						}
 					}`,
 					string(body),
 				)
@@ -604,7 +606,11 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"items":[]}`,
+					`{
+						"data": {
+							"items":[]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -687,24 +693,26 @@ func TestManagementHandler_Spots(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"items": [
-							{
-								"id": "1",
-								"name": "Spot 1",
-								"latitude": 1.23,
-								"longitude": 3.21,
-								"locality": "Locality 1",
-								"country_code": "kz"
-							},
-							{
-								"id": "2",
-								"name": "Spot 2",
-								"latitude": 1.23,
-								"longitude": 3.21,
-								"locality": "Locality 2",
-								"country_code": "kz"
-							}
-						]
+						"data": {
+							"items": [
+								{
+									"id": "1",
+									"name": "Spot 1",
+									"latitude": 1.23,
+									"longitude": 3.21,
+									"locality": "Locality 1",
+									"country_code": "kz"
+								},
+								{
+									"id": "2",
+									"name": "Spot 2",
+									"latitude": 1.23,
+									"longitude": 3.21,
+									"locality": "Locality 2",
+									"country_code": "kz"
+								}
+							]
+						}
 					}`,
 					string(body),
 				)
@@ -947,12 +955,14 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"id": "1",
-						"name": "Spot 1",
-						"latitude": 1.23,
-						"longitude": 3.21,
-						"locality": "Locality 1",
-						"country_code": "Country code 1"
+						"data": {
+							"id": "1",
+							"name": "Spot 1",
+							"latitude": 1.23,
+							"longitude": 3.21,
+							"locality": "Locality 1",
+							"country_code": "Country code 1"
+						}
 					}`,
 					string(body),
 				)
@@ -1266,12 +1276,14 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"id": "1",
-						"name": "Spot 1",
-						"latitude": 1.23,
-						"longitude": 3.21,
-						"locality": "Locality 1",
-						"country_code": "kz"
+						"data": {
+							"id": "1",
+							"name": "Spot 1",
+							"latitude": 1.23,
+							"longitude": 3.21,
+							"locality": "Locality 1",
+							"country_code": "kz"
+						}
 					}`,
 					string(body),
 				)
@@ -1325,12 +1337,14 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"id": "1",
-						"name": "Spot 1",
-						"latitude": 1.23,
-						"longitude": 3.21,
-						"locality": "Locality 1",
-						"country_code": "kz"
+						"data": {
+							"id": "1",
+							"name": "Spot 1",
+							"latitude": 1.23,
+							"longitude": 3.21,
+							"locality": "Locality 1",
+							"country_code": "kz"
+						}
 					}`,
 					string(body),
 				)
@@ -1390,12 +1404,14 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"id": "1",
-						"name": "Spot 1",
-						"latitude": 1.23,
-						"longitude": 3.21,
-						"locality": "Locality 1",
-						"country_code": "kz"
+						"data": {
+							"id": "1",
+							"name": "Spot 1",
+							"latitude": 1.23,
+							"longitude": 3.21,
+							"locality": "Locality 1",
+							"country_code": "kz"
+						}
 					}`,
 					string(body),
 				)
@@ -1884,10 +1900,12 @@ func TestManagementHandler_Location(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"latitude": 1.23,
-						"longitude": 3.21,
-						"locality": "Locality 1",
-						"country_code": "kz"
+						"data": {
+							"latitude": 1.23,
+							"longitude": 3.21,
+							"locality": "Locality 1",
+							"country_code": "kz"
+						}
 					}`,
 					string(body),
 				)

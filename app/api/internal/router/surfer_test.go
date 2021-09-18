@@ -175,12 +175,14 @@ func TestSurferHandler_Spot(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"id": "1",
-						"name": "Spot 1",
-						"latitude": 1.23,
-						"longitude": 3.21,
-						"locality": "Locality 1",
-						"country_code": "Country code 1"
+						"data": {
+							"id": "1",
+							"name": "Spot 1",
+							"latitude": 1.23,
+							"longitude": 3.21,
+							"locality": "Locality 1",
+							"country_code": "Country code 1"
+						}
 					}`,
 					string(body),
 				)
@@ -582,7 +584,11 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 				assert.JSONEq(
 					t,
-					`{"items":[]}`,
+					`{
+						"data": {
+							"items":[]
+						}
+					}`,
 					string(body),
 				)
 			},
@@ -647,7 +653,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 					"limit":   []string{"10"},
 					"offset":  []string{"0"},
 					"country": []string{"kz"},
-					"query":       []string{"query"},
+					"query":   []string{"query"},
 					"ne_lat":  []string{"90"},
 					"ne_lon":  []string{"180"},
 					"sw_lat":  []string{"-90"},
@@ -665,24 +671,26 @@ func TestSurferHandler_Spots(t *testing.T) {
 				assert.JSONEq(
 					t,
 					`{
-						"items": [
-							{
-								"id": "1",
-								"name": "Spot 1",
-								"latitude": 1.23,
-								"longitude": 3.21,
-								"locality": "Locality 1",
-								"country_code": "kz"
-							},
-							{
-								"id": "2",
-								"name": "Spot 2",
-								"latitude": 1.23,
-								"longitude": 3.21,
-								"locality": "Locality 2",
-								"country_code": "kz"
-							}
-						]
+						"data": {
+							"items": [
+								{
+									"id": "1",
+									"name": "Spot 1",
+									"latitude": 1.23,
+									"longitude": 3.21,
+									"locality": "Locality 1",
+									"country_code": "kz"
+								},
+								{
+									"id": "2",
+									"name": "Spot 2",
+									"latitude": 1.23,
+									"longitude": 3.21,
+									"locality": "Locality 2",
+									"country_code": "kz"
+								}
+							]
+						}
 					}`,
 					string(body),
 				)
