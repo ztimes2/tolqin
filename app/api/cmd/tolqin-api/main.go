@@ -6,7 +6,7 @@ import (
 	config "github.com/ztimes2/tolqin/app/api/internal/config/api"
 	"github.com/ztimes2/tolqin/app/api/internal/geo/nominatim"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httpserver"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
+	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/router"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
@@ -21,7 +21,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	logger, err := logging.New(conf.LogLevel, conf.LogFormat)
+	logger, err := logx.New(conf.LogLevel, conf.LogFormat)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/importing"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/csv"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/psql"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
+	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 )
 
@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	logger, err := logging.New(conf.LogLevel, conf.LogFormat)
+	logger, err := logx.New(conf.LogLevel, conf.LogFormat)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}

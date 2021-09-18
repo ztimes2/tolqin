@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 )
@@ -54,7 +54,7 @@ func withLogger(l *logrus.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// TODO can be improved by setting fields with request details.
 			if l != nil {
-				r = r.WithContext(logging.ContextWith(r.Context(), logrus.NewEntry(l)))
+				r = r.WithContext(log.ContextWith(r.Context(), logrus.NewEntry(l)))
 			}
 
 			next.ServeHTTP(w, r)

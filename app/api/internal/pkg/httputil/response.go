@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/logging"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 )
 
 type response struct {
@@ -37,7 +37,7 @@ func WriteError(w http.ResponseWriter, r *http.Request, statusCode int, errCode,
 }
 
 func WriteUnexpectedError(w http.ResponseWriter, r *http.Request, err error) {
-	if logger := logging.FromContext(r.Context()); logger != nil {
+	if logger := log.FromContext(r.Context()); logger != nil {
 		logger.WithError(err).Errorf("unexpected error: %s", err)
 	}
 
