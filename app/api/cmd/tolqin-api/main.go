@@ -52,8 +52,6 @@ func main() {
 	)
 
 	server := httpserver.New(conf.ServerPort, router, httpserver.WithLogger(logger))
-	defer server.Close()
-
 	if err := server.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatalf("server failure: %v", err)
 	}
