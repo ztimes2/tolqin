@@ -56,15 +56,21 @@ func New(length, batchSize int) *Coordinator {
 }
 
 // HasNext checks whether there is a batch that is waiting to be consumed.
+//
 // When true gets returned, the caller is expected to envoke Batch() method for
 // consuming that awaiting batch.
 func (c *Coordinator) HasNext() bool {
 	return c.hasNext
 }
 
-// Batch returns a batch that is waiting to be consumed. If there are no more
-// batches left, then an empty Batch gets returned. The caller is expected to
-// check the availability of a batch using HasNext() method prior to its consumption.
+// Batch returns a batch that is waiting to be consumed.
+//
+// If there are no more batches left, then an empty Batch gets returned. The caller
+// is expected to check the availability of a batch using HasNext() method prior
+// to its consumption.
+//
+// Once a batch is consumed, the coordinator immediately queues the next batch if
+// available.
 func (c *Coordinator) Batch() Batch {
 	if !c.hasNext {
 		return Batch{}
