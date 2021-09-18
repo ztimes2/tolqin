@@ -20,7 +20,7 @@ func TestNewLogger(t *testing.T) {
 		{
 			name:   "return error for invalid level",
 			level:  "unknown",
-			format: formatJSON,
+			format: FormatJSON,
 			expectedLoggerFn: func(t *testing.T, l *logrus.Logger) {
 				assert.Nil(t, l)
 			},
@@ -38,7 +38,7 @@ func TestNewLogger(t *testing.T) {
 		{
 			name:   "return logger with json formatter",
 			level:  logrus.InfoLevel.String(),
-			format: formatJSON,
+			format: FormatJSON,
 			expectedLoggerFn: func(t *testing.T, l *logrus.Logger) {
 				assert.Equal(t, logrus.InfoLevel, l.Level)
 				assert.Equal(
@@ -54,7 +54,7 @@ func TestNewLogger(t *testing.T) {
 		{
 			name:   "return logger with text formatter",
 			level:  logrus.InfoLevel.String(),
-			format: formatText,
+			format: FormatText,
 			expectedLoggerFn: func(t *testing.T, l *logrus.Logger) {
 				assert.Equal(t, logrus.InfoLevel, l.Level)
 				assert.Equal(

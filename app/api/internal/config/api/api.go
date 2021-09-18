@@ -1,12 +1,9 @@
 package api
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/ztimes2/tolqin/app/api/internal/config"
-)
-
-const (
-	defaultLogLevel  = "info"
-	defaultLogFormat = "json"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 )
 
 type Config struct {
@@ -20,8 +17,8 @@ type Config struct {
 func New() (Config, error) {
 	cfg := Config{
 		Logger: config.Logger{
-			LogLevel:  defaultLogLevel,
-			LogFormat: defaultLogFormat,
+			LogLevel:  logrus.InfoLevel.String(),
+			LogFormat: log.FormatJSON,
 		},
 	}
 

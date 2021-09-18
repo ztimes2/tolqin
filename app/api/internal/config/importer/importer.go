@@ -1,7 +1,9 @@
 package importer
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/ztimes2/tolqin/app/api/internal/config"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 )
 
 const (
@@ -21,8 +23,8 @@ type Config struct {
 func New() (Config, error) {
 	cfg := Config{
 		Logger: config.Logger{
-			LogLevel:  defaultLogLevel,
-			LogFormat: defaultLogFormat,
+			LogLevel:  logrus.InfoLevel.String(),
+			LogFormat: log.FormatJSON,
 		},
 		BatchSize: defaultBatchSize,
 	}
