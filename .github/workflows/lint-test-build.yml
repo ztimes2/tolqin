@@ -25,7 +25,7 @@ jobs:
       with:
         working-directory: app/api
         skip-go-installation: true
-        args: --enable revive --print-issued-lines
+        args: --enable=revive --out-format=colored-line-number
 
   api-unit-test:
     name: "api: Run unit tests"
