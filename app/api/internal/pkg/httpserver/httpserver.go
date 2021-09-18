@@ -67,7 +67,8 @@ func WithLogger(l *logrus.Logger) Option {
 // ListenAndServe spins up a server and starts accepting/serving HTTP requests.
 //
 // It keeps running until a server error is caught, syscall.SIGTERM/syscall.SIGINT
-// signals are triggered, or Close() method is envoked.
+// signals are triggered, or Close() method is envoked. The server gracefully
+// shuts itself down if one of the listed cases happen.
 func (s *Server) ListenAndServe() error {
 	if s.isClosed.get() {
 		return http.ErrServerClosed
@@ -119,8 +120,11 @@ func (s *Server) shutdown() error {
 	return nil
 }
 
-// Close tells the server to gracefully shutdown if it's running. It's not mandatory
-// to envoke this method unless a manual shutdown is desired.
+// Close tells the server to gracefully shut itself down if it's running.
+//
+// It's not mandatory to envoke this method unless a manual shutdown is desired
+// which is probably rare since the server is capable of automatically shutting
+// itself down during the majority of the practical cases.
 func (s *Server) Close() {
 	if !s.isClosed.get() {
 		s.closeCh <- struct{}{}
