@@ -8,8 +8,6 @@ import (
 
 const (
 	defaultBatchSize = 100
-	defaultLogLevel  = "info"
-	defaultLogFormat = "json"
 )
 
 type Config struct {
