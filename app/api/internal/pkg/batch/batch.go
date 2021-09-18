@@ -5,7 +5,7 @@ type Batch struct {
 	J int
 }
 
-type Batcher struct {
+type Coordinator struct {
 	length    int
 	batchSize int
 	i         int
@@ -13,12 +13,12 @@ type Batcher struct {
 	hasNext   bool
 }
 
-func New(length, batchSize int) *Batcher {
+func New(length, batchSize int) *Coordinator {
 	var hasNext bool
 	if batchSize > 0 && length > 0 {
 		hasNext = true
 	}
-	return &Batcher{
+	return &Coordinator{
 		length:    length,
 		batchSize: batchSize,
 		i:         0,
@@ -27,28 +27,28 @@ func New(length, batchSize int) *Batcher {
 	}
 }
 
-func (b *Batcher) HasNext() bool {
-	return b.hasNext
+func (c *Coordinator) HasNext() bool {
+	return c.hasNext
 }
 
-func (b *Batcher) Batch() Batch {
-	if !b.hasNext {
+func (c *Coordinator) Batch() Batch {
+	if !c.hasNext {
 		return Batch{}
 	}
 
-	batch := Batch{
-		I: b.i,
-		J: b.j,
+	b := Batch{
+		I: c.i,
+		J: c.j,
 	}
 
-	b.i = b.j + 1
-	b.j = clampIntMax(b.j+b.batchSize, b.length-1)
+	c.i = c.j + 1
+	c.j = clampIntMax(c.j+c.batchSize, c.length-1)
 
-	if b.i > b.length-1 {
-		b.hasNext = false
+	if c.i > c.length-1 {
+		c.hasNext = false
 	}
 
-	return batch
+	return b
 }
 
 func clampIntMax(i, max int) int {

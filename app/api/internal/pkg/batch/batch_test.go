@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCoord(t *testing.T) {
+func TestCoordinator(t *testing.T) {
 	tests := []struct {
 		name            string
 		size            int
@@ -76,12 +76,12 @@ func TestCoord(t *testing.T) {
 				entries []int
 			)
 
-			b := New(len(test.entries), test.size)
-			for b.HasNext() {
-				batch := b.Batch()
+			coord := New(len(test.entries), test.size)
+			for coord.HasNext() {
+				b := coord.Batch()
 
-				batches = append(batches, batch)
-				entries = append(entries, test.entries[batch.I:batch.J+1]...)
+				batches = append(batches, b)
+				entries = append(entries, test.entries[b.I:b.J+1]...)
 			}
 
 			assert.Equal(t, test.expectedBatches, batches)
