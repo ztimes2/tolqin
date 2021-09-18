@@ -6,24 +6,24 @@ type Batch struct {
 }
 
 type Batcher struct {
-	length  int
-	size    int
-	i       int
-	j       int
-	hasNext bool
+	length    int
+	batchSize int
+	i         int
+	j         int
+	hasNext   bool
 }
 
-func New(length, size int) *Batcher {
+func New(length, batchSize int) *Batcher {
 	var hasNext bool
-	if size > 0 && length > 0 {
+	if batchSize > 0 && length > 0 {
 		hasNext = true
 	}
 	return &Batcher{
-		length:  length,
-		size:    size,
-		i:       0,
-		j:       clampIntMax(size-1, length-1),
-		hasNext: hasNext,
+		length:    length,
+		batchSize: batchSize,
+		i:         0,
+		j:         clampIntMax(batchSize-1, length-1),
+		hasNext:   hasNext,
 	}
 }
 
@@ -42,7 +42,7 @@ func (b *Batcher) Batch() Batch {
 	}
 
 	b.i = b.j + 1
-	b.j = clampIntMax(b.j+b.size, b.length-1)
+	b.j = clampIntMax(b.j+b.batchSize, b.length-1)
 
 	if b.i > b.length-1 {
 		b.hasNext = false
