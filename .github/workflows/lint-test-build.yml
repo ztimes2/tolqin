@@ -25,7 +25,7 @@ jobs:
       with:
         working-directory: app/api
         skip-go-installation: true
-        args: --enable=revive --verbose
+        args: --enable=revive
 
   api-unit-test:
     name: "api: Run unit tests"
