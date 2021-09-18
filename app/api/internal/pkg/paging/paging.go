@@ -1,8 +1,8 @@
-package pagination
+package paging
 
-func Limit(limit, min, max, dflt int) int {
+func Limit(limit, min, max, fallback int) int {
 	if limit < min {
-		return dflt
+		return fallback
 	}
 	if limit > max {
 		return max

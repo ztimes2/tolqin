@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/pagination"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/paging"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
@@ -63,8 +63,8 @@ type SpotsParams struct {
 }
 
 func (p SpotsParams) sanitize() SpotsParams {
-	p.Limit = pagination.Limit(p.Limit, minLimit, maxLimit, defaultLimit)
-	p.Offset = pagination.Offset(p.Offset, minOffset)
+	p.Limit = paging.Limit(p.Limit, minLimit, maxLimit, defaultLimit)
+	p.Offset = paging.Offset(p.Offset, minOffset)
 	p.CountryCode = strings.ToLower(strings.TrimSpace(p.CountryCode))
 	p.Query = strings.TrimSpace(p.Query)
 	return p
