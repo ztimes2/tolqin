@@ -1,22 +1,23 @@
-// Package batch helps with creation and coordination of batches for a slice/array.
-//
-// For example, the following piece of code splits a slice that contains 10 elements
-// into batches with a size of 3 and prints them one by one:
-//
-//		list := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-//
-//		coord := batch.New(len(list), 3)
-//		for coord.HasNext() {
-//			b := coord.Batch()
-//			fmt.Println(list[b.I:b.J+1])
-//		}
-//
-//		// Output:
-//		// [1, 2, 3]
-// 		// [4, 5, 6]
-//		// [7, 8, 9]
-// 		// [10]
-//
+/*
+Package batch helps with creation and coordination of batches for a slice/array.
+
+For example, the following piece of code splits a slice that contains 10 elements
+into batches with a size of 3 and prints them one by one:
+
+	list := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+	coord := batch.New(len(list), 3)
+	for coord.HasNext() {
+		b := coord.Batch()
+		fmt.Println(list[b.I:b.J+1])
+	}
+
+	// Output:
+	// [1, 2, 3]
+	// [4, 5, 6]
+	// [7, 8, 9]
+	// [10]
+*/
 package batch
 
 // Coordinator creates and coordinates batches for a slice/array.

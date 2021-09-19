@@ -32,18 +32,18 @@ error types and returns errors for 2 conditions that fail validation:
 Alternatively, if there is only one condition that needs to be checked, then the
 following shorter approach can be used:
 
-		valerra.IfFalse(valerra.StringNotEmpty(""), errors.New("invalid input")))
-		if err := v.Validate(); err != nil {
-			var vErr *valerra.Errors
-			if errors.As(err, &vErr) {
-				for _, e := range vErr.Errors() {
-					fmt.Println(e)
-				}
+	valerra.IfFalse(valerra.StringNotEmpty(""), errors.New("invalid input")))
+	if err := v.Validate(); err != nil {
+		var vErr *valerra.Errors
+		if errors.As(err, &vErr) {
+			for _, e := range vErr.Errors() {
+				fmt.Println(e)
 			}
 		}
-
-		// Output:
-		// invalid input
+	}
+	
+	// Output:
+	// invalid input
 
 The package is built around the Condition function primitive for checking validation
 and comes with a set of trivial conditions out of the box. Additionally, it can support
