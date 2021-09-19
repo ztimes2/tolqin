@@ -24,18 +24,23 @@ func write(w http.ResponseWriter, r *http.Request, statusCode int, resp response
 	_, _ = w.Write(body)
 }
 
-func writeData(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
-	write(w, r, statusCode, response{Data: v})
+func writeData(w http.ResponseWriter, r *http.Request, statusCode int, data interface{}) {
+	write(w, r, statusCode, response{Data: data})
 }
 
-func writeError(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
-	write(w, r, statusCode, response{Error: v})
+func writeError(w http.ResponseWriter, r *http.Request, statusCode int, errResp interface{}) {
+	write(w, r, statusCode, response{Error: errResp})
 }
 
+// WriteError writes an error to the response using the given HTTP status code,
+// error code, and error description.
 func WriteError(w http.ResponseWriter, r *http.Request, statusCode int, errCode, errDesc string) {
 	writeError(w, r, statusCode, newErrorResponse(errCode, errDesc))
 }
 
+// WriteUnexpectedError writes a 500 Internal Server Error HTTP status code and
+// an error using 'unexpected' error code and the static unexpected error description
+// to the response. The given error gets additionally logged.
 func WriteUnexpectedError(w http.ResponseWriter, r *http.Request, err error) {
 	if logger := log.FromContext(r.Context()); logger != nil {
 		logger.WithError(err).Errorf("unexpected error: %s", err)
@@ -49,34 +54,50 @@ func WriteUnexpectedError(w http.ResponseWriter, r *http.Request, err error) {
 	_, _ = w.Write(body)
 }
 
+// WriteNoContent writes a 204 No Content HTTP status code to the response.
 func WriteNoContent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func WriteOK(w http.ResponseWriter, r *http.Request, v interface{}) {
-	writeData(w, r, http.StatusOK, v)
+// WriteOK writes a 200 OK HTTP status code and the given data to the response.
+func WriteOK(w http.ResponseWriter, r *http.Request, data interface{}) {
+	writeData(w, r, http.StatusOK, data)
 }
 
-func WriteCreated(w http.ResponseWriter, r *http.Request, v interface{}) {
-	writeData(w, r, http.StatusCreated, v)
+// WriteCreated writes a 201 Created HTTP status code and the given data to the
+// response.
+func WriteCreated(w http.ResponseWriter, r *http.Request, data interface{}) {
+	writeData(w, r, http.StatusCreated, data)
 }
 
+// WriteValidationError writes a 400 Bad Request HTTP status code and an error
+// using 'invalid_input' error code and the given description to the response.
 func WriteValidationError(w http.ResponseWriter, r *http.Request, desc string) {
 	writeError(w, r, http.StatusBadRequest, newValidationErrorResponse(desc))
 }
 
+// WriteFieldErrors writes a 400 Bad Request HTTP status code and an error using
+// 'invalid_input' error code, the static invalid input error description, and
+// the given fields to the response.
 func WriteFieldErrors(w http.ResponseWriter, r *http.Request, f *Fields) {
 	writeError(w, r, http.StatusBadRequest, newFieldErrorResponse(f))
 }
 
-func WriteFieldError(w http.ResponseWriter, r *http.Request, key, reason string) {
-	WriteFieldErrors(w, r, NewFields(Field{key: key, reason: reason}))
+// WriteFieldError writes a 400 Bad Request HTTP status code and an error using
+// 'invalid_input' error code, the static invalid parameters error description,
+// and the given field to the response.
+func WriteFieldError(w http.ResponseWriter, r *http.Request, f Field) {
+	WriteFieldErrors(w, r, NewFields(f))
 }
 
+// WritePayloadError writes a 400 Bad Request HTTP status code and an error using
+// 'invalid_input' error code and the static invalid payload error description.
 func WritePayloadError(w http.ResponseWriter, r *http.Request) {
 	WriteValidationError(w, r, "Invalid payload.")
 }
 
+// WriteNotFoundError writes a 404 Not Found HTTP status code and an error using
+// 'not_found' error code and the given error description to the response.
 func WriteNotFoundError(w http.ResponseWriter, r *http.Request, desc string) {
 	WriteError(w, r, http.StatusNotFound, "not_found", desc)
 }
@@ -115,35 +136,45 @@ func newFieldErrorResponse(f *Fields) validationErrorResponse {
 
 	for _, field := range f.fields {
 		resp.Fields = append(resp.Fields, validationErrorResponseField{
-			Key:    field.key,
-			Reason: field.reason,
+			Key:    field.Key,
+			Reason: field.Reason,
 		})
 	}
 
 	return resp
 }
 
+// Field holds details of an invalid field.
 type Field struct {
-	key    string
-	reason string
+	Key    string
+	Reason string
 }
 
+// NewField returns Field using the given key and reason.
+func NewField(key, reason string) Field {
+	return Field{
+		Key:    key,
+		Reason: reason,
+	}
+}
+
+// Fields holds multiple invalid fields.
 type Fields struct {
 	fields []Field
 }
 
+// NewFields wraps the given fields as *Fields.
 func NewFields(f ...Field) *Fields {
 	return &Fields{
 		fields: f,
 	}
 }
 
-func (f *Fields) Is(err, target error, key, reason string) {
+// Is adds the given field to the fields if at least one of errors in the given
+// err's chain matches the target.
+func (f *Fields) Is(err, target error, field Field) {
 	if !errors.Is(err, target) {
 		return
 	}
-	f.fields = append(f.fields, Field{
-		key:    key,
-		reason: reason,
-	})
+	f.fields = append(f.fields, field)
 }

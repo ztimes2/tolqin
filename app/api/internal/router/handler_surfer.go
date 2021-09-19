@@ -45,7 +45,7 @@ func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &vErr) {
 			f := httputil.NewFields()
 			for _, e := range vErr.Errors() {
-				f.Is(e, surfer.ErrInvalidSpotID, paramKeySpotID, "Must be a non empty string.")
+				f.Is(e, surfer.ErrInvalidSpotID, httputil.NewField(paramKeySpotID, "Must be a non empty string."))
 			}
 			httputil.WriteFieldErrors(w, r, f)
 			return
@@ -65,14 +65,14 @@ func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
 
 func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 	limit, err := httputil.QueryParamInt(r, "limit")
-	if err != nil && !errors.Is(err, httputil.ErrEmptyParam) {
-		httputil.WriteFieldError(w, r, "limit", "Must be a valid integer.")
+	if err != nil && !errors.Is(err, httputil.ErrParamNotFound) {
+		httputil.WriteFieldError(w, r, httputil.NewField("limit", "Must be a valid integer."))
 		return
 	}
 
 	offset, err := httputil.QueryParamInt(r, "offset")
-	if err != nil && !errors.Is(err, httputil.ErrEmptyParam) {
-		httputil.WriteFieldError(w, r, "offset", "Must be a valid integer.")
+	if err != nil && !errors.Is(err, httputil.ErrParamNotFound) {
+		httputil.WriteFieldError(w, r, httputil.NewField("offset", "Must be a valid integer."))
 		return
 	}
 
@@ -89,10 +89,10 @@ func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 	if vErr != nil {
 		f := httputil.NewFields()
 		for _, e := range vErr.Errors() {
-			f.Is(e, errInvalidNorthEastLatitude, "ne_lat", "Must be a valid latitude.")
-			f.Is(e, errInvalidNorthEastLongitude, "ne_lon", "Must be a valid longitude.")
-			f.Is(e, errInvalidSouthWestLatitude, "sw_lat", "Must be a valid latitude.")
-			f.Is(e, errInvalidSouthWestLongitude, "sw_lon", "Must be a valid longitude.")
+			f.Is(e, errInvalidNorthEastLatitude, httputil.NewField("ne_lat", "Must be a valid latitude."))
+			f.Is(e, errInvalidNorthEastLongitude, httputil.NewField("ne_lon", "Must be a valid longitude."))
+			f.Is(e, errInvalidSouthWestLatitude, httputil.NewField("sw_lat", "Must be a valid latitude."))
+			f.Is(e, errInvalidSouthWestLongitude, httputil.NewField("sw_lon", "Must be a valid longitude."))
 		}
 		httputil.WriteFieldErrors(w, r, f)
 		return
@@ -110,12 +110,12 @@ func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &vErr) {
 			f := httputil.NewFields()
 			for _, e := range vErr.Errors() {
-				f.Is(e, surfer.ErrInvalidSearchQuery, "query", "Must not exceed character limit.")
-				f.Is(e, surfer.ErrInvalidCountryCode, "country", "Must be a valid ISO-2 country code.")
-				f.Is(e, surfer.ErrInvalidNorthEastLatitude, "ne_lat", "Must be a valid latitude.")
-				f.Is(e, surfer.ErrInvalidNorthEastLongitude, "ne_lon", "Must be a valid longitude.")
-				f.Is(e, surfer.ErrInvalidSouthWestLatitude, "sw_lat", "Must be a valid latitude.")
-				f.Is(e, surfer.ErrInvalidSouthWestLongitude, "sw_lon", "Must be a valid longitude.")
+				f.Is(e, surfer.ErrInvalidSearchQuery, httputil.NewField("query", "Must not exceed character limit."))
+				f.Is(e, surfer.ErrInvalidCountryCode, httputil.NewField("country", "Must be a valid ISO-2 country code."))
+				f.Is(e, surfer.ErrInvalidNorthEastLatitude, httputil.NewField("ne_lat", "Must be a valid latitude."))
+				f.Is(e, surfer.ErrInvalidNorthEastLongitude, httputil.NewField("ne_lon", "Must be a valid longitude."))
+				f.Is(e, surfer.ErrInvalidSouthWestLatitude, httputil.NewField("sw_lat", "Must be a valid latitude."))
+				f.Is(e, surfer.ErrInvalidSouthWestLongitude, httputil.NewField("sw_lon", "Must be a valid longitude."))
 			}
 			httputil.WriteFieldErrors(w, r, f)
 			return
