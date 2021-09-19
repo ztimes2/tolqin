@@ -7,7 +7,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 )
 
 const (
@@ -16,6 +15,14 @@ const (
 	sslModeNameDisable = "disable"
 )
 
+// NewDB opens a new github.com/jmoiron/sqlx *sqlx.DB using the given config.
+// The caller is expected to register a PostgreSQL driver to the standard database/sql
+// package prior to envoking this function.
+func NewDB(cfg Config) (*sqlx.DB, error) {
+	return sqlx.Open(driverName, cfg.String())
+}
+
+// Config holds configuration for connecting to a PostgreSQL database.
 type Config struct {
 	Host         string
 	Port         string
@@ -25,6 +32,7 @@ type Config struct {
 	SSLMode      SSLMode
 }
 
+// String returns the confiration as a database connection string.
 func (c Config) String() string {
 	entries := []string{
 		"host=" + c.Host,
@@ -43,13 +51,25 @@ func (c Config) String() string {
 	return strings.Join(entries, " ")
 }
 
+// SSLMode represents PostgreSQL's SSL mode.
 type SSLMode int
 
 const (
+	// SSLModeUndefined is used as blank SSL mode.
 	SSLModeUndefined SSLMode = iota
+
+	// SSLModeDisabled is used to disable SSL mode.
+	//
+	// As per PostgreSQL's documentation:
+	//	"I don't care about security, and I don't want to pay the overhead of encryption."
 	SSLModeDisabled
+
+	// TODO add more SSL modes if necessary.
 )
 
+// NewSSLMode parses SSLMode from the given string.
+//
+// The accepted value is only "disable" so far. Any other values return SSLModeUndefined.
 func NewSSLMode(s string) SSLMode {
 	switch s {
 	case sslModeNameDisable:
@@ -59,6 +79,7 @@ func NewSSLMode(s string) SSLMode {
 	}
 }
 
+// String returns string representation of the SSLMode.
 func (s SSLMode) String() string {
 	switch s {
 	case SSLModeDisabled:
@@ -68,26 +89,31 @@ func (s SSLMode) String() string {
 	}
 }
 
-func NewDB(cfg Config) (*sqlx.DB, error) {
-	return sqlx.Open(driverName, cfg.String())
-}
-
+// WrapDB wraps and returns the given standard *sql.DB as github.com/jmoiron/sqlx
+// *sqlx.DB for PostgreSQL.
 func WrapDB(db *sql.DB) *sqlx.DB {
 	return sqlx.NewDb(db, driverName)
 }
 
+// NewQueryBuilder returns a new github.com/Masterminds/squirrel query builder for
+// PostgreSQL.
 func NewQueryBuilder() sq.StatementBuilderType {
 	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 }
 
+// Wildcard surrounds the given string with PostgreSQL's wildcards.
 func Wildcard(s string) string {
 	return "%" + s + "%"
 }
 
+// Between returns a github.com/Masterminds/squirrel expression for PostgreSQL's
+// BETWEEN clause using the given arguments.
 func Between(key string, min, max float64) sq.Sqlizer {
 	return sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", key), min, max)
 }
 
+// CastAsVarchar returns PostgreSQL's CAST clause for casting the given key as
+// VARCHAR.
 func CastAsVarchar(key string) string {
 	return fmt.Sprintf("CAST(%s AS VARCHAR)", key)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	_ "github.com/lib/pq"
 	config "github.com/ztimes2/tolqin/app/api/internal/config/api"
 	"github.com/ztimes2/tolqin/app/api/internal/geo/nominatim"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httpserver"

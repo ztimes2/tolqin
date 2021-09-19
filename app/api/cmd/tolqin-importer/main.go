@@ -11,6 +11,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/importing/psql"
 	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
+	_ "github.com/lib/pq"
 )
 
 func main() {
