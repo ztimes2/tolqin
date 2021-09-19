@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/importing"
@@ -447,7 +448,7 @@ func TestSpotImporter_ImportSpots(t *testing.T) {
 
 			test.mockFn(mock)
 
-			importer := NewSpotImporter(psqlutil.WrapDB(db), test.batchSize)
+			importer := NewSpotImporter(sqlx.NewDb(db, psqlutil.DriverNameSQLMock), test.batchSize)
 			count, err := importer.ImportSpots(test.entries)
 			assert.Equal(t, test.expectedCount, count)
 			test.expectedErrFn(t, err)

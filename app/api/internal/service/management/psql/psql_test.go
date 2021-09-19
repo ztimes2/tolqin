@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
@@ -99,7 +100,7 @@ func TestSpotStore_Spot(t *testing.T) {
 
 			test.mockFn(mock)
 
-			store := NewSpotStore(psqlutil.WrapDB(db))
+			store := NewSpotStore(sqlx.NewDb(db, psqlutil.DriverNameSQLMock))
 
 			spot, err := store.Spot(test.id)
 			test.expectedErrFn(t, err)
@@ -470,7 +471,7 @@ func TestSpotStore_Spots(t *testing.T) {
 
 			test.mockFn(mock)
 
-			store := NewSpotStore(psqlutil.WrapDB(db))
+			store := NewSpotStore(sqlx.NewDb(db, psqlutil.DriverNameSQLMock))
 
 			spots, err := store.Spots(test.params)
 			test.expectedErrFn(t, err)
@@ -571,7 +572,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 
 			test.mockFn(mock)
 
-			store := NewSpotStore(psqlutil.WrapDB(db))
+			store := NewSpotStore(sqlx.NewDb(db, psqlutil.DriverNameSQLMock))
 			spot, err := store.CreateSpot(test.params)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpot, spot)
@@ -739,7 +740,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 
 			test.mockFn(mock)
 
-			store := NewSpotStore(psqlutil.WrapDB(db))
+			store := NewSpotStore(sqlx.NewDb(db, psqlutil.DriverNameSQLMock))
 			spot, err := store.UpdateSpot(test.params)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpot, spot)
@@ -822,7 +823,7 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 
 			test.mockFn(mock)
 
-			store := NewSpotStore(psqlutil.WrapDB(db))
+			store := NewSpotStore(sqlx.NewDb(db, psqlutil.DriverNameSQLMock))
 			err = store.DeleteSpot(test.id)
 			test.expectedErrFn(t, err)
 

@@ -5,13 +5,13 @@ import (
 	"os"
 	"time"
 
+	_ "github.com/lib/pq"
 	config "github.com/ztimes2/tolqin/app/api/internal/config/importer"
 	"github.com/ztimes2/tolqin/app/api/internal/importing"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/csv"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/psql"
 	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 	}
 	defer file.Close()
 
-	db, err := psqlutil.NewDB(psqlutil.Config{
+	db, err := psqlutil.NewDB(psqlutil.DriverNamePQ, psqlutil.Config{
 		Host:         conf.Database.Host,
 		Port:         conf.Database.Port,
 		Username:     conf.Database.Username,

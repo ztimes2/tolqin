@@ -1,7 +1,6 @@
 package psqlutil
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -10,15 +9,23 @@ import (
 )
 
 const (
-	driverName = "postgres"
+	// DriverNamePQ is github.com/lib/pq package's driver name.
+	DriverNamePQ = "postgres"
 
+	// DriverNameSQLMock is github.com/DATA-DOG/go-sqlmock package's driver name.
+	DriverNameSQLMock = "sqlmock"
+)
+
+const (
 	sslModeNameDisable = "disable"
 )
 
-// NewDB opens a new github.com/jmoiron/sqlx *sqlx.DB using the given config.
+// NewDB opens a new github.com/jmoiron/sqlx *sqlx.DB using the given database
+// driver name and configuration.
+//
 // The caller is expected to register a PostgreSQL driver to the standard database/sql
 // package prior to envoking this function.
-func NewDB(cfg Config) (*sqlx.DB, error) {
+func NewDB(driverName string, cfg Config) (*sqlx.DB, error) {
 	return sqlx.Open(driverName, cfg.String())
 }
 
@@ -32,7 +39,7 @@ type Config struct {
 	SSLMode      SSLMode
 }
 
-// String returns the confiration as a database connection string.
+// String returns the confiration as a DSN string.
 func (c Config) String() string {
 	entries := []string{
 		"host=" + c.Host,
@@ -87,12 +94,6 @@ func (s SSLMode) String() string {
 	default:
 		return ""
 	}
-}
-
-// WrapDB wraps and returns the given standard *sql.DB as github.com/jmoiron/sqlx
-// *sqlx.DB for PostgreSQL.
-func WrapDB(db *sql.DB) *sqlx.DB {
-	return sqlx.NewDb(db, driverName)
 }
 
 // NewQueryBuilder returns a new github.com/Masterminds/squirrel query builder for

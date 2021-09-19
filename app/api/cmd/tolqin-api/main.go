@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	db, err := psqlutil.NewDB(psqlutil.Config{
+	db, err := psqlutil.NewDB(psqlutil.DriverNamePQ, psqlutil.Config{
 		Host:         conf.Database.Host,
 		Port:         conf.Database.Port,
 		Username:     conf.Database.Username,
