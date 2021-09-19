@@ -20,11 +20,3 @@ func AreValidationErrors(targets ...error) assert.ErrorAssertionFunc {
 			assert.Equal(t, targets, vErr.Errors())
 	}
 }
-
-func RepeatRune(r rune, n int) string {
-	var s string
-	for i := 0; i < n; i++ {
-		s += string(r)
-	}
-	return s
-}

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/strutil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
 )
 
@@ -205,7 +206,7 @@ func TestService_Spots(t *testing.T) {
 				Limit:       20,
 				Offset:      0,
 				CountryCode: "kz",
-				Query:       testutil.RepeatRune('a', 101),
+				Query:       strutil.RepeatRune('a', 101),
 			},
 			expectedSpots: nil,
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSearchQuery),
