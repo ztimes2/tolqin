@@ -135,10 +135,7 @@ func newFieldErrorResponse(f *Fields) validationErrorResponse {
 	resp := newValidationErrorResponse("Invalid input parameters.")
 
 	for _, field := range f.fields {
-		resp.Fields = append(resp.Fields, validationErrorResponseField{
-			Key:    field.Key,
-			Reason: field.Reason,
-		})
+		resp.Fields = append(resp.Fields, validationErrorResponseField(field))
 	}
 
 	return resp
