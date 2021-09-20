@@ -87,7 +87,9 @@ func WriteFieldErrors(w http.ResponseWriter, r *http.Request, f *Fields) {
 // 'invalid_input' error code, the static invalid parameters error description,
 // and the given field to the response.
 func WriteFieldError(w http.ResponseWriter, r *http.Request, f Field) {
-	WriteFieldErrors(w, r, NewFields(f))
+	WriteFieldErrors(w, r, &Fields{
+		fields: []Field{f},
+	})
 }
 
 // WritePayloadError writes a 400 Bad Request HTTP status code and an error using
@@ -160,11 +162,9 @@ type Fields struct {
 	fields []Field
 }
 
-// NewFields wraps the given fields as *Fields.
-func NewFields(f ...Field) *Fields {
-	return &Fields{
-		fields: f,
-	}
+// NewFields returns a new *Fields.
+func NewFields() *Fields {
+	return &Fields{}
 }
 
 // Is adds the given field to the fields if at least one of errors in the given
