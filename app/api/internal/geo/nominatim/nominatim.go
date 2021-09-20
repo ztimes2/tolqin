@@ -25,16 +25,19 @@ const (
 	languageCodeEnglish = "en"
 )
 
+// Nominatim is an adapter for communicating with the Notimatim API.
 type Nominatim struct {
 	client  *http.Client
 	baseURL string
 }
 
+// Config holds configuration for connecting to the Nominatim API.
 type Config struct {
 	BaseURL string
 	Timeout time.Duration
 }
 
+// New returns a new *Nominatim.
 func New(cfg Config) *Nominatim {
 	return &Nominatim{
 		client: &http.Client{
@@ -44,6 +47,8 @@ func New(cfg Config) *Nominatim {
 	}
 }
 
+// Location implements geo.LocationSource interface and fetches a location by the
+// given coordinates. ErrLocationNotFound is returned when location is not found.
 func (n *Nominatim) Location(c geo.Coordinates) (geo.Location, error) {
 	req, err := http.NewRequest(http.MethodGet, n.baseURL+endpointReverseGeocoding, nil)
 	if err != nil {

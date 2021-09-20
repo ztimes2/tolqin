@@ -16,6 +16,7 @@ const (
 	paramKeySpotID = "spot_id"
 )
 
+// New returns an HTTP router that serves various APIs of the application.
 func New(ss *surfer.Service, ms *management.Service, l *logrus.Logger) http.Handler {
 	return newRouter(ss, ms, l)
 }
