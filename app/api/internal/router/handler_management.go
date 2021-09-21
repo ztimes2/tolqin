@@ -10,26 +10,16 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 type managementService interface {
-	Spot(id string) (management.Spot, error)
-	Spots(management.SpotsParams) ([]management.Spot, error)
-	CreateSpot(management.CreateSpotParams) (management.Spot, error)
-	UpdateSpot(management.UpdateSpotParams) (management.Spot, error)
+	Spot(id string) (surf.Spot, error)
+	Spots(management.SpotsParams) ([]surf.Spot, error)
+	CreateSpot(management.CreateSpotParams) (surf.Spot, error)
+	UpdateSpot(management.UpdateSpotParams) (surf.Spot, error)
 	DeleteSpot(id string) error
 	Location(geo.Coordinates) (geo.Location, error)
-}
-
-func fromManagementSpot(s management.Spot) spotResponse {
-	return spotResponse{
-		ID:          s.ID,
-		Name:        s.Name,
-		Latitude:    s.Location.Coordinates.Latitude,
-		Longitude:   s.Location.Coordinates.Longitude,
-		Locality:    s.Location.Locality,
-		CountryCode: s.Location.CountryCode,
-	}
 }
 
 type managementHandler struct {
@@ -57,7 +47,7 @@ func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, management.ErrNotFound) {
+		if errors.Is(err, surf.ErrSpotNotFound) {
 			httputil.WriteNotFoundError(w, r, "Such spot doesn't exist.")
 			return
 		}
@@ -66,7 +56,7 @@ func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteOK(w, r, fromManagementSpot(spot))
+	httputil.WriteOK(w, r, toSpotResponse(spot))
 }
 
 func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +98,7 @@ func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request) {
 		Limit:       limit,
 		Offset:      offset,
 		CountryCode: countryCode,
-		Query:       query,
+		SearchQuery: query,
 		Bounds:      bounds,
 	})
 	if err != nil {
@@ -136,7 +126,7 @@ func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i, s := range spots {
-		resp.Items[i] = fromManagementSpot(s)
+		resp.Items[i] = toSpotResponse(s)
 	}
 
 	httputil.WriteOK(w, r, resp)
@@ -187,7 +177,7 @@ func (h *managementHandler) createSpot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteCreated(w, r, fromManagementSpot(spot))
+	httputil.WriteCreated(w, r, toSpotResponse(spot))
 }
 
 func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request) {
@@ -231,12 +221,12 @@ func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, management.ErrNotFound) {
+		if errors.Is(err, surf.ErrSpotNotFound) {
 			httputil.WriteNotFoundError(w, r, "Such spot doesn't exist.")
 			return
 		}
 
-		if errors.Is(err, management.ErrNothingToUpdate) {
+		if errors.Is(err, surf.ErrEmptySpotUpdateEntry) {
 			httputil.WriteValidationError(w, r, "Nothing to update.")
 			return
 		}
@@ -245,7 +235,7 @@ func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteOK(w, r, fromManagementSpot(spot))
+	httputil.WriteOK(w, r, toSpotResponse(spot))
 }
 
 func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request) {
@@ -262,7 +252,7 @@ func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, management.ErrNotFound) {
+		if errors.Is(err, surf.ErrSpotNotFound) {
 			httputil.WriteNotFoundError(w, r, "Such spot doesn't exist.")
 			return
 		}
@@ -303,7 +293,7 @@ func (h *managementHandler) location(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, management.ErrNotFound) {
+		if errors.Is(err, geo.ErrLocationNotFound) {
 			httputil.WriteNotFoundError(w, r, "Location was not found.")
 			return
 		}

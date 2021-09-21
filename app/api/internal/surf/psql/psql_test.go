@@ -14,7 +14,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
-	"github.com/ztimes2/tolqin/app/api/internal/service/management"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 func TestSpotStore_Spot(t *testing.T) {
@@ -22,7 +22,7 @@ func TestSpotStore_Spot(t *testing.T) {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
 		id            string
-		expectedSpot  management.Spot
+		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -37,7 +37,7 @@ func TestSpotStore_Spot(t *testing.T) {
 					WillReturnError(errors.New("something went wrong"))
 			},
 			id:            "1",
-			expectedSpot:  management.Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -52,8 +52,8 @@ func TestSpotStore_Spot(t *testing.T) {
 					WillReturnError(sql.ErrNoRows)
 			},
 			id:            "1",
-			expectedSpot:  management.Spot{},
-			expectedErrFn: testutil.IsError(management.ErrNotFound),
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(surf.ErrSpotNotFound),
 		},
 		{
 			name: "return spot without error",
@@ -73,7 +73,7 @@ func TestSpotStore_Spot(t *testing.T) {
 					RowsWillBeClosed()
 			},
 			id: "1",
-			expectedSpot: management.Spot{
+			expectedSpot: surf.Spot{
 				ID:        "1",
 				Name:      "Spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
@@ -114,14 +114,14 @@ func TestSpotStore_Spot(t *testing.T) {
 func TestSpotStore_Spots(t *testing.T) {
 	tests := []struct {
 		name          string
-		params        management.SpotsParams
+		params        surf.SpotsParams
 		mockFn        func(sqlmock.Sqlmock)
-		expectedSpots []management.Spot
+		expectedSpots []surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name: "return error during query execution",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -138,7 +138,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return error during row scanning",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -161,7 +161,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return 0 spots without error",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -183,7 +183,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots without error",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 			},
@@ -202,7 +202,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []management.Spot{
+			expectedSpots: []surf.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -234,7 +234,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by country without error",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:       10,
 				Offset:      0,
 				CountryCode: "kz",
@@ -255,7 +255,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []management.Spot{
+			expectedSpots: []surf.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -287,20 +287,20 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by query without error",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:  10,
 				Offset: 0,
-				Query:  "query",
+				SearchQuery: surf.SpotSearchQuery{
+					Query: "query",
+				},
 			},
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
-							"FROM spots "+
-							"WHERE (name ILIKE $1 OR locality ILIKE $2 OR CAST(id AS VARCHAR) ILIKE $3) "+
-							"LIMIT 10 OFFSET 0",
+							"FROM spots WHERE (name ILIKE $1 OR locality ILIKE $2) LIMIT 10 OFFSET 0",
 					)).
-					WithArgs("%query%", "%query%", "%query%").
+					WithArgs("%query%", "%query%").
 					WillReturnRows(sqlmock.
 						NewRows([]string{
 							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
@@ -310,7 +310,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []management.Spot{
+			expectedSpots: []surf.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -342,7 +342,7 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by bounds without error",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:  10,
 				Offset: 0,
 				Bounds: &geo.Bounds{
@@ -373,7 +373,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []management.Spot{
+			expectedSpots: []surf.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -405,19 +405,76 @@ func TestSpotStore_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots by country code and query without error",
-			params: management.SpotsParams{
+			params: surf.SpotsParams{
 				Limit:       10,
 				Offset:      0,
 				CountryCode: "kz",
-				Query:       "query",
+				SearchQuery: surf.SpotSearchQuery{
+					Query: "query",
+				},
 			},
 			mockFn: func(m sqlmock.Sqlmock) {
 				m.
 					ExpectQuery(regexp.QuoteMeta(
 						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
-							"FROM spots WHERE country_code = $1 "+
-							"AND (name ILIKE $2 OR locality ILIKE $3 OR CAST(id AS VARCHAR) ILIKE $4) "+
-							"LIMIT 10 OFFSET 0",
+							"FROM spots WHERE country_code = $1 AND (name ILIKE $2 OR locality ILIKE $3) LIMIT 10 OFFSET 0",
+					)).
+					WithArgs("kz", "%query%", "%query%").
+					WillReturnRows(sqlmock.
+						NewRows([]string{
+							"id", "name", "latitude", "longitude", "locality", "country_code", "created_at",
+						}).
+						AddRow("1", "Spot 1", 1.23, 3.21, "Locality 1", "kz", time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)).
+						AddRow("2", "Spot 2", 2.34, 4.32, "Locality 2", "kz", time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)),
+					).
+					RowsWillBeClosed()
+			},
+			expectedSpots: []surf.Spot{
+				{
+					ID:        "1",
+					Name:      "Spot 1",
+					CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					ID:        "2",
+					Name:      "Spot 2",
+					CreatedAt: time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC),
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "kz",
+						Coordinates: geo.Coordinates{
+							Latitude:  2.34,
+							Longitude: 4.32,
+						},
+					},
+				},
+			},
+			expectedErrFn: assert.NoError,
+		},
+		{
+			name: "return spots by country code and query including spot id without error",
+			params: surf.SpotsParams{
+				Limit:       10,
+				Offset:      0,
+				CountryCode: "kz",
+				SearchQuery: surf.SpotSearchQuery{
+					Query:      "query",
+					WithSpotID: true,
+				},
+			},
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.
+					ExpectQuery(regexp.QuoteMeta(
+						"SELECT id, name, latitude, longitude, locality, country_code, created_at "+
+							"FROM spots WHERE country_code = $1 AND (name ILIKE $2 OR locality ILIKE $3 OR CAST(id AS VARCHAR) ILIKE $4) LIMIT 10 OFFSET 0",
 					)).
 					WithArgs("kz", "%query%", "%query%", "%query%").
 					WillReturnRows(sqlmock.
@@ -429,7 +486,7 @@ func TestSpotStore_Spots(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			expectedSpots: []management.Spot{
+			expectedSpots: []surf.Spot{
 				{
 					ID:        "1",
 					Name:      "Spot 1",
@@ -486,8 +543,8 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
-		params        management.CreateSpotParams
-		expectedSpot  management.Spot
+		params        surf.CreateSpotParams
+		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -502,7 +559,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 					WithArgs("Spot 1", 1.23, 3.21, "Locality 1", "Country code 1").
 					WillReturnError(errors.New("unexpected error"))
 			},
-			params: management.CreateSpotParams{
+			params: surf.CreateSpotParams{
 				Name: "Spot 1",
 				Location: geo.Location{
 					Locality:    "Locality 1",
@@ -513,7 +570,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 					},
 				},
 			},
-			expectedSpot:  management.Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -534,7 +591,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			params: management.CreateSpotParams{
+			params: surf.CreateSpotParams{
 				Name: "Spot 1",
 				Location: geo.Location{
 					Locality:    "Locality 1",
@@ -545,7 +602,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 					},
 				},
 			},
-			expectedSpot: management.Spot{
+			expectedSpot: surf.Spot{
 				ID:        "1",
 				Name:      "Spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
@@ -586,8 +643,8 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
-		params        management.UpdateSpotParams
-		expectedSpot  management.Spot
+		params        surf.UpdateSpotParams
+		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -603,7 +660,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnError(errors.New("unexpected error"))
 			},
-			params: management.UpdateSpotParams{
+			params: surf.UpdateSpotParams{
 				ID:          "1",
 				Name:        pconv.String("Updated spot 1"),
 				Locality:    pconv.String("Locality 1"),
@@ -611,7 +668,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 				Latitude:    pconv.Float64(2.34),
 				Longitude:   pconv.Float64(4.32),
 			},
-			expectedSpot:  management.Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -627,7 +684,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnError(sql.ErrNoRows)
 			},
-			params: management.UpdateSpotParams{
+			params: surf.UpdateSpotParams{
 				ID:          "1",
 				Name:        pconv.String("Updated spot 1"),
 				Locality:    pconv.String("Locality 1"),
@@ -635,17 +692,17 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 				Latitude:    pconv.Float64(2.34),
 				Longitude:   pconv.Float64(4.32),
 			},
-			expectedSpot:  management.Spot{},
-			expectedErrFn: testutil.IsError(management.ErrNotFound),
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(surf.ErrSpotNotFound),
 		},
 		{
 			name:   "return error when nothing to update",
 			mockFn: func(m sqlmock.Sqlmock) {},
-			params: management.UpdateSpotParams{
+			params: surf.UpdateSpotParams{
 				ID: "1",
 			},
-			expectedSpot:  management.Spot{},
-			expectedErrFn: testutil.IsError(management.ErrNothingToUpdate),
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(surf.ErrEmptySpotUpdateEntry),
 		},
 		{
 			name: "return spot without error for full update",
@@ -666,7 +723,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			params: management.UpdateSpotParams{
+			params: surf.UpdateSpotParams{
 				ID:          "1",
 				Name:        pconv.String("Updated spot 1"),
 				Locality:    pconv.String("Locality 1"),
@@ -674,7 +731,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 				Latitude:    pconv.Float64(2.34),
 				Longitude:   pconv.Float64(4.32),
 			},
-			expectedSpot: management.Spot{
+			expectedSpot: surf.Spot{
 				ID:        "1",
 				Name:      "Updated spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
@@ -708,12 +765,12 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			params: management.UpdateSpotParams{
+			params: surf.UpdateSpotParams{
 				ID:       "1",
 				Name:     pconv.String("Updated spot 1"),
 				Latitude: pconv.Float64(2.34),
 			},
-			expectedSpot: management.Spot{
+			expectedSpot: surf.Spot{
 				ID:        "1",
 				Name:      "Updated spot 1",
 				CreatedAt: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
@@ -796,7 +853,7 @@ func TestSpotStore_DeleteSpot(t *testing.T) {
 					WillReturnResult(sqlmock.NewResult(0, 0))
 			},
 			id:            "1",
-			expectedErrFn: testutil.IsError(management.ErrNotFound),
+			expectedErrFn: testutil.IsError(surf.ErrSpotNotFound),
 		},
 		{
 			name: "return no error",

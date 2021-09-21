@@ -15,6 +15,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 type mockSurferService struct {
@@ -25,14 +26,14 @@ func newMockSurferService() *mockSurferService {
 	return &mockSurferService{}
 }
 
-func (m *mockSurferService) Spot(id string) (surfer.Spot, error) {
+func (m *mockSurferService) Spot(id string) (surf.Spot, error) {
 	args := m.Called(id)
-	return args.Get(0).(surfer.Spot), args.Error(1)
+	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockSurferService) Spots(p surfer.SpotsParams) ([]surfer.Spot, error) {
+func (m *mockSurferService) Spots(p surfer.SpotsParams) ([]surf.Spot, error) {
 	args := m.Called(p)
-	return args.Get(0).([]surfer.Spot), args.Error(1)
+	return args.Get(0).([]surf.Spot), args.Error(1)
 }
 
 func TestSurferHandler_Spot(t *testing.T) {
@@ -49,7 +50,7 @@ func TestSurferHandler_Spot(t *testing.T) {
 				m := newMockSurferService()
 				m.
 					On("Spot", "1").
-					Return(surfer.Spot{}, errors.New("something went wrong"))
+					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -79,7 +80,7 @@ func TestSurferHandler_Spot(t *testing.T) {
 				m := newMockSurferService()
 				m.
 					On("Spot", "1").
-					Return(surfer.Spot{}, surfer.ErrNotFound)
+					Return(surf.Spot{}, surf.ErrSpotNotFound)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -109,7 +110,7 @@ func TestSurferHandler_Spot(t *testing.T) {
 				m := newMockSurferService()
 				m.
 					On("Spot", "invalid").
-					Return(surfer.Spot{}, valerra.NewErrors(surfer.ErrInvalidSpotID))
+					Return(surf.Spot{}, valerra.NewErrors(surfer.ErrInvalidSpotID))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -146,7 +147,7 @@ func TestSurferHandler_Spot(t *testing.T) {
 				m.
 					On("Spot", "1").
 					Return(
-						surfer.Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -456,7 +457,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 						Offset:      0,
 						CountryCode: "zz",
 					}).
-					Return(([]surfer.Spot)(nil), valerra.NewErrors(
+					Return(([]surf.Spot)(nil), valerra.NewErrors(
 						surfer.ErrInvalidSearchQuery,
 						surfer.ErrInvalidCountryCode,
 						surfer.ErrInvalidNorthEastLatitude,
@@ -529,7 +530,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 						Limit:  10,
 						Offset: 0,
 					}).
-					Return(([]surfer.Spot)(nil), errors.New("something went wrong"))
+					Return(([]surf.Spot)(nil), errors.New("something went wrong"))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -568,7 +569,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 						Limit:  0,
 						Offset: 0,
 					}).
-					Return(([]surfer.Spot)(nil), nil)
+					Return(([]surf.Spot)(nil), nil)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -602,7 +603,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",
-						Query:       "query",
+						SearchQuery: "query",
 						Bounds: &geo.Bounds{
 							NorthEast: geo.Coordinates{
 								Latitude:  90,
@@ -615,7 +616,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 						},
 					}).
 					Return(
-						[]surfer.Spot{
+						[]surf.Spot{
 							{
 								Location: geo.Location{
 									Coordinates: geo.Coordinates{

@@ -17,6 +17,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 type mockManagementService struct {
@@ -27,24 +28,24 @@ func newMockManagementService() *mockManagementService {
 	return &mockManagementService{}
 }
 
-func (m *mockManagementService) Spot(id string) (management.Spot, error) {
+func (m *mockManagementService) Spot(id string) (surf.Spot, error) {
 	args := m.Called(id)
-	return args.Get(0).(management.Spot), args.Error(1)
+	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockManagementService) Spots(p management.SpotsParams) ([]management.Spot, error) {
+func (m *mockManagementService) Spots(p management.SpotsParams) ([]surf.Spot, error) {
 	args := m.Called(p)
-	return args.Get(0).([]management.Spot), args.Error(1)
+	return args.Get(0).([]surf.Spot), args.Error(1)
 }
 
-func (m *mockManagementService) CreateSpot(p management.CreateSpotParams) (management.Spot, error) {
+func (m *mockManagementService) CreateSpot(p management.CreateSpotParams) (surf.Spot, error) {
 	args := m.Called(p)
-	return args.Get(0).(management.Spot), args.Error(1)
+	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockManagementService) UpdateSpot(p management.UpdateSpotParams) (management.Spot, error) {
+func (m *mockManagementService) UpdateSpot(p management.UpdateSpotParams) (surf.Spot, error) {
 	args := m.Called(p)
-	return args.Get(0).(management.Spot), args.Error(1)
+	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
 func (m *mockManagementService) DeleteSpot(id string) error {
@@ -71,7 +72,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 				m := newMockManagementService()
 				m.
 					On("Spot", "1").
-					Return(management.Spot{}, errors.New("something went wrong"))
+					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -101,7 +102,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 				m := newMockManagementService()
 				m.
 					On("Spot", "1").
-					Return(management.Spot{}, management.ErrNotFound)
+					Return(surf.Spot{}, surf.ErrSpotNotFound)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -131,7 +132,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 				m := newMockManagementService()
 				m.
 					On("Spot", "1").
-					Return(management.Spot{}, valerra.NewErrors(management.ErrInvalidSpotID))
+					Return(surf.Spot{}, valerra.NewErrors(management.ErrInvalidSpotID))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -168,7 +169,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 				m.
 					On("Spot", "1").
 					Return(
-						management.Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -478,7 +479,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 						Offset:      0,
 						CountryCode: "zz",
 					}).
-					Return(([]management.Spot)(nil), valerra.NewErrors(
+					Return(([]surf.Spot)(nil), valerra.NewErrors(
 						management.ErrInvalidSearchQuery,
 						management.ErrInvalidCountryCode,
 						management.ErrInvalidNorthEastLatitude,
@@ -551,7 +552,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 						Limit:  10,
 						Offset: 0,
 					}).
-					Return(([]management.Spot)(nil), errors.New("something went wrong"))
+					Return(([]surf.Spot)(nil), errors.New("something went wrong"))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -590,7 +591,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 						Limit:  0,
 						Offset: 0,
 					}).
-					Return(([]management.Spot)(nil), nil)
+					Return(([]surf.Spot)(nil), nil)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -624,7 +625,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",
-						Query:       "query",
+						SearchQuery: "query",
 						Bounds: &geo.Bounds{
 							NorthEast: geo.Coordinates{
 								Latitude:  90,
@@ -637,7 +638,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 						},
 					}).
 					Return(
-						[]management.Spot{
+						[]surf.Spot{
 							{
 								Location: geo.Location{
 									Coordinates: geo.Coordinates{
@@ -788,7 +789,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 							CountryCode: "kz",
 						},
 					}).
-					Return(management.Spot{}, valerra.NewErrors(
+					Return(surf.Spot{}, valerra.NewErrors(
 						management.ErrInvalidSpotName,
 						management.ErrInvalidCountryCode,
 						management.ErrInvalidLocality,
@@ -865,7 +866,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 						},
 						Name: "Spot 1",
 					}).
-					Return(management.Spot{}, errors.New("something went wrong"))
+					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -916,7 +917,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 						Name: "Spot 1",
 					}).
 					Return(
-						management.Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -1036,7 +1037,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 						Name:      pconv.String(""),
 						ID:        "1",
 					}).
-					Return(management.Spot{}, valerra.NewErrors(
+					Return(surf.Spot{}, valerra.NewErrors(
 						management.ErrInvalidSpotID,
 						management.ErrInvalidSpotName,
 						management.ErrInvalidCountryCode,
@@ -1110,7 +1111,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 					On("UpdateSpot", management.UpdateSpotParams{
 						ID: "1",
 					}).
-					Return(management.Spot{}, management.ErrNothingToUpdate)
+					Return(surf.Spot{}, surf.ErrEmptySpotUpdateEntry)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -1149,7 +1150,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 						Name:      pconv.String("Spot 1"),
 						ID:        "1",
 					}).
-					Return(management.Spot{}, management.ErrNotFound)
+					Return(surf.Spot{}, surf.ErrSpotNotFound)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -1193,7 +1194,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 						Name:      pconv.String("Spot 1"),
 						ID:        "1",
 					}).
-					Return(management.Spot{}, errors.New("something went wrong"))
+					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -1238,7 +1239,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 						ID:        "1",
 					}).
 					Return(
-						management.Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -1300,7 +1301,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 						ID:          "1",
 					}).
 					Return(
-						management.Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -1364,7 +1365,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 						ID:          "1",
 					}).
 					Return(
-						management.Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -1481,7 +1482,7 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 				m := newMockManagementService()
 				m.
 					On("DeleteSpot", "1").
-					Return(management.ErrNotFound)
+					Return(surf.ErrSpotNotFound)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -1830,7 +1831,7 @@ func TestManagementHandler_Location(t *testing.T) {
 						Latitude:  1.23,
 						Longitude: 3.21,
 					}).
-					Return(geo.Location{}, management.ErrNotFound)
+					Return(geo.Location{}, geo.ErrLocationNotFound)
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs

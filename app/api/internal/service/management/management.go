@@ -3,12 +3,12 @@ package management
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/paging"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
 )
 
@@ -19,13 +19,10 @@ const (
 
 	minOffset = 0
 
-	maxQueryChars = 100
+	maxSearchQueryChars = 100
 )
 
 var (
-	ErrNotFound        = errors.New("resource not found")
-	ErrNothingToUpdate = errors.New("nothing to update")
-
 	ErrInvalidSearchQuery        = errors.New("invalid search query")
 	ErrInvalidLocality           = errors.New("invalid locality")
 	ErrInvalidCountryCode        = errors.New("invalid country code")
@@ -40,25 +37,60 @@ var (
 )
 
 type SpotStore interface {
-	Spot(id string) (Spot, error)
-	Spots(SpotsParams) ([]Spot, error)
-	CreateSpot(CreateSpotParams) (Spot, error)
-	UpdateSpot(UpdateSpotParams) (Spot, error)
-	DeleteSpot(id string) error
+	surf.SpotReader
+	surf.SpotWriter
 }
 
-type Spot struct {
-	ID        string
-	Name      string
-	CreatedAt time.Time
-	Location  geo.Location
+type Service struct {
+	spotStore      SpotStore
+	locationSource geo.LocationSource
+}
+
+func NewService(s SpotStore, l geo.LocationSource) *Service {
+	return &Service{
+		spotStore:      s,
+		locationSource: l,
+	}
+}
+
+func (s *Service) Spot(id string) (surf.Spot, error) {
+	id = strings.TrimSpace(id)
+
+	if err := valerra.IfFalse(valerra.StringNotEmpty(id), ErrInvalidSpotID); err != nil {
+		return surf.Spot{}, err
+	}
+
+	return s.spotStore.Spot(id)
+}
+
+func (s *Service) Spots(p SpotsParams) ([]surf.Spot, error) {
+	p = p.sanitize()
+
+	if err := p.validate(); err != nil {
+		return nil, err
+	}
+
+	sp := surf.SpotsParams{
+		Limit:       p.Limit,
+		Offset:      p.Offset,
+		CountryCode: p.CountryCode,
+		Bounds:      p.Bounds,
+	}
+	if p.SearchQuery != "" {
+		sp.SearchQuery = surf.SpotSearchQuery{
+			Query:      p.SearchQuery,
+			WithSpotID: true,
+		}
+	}
+
+	return s.spotStore.Spots(sp)
 }
 
 type SpotsParams struct {
 	Limit       int
 	Offset      int
 	CountryCode string
-	Query       string
+	SearchQuery string
 	Bounds      *geo.Bounds
 }
 
@@ -66,14 +98,14 @@ func (p SpotsParams) sanitize() SpotsParams {
 	p.Limit = paging.Limit(p.Limit, minLimit, maxLimit, defaultLimit)
 	p.Offset = paging.Offset(p.Offset, minOffset)
 	p.CountryCode = strings.ToLower(strings.TrimSpace(p.CountryCode))
-	p.Query = strings.TrimSpace(p.Query)
+	p.SearchQuery = strings.TrimSpace(p.SearchQuery)
 	return p
 }
 
 func (p SpotsParams) validate() error {
 	v := valerra.New()
 
-	v.IfFalse(valerra.StringLessOrEqual(p.Query, maxQueryChars), ErrInvalidSearchQuery)
+	v.IfFalse(valerra.StringLessOrEqual(p.SearchQuery, maxSearchQueryChars), ErrInvalidSearchQuery)
 	if p.CountryCode != "" {
 		v.IfFalse(valerrautil.IsCountry(p.CountryCode), ErrInvalidCountryCode)
 	}
@@ -87,10 +119,17 @@ func (p SpotsParams) validate() error {
 	return v.Validate()
 }
 
-type CreateSpotParams struct {
-	Location geo.Location
-	Name     string
+func (s *Service) CreateSpot(p CreateSpotParams) (surf.Spot, error) {
+	p = p.sanitize()
+
+	if err := p.validate(); err != nil {
+		return surf.Spot{}, err
+	}
+
+	return s.spotStore.CreateSpot(surf.CreateSpotParams(p))
 }
+
+type CreateSpotParams surf.CreateSpotParams
 
 func (p CreateSpotParams) sanitize() CreateSpotParams {
 	p.Name = strings.TrimSpace(p.Name)
@@ -111,14 +150,17 @@ func (p CreateSpotParams) validate() error {
 	return v.Validate()
 }
 
-type UpdateSpotParams struct {
-	ID          string
-	Name        *string
-	Latitude    *float64
-	Longitude   *float64
-	Locality    *string
-	CountryCode *string
+func (s *Service) UpdateSpot(p UpdateSpotParams) (surf.Spot, error) {
+	p = p.sanitize()
+
+	if err := p.validate(); err != nil {
+		return surf.Spot{}, err
+	}
+
+	return s.spotStore.UpdateSpot(surf.UpdateSpotParams(p))
 }
+
+type UpdateSpotParams surf.UpdateSpotParams
 
 func (p UpdateSpotParams) sanitize() UpdateSpotParams {
 	sanitized := UpdateSpotParams{
@@ -161,61 +203,6 @@ func (p UpdateSpotParams) validate() error {
 	return v.Validate()
 }
 
-type Service struct {
-	spotStore      SpotStore
-	locationSource geo.LocationSource
-}
-
-func NewService(s SpotStore, l geo.LocationSource) *Service {
-	return &Service{
-		spotStore:      s,
-		locationSource: l,
-	}
-}
-
-func (s *Service) Spot(id string) (Spot, error) {
-	id = strings.TrimSpace(id)
-
-	if err := valerra.IfFalse(valerra.StringNotEmpty(id), ErrInvalidSpotID); err != nil {
-		return Spot{}, err
-	}
-
-	return s.spotStore.Spot(id)
-}
-
-func (s *Service) Spots(p SpotsParams) ([]Spot, error) {
-	p = p.sanitize()
-
-	if err := p.validate(); err != nil {
-		return nil, err
-	}
-
-	return s.spotStore.Spots(p)
-}
-
-func (s *Service) CreateSpot(p CreateSpotParams) (Spot, error) {
-	p = p.sanitize()
-
-	if err := p.validate(); err != nil {
-		return Spot{}, err
-	}
-
-	return s.spotStore.CreateSpot(CreateSpotParams{
-		Name:     p.Name,
-		Location: p.Location,
-	})
-}
-
-func (s *Service) UpdateSpot(p UpdateSpotParams) (Spot, error) {
-	p = p.sanitize()
-
-	if err := p.validate(); err != nil {
-		return Spot{}, err
-	}
-
-	return s.spotStore.UpdateSpot(p)
-}
-
 func (s *Service) DeleteSpot(id string) error {
 	id = strings.TrimSpace(id)
 
@@ -236,9 +223,6 @@ func (s *Service) Location(c geo.Coordinates) (geo.Location, error) {
 
 	l, err := s.locationSource.Location(c)
 	if err != nil {
-		if errors.Is(err, geo.ErrLocationNotFound) {
-			return geo.Location{}, ErrNotFound
-		}
 		return geo.Location{}, err
 	}
 

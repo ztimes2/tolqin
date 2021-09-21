@@ -3,11 +3,11 @@ package surfer
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/paging"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
 )
 
@@ -18,13 +18,10 @@ const (
 
 	minOffset = 0
 
-	maxQueryChars = 100
+	maxSearchQueryChars = 100
 )
 
 var (
-	ErrNotFound        = errors.New("resource not found")
-	ErrNothingToUpdate = errors.New("nothing to update")
-
 	ErrInvalidSearchQuery        = errors.New("invalid search query")
 	ErrInvalidCountryCode        = errors.New("invalid country code")
 	ErrInvalidNorthEastLatitude  = errors.New("invalid north-east latitude")
@@ -35,48 +32,7 @@ var (
 )
 
 type SpotStore interface {
-	Spot(id string) (Spot, error)
-	Spots(SpotsParams) ([]Spot, error)
-}
-
-type Spot struct {
-	ID        string
-	Name      string
-	CreatedAt time.Time
-	Location  geo.Location
-}
-
-type SpotsParams struct {
-	Limit       int
-	Offset      int
-	CountryCode string
-	Query       string
-	Bounds      *geo.Bounds
-}
-
-func (p SpotsParams) sanitize() SpotsParams {
-	p.Limit = paging.Limit(p.Limit, minLimit, maxLimit, defaultLimit)
-	p.Offset = paging.Offset(p.Offset, minOffset)
-	p.CountryCode = strings.ToLower(strings.TrimSpace(p.CountryCode))
-	p.Query = strings.TrimSpace(p.Query)
-	return p
-}
-
-func (p SpotsParams) validate() error {
-	v := valerra.New()
-
-	v.IfFalse(valerra.StringLessOrEqual(p.Query, maxQueryChars), ErrInvalidSearchQuery)
-	if p.CountryCode != "" {
-		v.IfFalse(valerrautil.IsCountry(p.CountryCode), ErrInvalidCountryCode)
-	}
-	if p.Bounds != nil {
-		v.IfFalse(valerrautil.IsLatitude(p.Bounds.NorthEast.Latitude), ErrInvalidNorthEastLatitude)
-		v.IfFalse(valerrautil.IsLongitude(p.Bounds.NorthEast.Longitude), ErrInvalidNorthEastLongitude)
-		v.IfFalse(valerrautil.IsLatitude(p.Bounds.SouthWest.Latitude), ErrInvalidSouthWestLatitude)
-		v.IfFalse(valerrautil.IsLongitude(p.Bounds.SouthWest.Longitude), ErrInvalidSouthWestLongitude)
-	}
-
-	return v.Validate()
+	surf.SpotReader
 }
 
 type Service struct {
@@ -89,22 +45,63 @@ func NewService(s SpotStore) *Service {
 	}
 }
 
-func (s *Service) Spot(id string) (Spot, error) {
+func (s *Service) Spot(id string) (surf.Spot, error) {
 	id = strings.TrimSpace(id)
 
 	if err := valerra.IfFalse(valerra.StringNotEmpty(id), ErrInvalidSpotID); err != nil {
-		return Spot{}, err
+		return surf.Spot{}, err
 	}
 
 	return s.spotStore.Spot(id)
 }
 
-func (s *Service) Spots(p SpotsParams) ([]Spot, error) {
+func (s *Service) Spots(p SpotsParams) ([]surf.Spot, error) {
 	p = p.sanitize()
 
 	if err := p.validate(); err != nil {
 		return nil, err
 	}
 
-	return s.spotStore.Spots(p)
+	return s.spotStore.Spots(surf.SpotsParams{
+		Limit:       p.Limit,
+		Offset:      p.Offset,
+		CountryCode: p.CountryCode,
+		Bounds:      p.Bounds,
+		SearchQuery: surf.SpotSearchQuery{
+			Query: p.SearchQuery,
+		},
+	})
+}
+
+type SpotsParams struct {
+	Limit       int
+	Offset      int
+	CountryCode string
+	SearchQuery string
+	Bounds      *geo.Bounds
+}
+
+func (p SpotsParams) sanitize() SpotsParams {
+	p.Limit = paging.Limit(p.Limit, minLimit, maxLimit, defaultLimit)
+	p.Offset = paging.Offset(p.Offset, minOffset)
+	p.CountryCode = strings.ToLower(strings.TrimSpace(p.CountryCode))
+	p.SearchQuery = strings.TrimSpace(p.SearchQuery)
+	return p
+}
+
+func (p SpotsParams) validate() error {
+	v := valerra.New()
+
+	v.IfFalse(valerra.StringLessOrEqual(p.SearchQuery, maxSearchQueryChars), ErrInvalidSearchQuery)
+	if p.CountryCode != "" {
+		v.IfFalse(valerrautil.IsCountry(p.CountryCode), ErrInvalidCountryCode)
+	}
+	if p.Bounds != nil {
+		v.IfFalse(valerrautil.IsLatitude(p.Bounds.NorthEast.Latitude), ErrInvalidNorthEastLatitude)
+		v.IfFalse(valerrautil.IsLongitude(p.Bounds.NorthEast.Longitude), ErrInvalidNorthEastLongitude)
+		v.IfFalse(valerrautil.IsLatitude(p.Bounds.SouthWest.Latitude), ErrInvalidSouthWestLatitude)
+		v.IfFalse(valerrautil.IsLongitude(p.Bounds.SouthWest.Longitude), ErrInvalidSouthWestLongitude)
+	}
+
+	return v.Validate()
 }

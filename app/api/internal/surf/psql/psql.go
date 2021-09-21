@@ -10,34 +10,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
-	"github.com/ztimes2/tolqin/app/api/internal/service/management"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
-
-type spot struct {
-	ID          string    `db:"id"`
-	Name        string    `db:"name"`
-	Latitude    float64   `db:"latitude"`
-	Longitude   float64   `db:"longitude"`
-	Locality    string    `db:"locality"`
-	CountryCode string    `db:"country_code"`
-	CreatedAt   time.Time `db:"created_at"`
-}
-
-func toSpot(s spot) management.Spot {
-	return management.Spot{
-		ID:        s.ID,
-		Name:      s.Name,
-		CreatedAt: s.CreatedAt,
-		Location: geo.Location{
-			Locality:    s.Locality,
-			CountryCode: s.CountryCode,
-			Coordinates: geo.Coordinates{
-				Latitude:  s.Latitude,
-				Longitude: s.Longitude,
-			},
-		},
-	}
-}
 
 type SpotStore struct {
 	db      *sqlx.DB
@@ -51,52 +25,29 @@ func NewSpotStore(db *sqlx.DB) *SpotStore {
 	}
 }
 
-func (ss *SpotStore) Spot(id string) (management.Spot, error) {
+func (ss *SpotStore) Spot(id string) (surf.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
 		From("spots").
 		Where(sq.Eq{psqlutil.CastAsVarchar("id"): id}).
 		ToSql()
 	if err != nil {
-		return management.Spot{}, fmt.Errorf("failed to build query: %w", err)
+		return surf.Spot{}, fmt.Errorf("failed to build query: %w", err)
 	}
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return management.Spot{}, management.ErrNotFound
+			return surf.Spot{}, surf.ErrSpotNotFound
 		}
-		return management.Spot{}, fmt.Errorf("failed to execute query: %w", err)
+		return surf.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	return toSpot(s), nil
 }
 
-func (ss *SpotStore) Spots(p management.SpotsParams) ([]management.Spot, error) {
-	builder := ss.builder.
-		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
-		From("spots").
-		Limit(uint64(p.Limit)).
-		Offset(uint64(p.Offset))
-
-	if p.CountryCode != "" {
-		builder = builder.Where(sq.Eq{"country_code": p.CountryCode})
-	}
-
-	if p.Query != "" {
-		builder = builder.Where(sq.Or{
-			sq.ILike{"name": psqlutil.Wildcard(p.Query)},
-			sq.ILike{"locality": psqlutil.Wildcard(p.Query)},
-			sq.ILike{psqlutil.CastAsVarchar("id"): psqlutil.Wildcard(p.Query)},
-		})
-	}
-
-	if p.Bounds != nil {
-		builder = builder.Where(sq.And{
-			psqlutil.Between("latitude", p.Bounds.SouthWest.Latitude, p.Bounds.NorthEast.Latitude),
-			psqlutil.Between("longitude", p.Bounds.SouthWest.Longitude, p.Bounds.NorthEast.Longitude),
-		})
-	}
+func (ss *SpotStore) Spots(p surf.SpotsParams) ([]surf.Spot, error) {
+	builder := buildSpotsSQL(ss.builder, p)
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -108,7 +59,7 @@ func (ss *SpotStore) Spots(p management.SpotsParams) ([]management.Spot, error) 
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	var spots []management.Spot
+	var spots []surf.Spot
 	defer rows.Close()
 	for rows.Next() {
 		var s spot
@@ -121,7 +72,39 @@ func (ss *SpotStore) Spots(p management.SpotsParams) ([]management.Spot, error) 
 	return spots, nil
 }
 
-func (ss *SpotStore) CreateSpot(p management.CreateSpotParams) (management.Spot, error) {
+func buildSpotsSQL(b sq.StatementBuilderType, p surf.SpotsParams) sq.SelectBuilder {
+	builder := b.
+		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
+		From("spots").
+		Limit(uint64(p.Limit)).
+		Offset(uint64(p.Offset))
+
+	if p.CountryCode != "" {
+		builder = builder.Where(sq.Eq{"country_code": p.CountryCode})
+	}
+
+	if p.SearchQuery.Query != "" {
+		or := sq.Or{
+			sq.ILike{"name": psqlutil.Wildcard(p.SearchQuery.Query)},
+			sq.ILike{"locality": psqlutil.Wildcard(p.SearchQuery.Query)},
+		}
+		if p.SearchQuery.WithSpotID {
+			or = append(or, sq.ILike{psqlutil.CastAsVarchar("id"): psqlutil.Wildcard(p.SearchQuery.Query)})
+		}
+		builder = builder.Where(or)
+	}
+
+	if p.Bounds != nil {
+		builder = builder.Where(sq.And{
+			psqlutil.Between("latitude", p.Bounds.SouthWest.Latitude, p.Bounds.NorthEast.Latitude),
+			psqlutil.Between("longitude", p.Bounds.SouthWest.Longitude, p.Bounds.NorthEast.Longitude),
+		})
+	}
+
+	return builder
+}
+
+func (ss *SpotStore) CreateSpot(p surf.CreateSpotParams) (surf.Spot, error) {
 	query, args, err := ss.builder.
 		Insert("spots").
 		Columns("name", "latitude", "longitude", "locality", "country_code").
@@ -135,18 +118,18 @@ func (ss *SpotStore) CreateSpot(p management.CreateSpotParams) (management.Spot,
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
-		return management.Spot{}, fmt.Errorf("failed to build query: %w", err)
+		return surf.Spot{}, fmt.Errorf("failed to build query: %w", err)
 	}
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
-		return management.Spot{}, fmt.Errorf("failed to execute query: %w", err)
+		return surf.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	return toSpot(s), nil
 }
 
-func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot, error) {
+func (ss *SpotStore) UpdateSpot(p surf.UpdateSpotParams) (surf.Spot, error) {
 	values := make(map[string]interface{})
 	if p.Name != nil {
 		values["name"] = *p.Name
@@ -164,7 +147,7 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 		values["country_code"] = *p.CountryCode
 	}
 	if len(values) == 0 {
-		return management.Spot{}, management.ErrNothingToUpdate
+		return surf.Spot{}, surf.ErrEmptySpotUpdateEntry
 	}
 
 	query, args, err := ss.builder.
@@ -174,15 +157,15 @@ func (ss *SpotStore) UpdateSpot(p management.UpdateSpotParams) (management.Spot,
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
 	if err != nil {
-		return management.Spot{}, fmt.Errorf("failed to build query: %w", err)
+		return surf.Spot{}, fmt.Errorf("failed to build query: %w", err)
 	}
 
 	var s spot
 	if err := ss.db.QueryRowx(query, args...).StructScan(&s); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return management.Spot{}, management.ErrNotFound
+			return surf.Spot{}, surf.ErrSpotNotFound
 		}
-		return management.Spot{}, fmt.Errorf("failed to execute query: %w", err)
+		return surf.Spot{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	return toSpot(s), nil
@@ -208,8 +191,34 @@ func (ss *SpotStore) DeleteSpot(id string) error {
 	}
 
 	if count == 0 {
-		return management.ErrNotFound
+		return surf.ErrSpotNotFound
 	}
 
 	return nil
+}
+
+type spot struct {
+	ID          string    `db:"id"`
+	Name        string    `db:"name"`
+	Latitude    float64   `db:"latitude"`
+	Longitude   float64   `db:"longitude"`
+	Locality    string    `db:"locality"`
+	CountryCode string    `db:"country_code"`
+	CreatedAt   time.Time `db:"created_at"`
+}
+
+func toSpot(s spot) surf.Spot {
+	return surf.Spot{
+		ID:        s.ID,
+		Name:      s.Name,
+		CreatedAt: s.CreatedAt,
+		Location: geo.Location{
+			Locality:    s.Locality,
+			CountryCode: s.CountryCode,
+			Coordinates: geo.Coordinates{
+				Latitude:  s.Latitude,
+				Longitude: s.Longitude,
+			},
+		},
+	}
 }

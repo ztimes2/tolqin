@@ -11,9 +11,8 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/router"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
-	managementpsql "github.com/ztimes2/tolqin/app/api/internal/service/management/psql"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
-	surferpsql "github.com/ztimes2/tolqin/app/api/internal/service/surfer/psql"
+	"github.com/ztimes2/tolqin/app/api/internal/surf/psql"
 )
 
 func main() {
@@ -40,10 +39,12 @@ func main() {
 	}
 	defer db.Close()
 
+	spotStore := psql.NewSpotStore(db)
+
 	router := router.New(
-		surfer.NewService(surferpsql.NewSpotStore(db)),
+		surfer.NewService(spotStore),
 		management.NewService(
-			managementpsql.NewSpotStore(db),
+			spotStore,
 			nominatim.New(nominatim.Config{
 				BaseURL: conf.Nominatim.BaseURL,
 				Timeout: conf.Nominatim.Timeout,

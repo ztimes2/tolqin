@@ -8,22 +8,12 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 type surferService interface {
-	Spot(id string) (surfer.Spot, error)
-	Spots(surfer.SpotsParams) ([]surfer.Spot, error)
-}
-
-func fromSurferSpot(s surfer.Spot) spotResponse {
-	return spotResponse{
-		ID:          s.ID,
-		Name:        s.Name,
-		Latitude:    s.Location.Coordinates.Latitude,
-		Longitude:   s.Location.Coordinates.Longitude,
-		Locality:    s.Location.Locality,
-		CountryCode: s.Location.CountryCode,
-	}
+	Spot(id string) (surf.Spot, error)
+	Spots(surfer.SpotsParams) ([]surf.Spot, error)
 }
 
 type surferHandler struct {
@@ -51,7 +41,7 @@ func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if errors.Is(err, surfer.ErrNotFound) {
+		if errors.Is(err, surf.ErrSpotNotFound) {
 			httputil.WriteNotFoundError(w, r, "Such spot doesn't exist.")
 			return
 		}
@@ -60,7 +50,7 @@ func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteOK(w, r, fromSurferSpot(spot))
+	httputil.WriteOK(w, r, toSpotResponse(spot))
 }
 
 func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +92,7 @@ func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 		Limit:       limit,
 		Offset:      offset,
 		CountryCode: countryCode,
-		Query:       query,
+		SearchQuery: query,
 		Bounds:      bounds,
 	})
 	if err != nil {
@@ -130,7 +120,7 @@ func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i, s := range spots {
-		resp.Items[i] = fromSurferSpot(s)
+		resp.Items[i] = toSpotResponse(s)
 	}
 
 	httputil.WriteOK(w, r, resp)

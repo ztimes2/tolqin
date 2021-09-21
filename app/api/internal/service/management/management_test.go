@@ -11,6 +11,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/strutil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 type mockSpotStore struct {
@@ -21,24 +22,24 @@ func newMockSpotStore() *mockSpotStore {
 	return &mockSpotStore{}
 }
 
-func (m *mockSpotStore) Spot(id string) (Spot, error) {
+func (m *mockSpotStore) Spot(id string) (surf.Spot, error) {
 	args := m.Called(id)
-	return args.Get(0).(Spot), args.Error(1)
+	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockSpotStore) Spots(p SpotsParams) ([]Spot, error) {
+func (m *mockSpotStore) Spots(p surf.SpotsParams) ([]surf.Spot, error) {
 	args := m.Called(p)
-	return args.Get(0).([]Spot), args.Error(1)
+	return args.Get(0).([]surf.Spot), args.Error(1)
 }
 
-func (m *mockSpotStore) CreateSpot(p CreateSpotParams) (Spot, error) {
+func (m *mockSpotStore) CreateSpot(p surf.CreateSpotParams) (surf.Spot, error) {
 	args := m.Called(p)
-	return args.Get(0).(Spot), args.Error(1)
+	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockSpotStore) UpdateSpot(p UpdateSpotParams) (Spot, error) {
+func (m *mockSpotStore) UpdateSpot(p surf.UpdateSpotParams) (surf.Spot, error) {
 	args := m.Called(p)
-	return args.Get(0).(Spot), args.Error(1)
+	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
 func (m *mockSpotStore) DeleteSpot(id string) error {
@@ -64,14 +65,14 @@ func TestService_Spot(t *testing.T) {
 		name          string
 		spotStore     SpotStore
 		id            string
-		expectedSpot  Spot
+		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
 			name:          "return error for invalid spot id",
 			spotStore:     newMockSpotStore(),
 			id:            "",
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotID),
 		},
 		{
@@ -80,11 +81,11 @@ func TestService_Spot(t *testing.T) {
 				m := newMockSpotStore()
 				m.
 					On("Spot", "1").
-					Return(Spot{}, errors.New("something went wrong"))
+					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
 			id:            "1",
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -94,7 +95,7 @@ func TestService_Spot(t *testing.T) {
 				m.
 					On("Spot", "1").
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -112,7 +113,7 @@ func TestService_Spot(t *testing.T) {
 				return m
 			}(),
 			id: " 1 ",
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -134,7 +135,7 @@ func TestService_Spot(t *testing.T) {
 				m.
 					On("Spot", "1").
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -152,7 +153,7 @@ func TestService_Spot(t *testing.T) {
 				return m
 			}(),
 			id: "1",
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -185,7 +186,7 @@ func TestService_Spots(t *testing.T) {
 		name          string
 		spotStore     SpotStore
 		params        SpotsParams
-		expectedSpots []Spot
+		expectedSpots []surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -206,7 +207,7 @@ func TestService_Spots(t *testing.T) {
 				Limit:       20,
 				Offset:      0,
 				CountryCode: "kz",
-				Query:       strutil.RepeatRune('a', 101),
+				SearchQuery: strutil.RepeatRune('a', 101),
 			},
 			expectedSpots: nil,
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSearchQuery),
@@ -292,15 +293,15 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSouthWestLongitude),
 		},
 		{
-			name: "return error during spot spore failure",
+			name: "return error during spot store failure",
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("Spots", SpotsParams{
+					On("Spots", surf.SpotsParams{
 						Limit:  20,
 						Offset: 0,
 					}).
-					Return(([]Spot)(nil), errors.New("something went wrong"))
+					Return(([]surf.Spot)(nil), errors.New("something went wrong"))
 				return m
 			}(),
 			params: SpotsParams{
@@ -315,14 +316,17 @@ func TestService_Spots(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("Spots", SpotsParams{
+					On("Spots", surf.SpotsParams{
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",
-						Query:       "query",
+						SearchQuery: surf.SpotSearchQuery{
+							Query:      "query",
+							WithSpotID: true,
+						},
 					}).
 					Return(
-						[]Spot{
+						[]surf.Spot{
 							{
 								Location: geo.Location{
 									Coordinates: geo.Coordinates{
@@ -358,9 +362,9 @@ func TestService_Spots(t *testing.T) {
 				Limit:       0,
 				Offset:      -1,
 				CountryCode: " kz ",
-				Query:       " query ",
+				SearchQuery: " query ",
 			},
-			expectedSpots: []Spot{
+			expectedSpots: []surf.Spot{
 				{
 					Location: geo.Location{
 						Coordinates: geo.Coordinates{
@@ -395,13 +399,13 @@ func TestService_Spots(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("Spots", SpotsParams{
+					On("Spots", surf.SpotsParams{
 						Limit:       20,
 						Offset:      3,
 						CountryCode: "kz",
 					}).
 					Return(
-						[]Spot{
+						[]surf.Spot{
 							{
 								Location: geo.Location{
 									Coordinates: geo.Coordinates{
@@ -438,7 +442,7 @@ func TestService_Spots(t *testing.T) {
 				Offset:      3,
 				CountryCode: "kz",
 			},
-			expectedSpots: []Spot{
+			expectedSpots: []surf.Spot{
 				{
 					Location: geo.Location{
 						Coordinates: geo.Coordinates{
@@ -486,7 +490,7 @@ func TestService_CreateSpot(t *testing.T) {
 		name          string
 		spotStore     SpotStore
 		params        CreateSpotParams
-		expectedSpot  Spot
+		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -503,7 +507,7 @@ func TestService_CreateSpot(t *testing.T) {
 					CountryCode: "kz",
 				},
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotName),
 		},
 		{
@@ -520,7 +524,7 @@ func TestService_CreateSpot(t *testing.T) {
 					CountryCode: "kz",
 				},
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLatitude),
 		},
 		{
@@ -537,7 +541,7 @@ func TestService_CreateSpot(t *testing.T) {
 					CountryCode: "kz",
 				},
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLongitude),
 		},
 		{
@@ -554,7 +558,7 @@ func TestService_CreateSpot(t *testing.T) {
 					CountryCode: "kz",
 				},
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLocality),
 		},
 		{
@@ -571,7 +575,7 @@ func TestService_CreateSpot(t *testing.T) {
 					CountryCode: "zz",
 				},
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidCountryCode),
 		},
 		{
@@ -579,7 +583,7 @@ func TestService_CreateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("CreateSpot", CreateSpotParams{
+					On("CreateSpot", surf.CreateSpotParams{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -590,7 +594,7 @@ func TestService_CreateSpot(t *testing.T) {
 						},
 						Name: "Spot 1",
 					}).
-					Return(Spot{}, errors.New("something went wrong"))
+					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
 			params: CreateSpotParams{
@@ -604,7 +608,7 @@ func TestService_CreateSpot(t *testing.T) {
 					CountryCode: "kz",
 				},
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -612,7 +616,7 @@ func TestService_CreateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("CreateSpot", CreateSpotParams{
+					On("CreateSpot", surf.CreateSpotParams{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -624,7 +628,7 @@ func TestService_CreateSpot(t *testing.T) {
 						Name: "Spot 1",
 					}).
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -652,7 +656,7 @@ func TestService_CreateSpot(t *testing.T) {
 					CountryCode: " kz ",
 				},
 			},
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -672,7 +676,7 @@ func TestService_CreateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("CreateSpot", CreateSpotParams{
+					On("CreateSpot", surf.CreateSpotParams{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -684,7 +688,7 @@ func TestService_CreateSpot(t *testing.T) {
 						Name: "Spot 1",
 					}).
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -712,7 +716,7 @@ func TestService_CreateSpot(t *testing.T) {
 				},
 				Name: "Spot 1",
 			},
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -745,7 +749,7 @@ func TestService_UpdateSpot(t *testing.T) {
 		name          string
 		spotStore     SpotStore
 		params        UpdateSpotParams
-		expectedSpot  Spot
+		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -755,7 +759,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				ID:   "",
 				Name: pconv.String("Spot 1"),
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotID),
 		},
 		{
@@ -765,7 +769,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				ID:   "1",
 				Name: pconv.String(""),
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotName),
 		},
 		{
@@ -776,7 +780,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				Name:     pconv.String("Spot 1"),
 				Latitude: pconv.Float64(-91),
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLatitude),
 		},
 		{
@@ -788,7 +792,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				Latitude:  pconv.Float64(1.23),
 				Longitude: pconv.Float64(-181),
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLongitude),
 		},
 		{
@@ -801,7 +805,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				Longitude: pconv.Float64(2.34),
 				Locality:  pconv.String(""),
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLocality),
 		},
 		{
@@ -815,7 +819,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				Locality:    pconv.String("Locality 1"),
 				CountryCode: pconv.String("zz"),
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidCountryCode),
 		},
 		{
@@ -823,7 +827,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", UpdateSpotParams{
+					On("UpdateSpot", surf.UpdateSpotParams{
 						Latitude:    pconv.Float64(1.23),
 						Longitude:   pconv.Float64(2.34),
 						Locality:    pconv.String("Locality 1"),
@@ -831,7 +835,7 @@ func TestService_UpdateSpot(t *testing.T) {
 						Name:        pconv.String("Spot 1"),
 						ID:          "1",
 					}).
-					Return(Spot{}, errors.New("something went wrong"))
+					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
 			params: UpdateSpotParams{
@@ -842,7 +846,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				Locality:    pconv.String("Locality 1"),
 				CountryCode: pconv.String("zz"),
 			},
-			expectedSpot:  Spot{},
+			expectedSpot:  surf.Spot{},
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -850,12 +854,12 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", UpdateSpotParams{
+					On("UpdateSpot", surf.UpdateSpotParams{
 						Name: pconv.String("Spot 1"),
 						ID:   "1",
 					}).
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -876,7 +880,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				ID:   "1",
 				Name: pconv.String("Spot 1"),
 			},
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -896,13 +900,13 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", UpdateSpotParams{
+					On("UpdateSpot", surf.UpdateSpotParams{
 						ID:       "1",
 						Latitude: pconv.Float64(1.23),
 						Locality: pconv.String("Locality 1"),
 					}).
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -924,7 +928,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				Latitude: pconv.Float64(1.23),
 				Locality: pconv.String("Locality 1"),
 			},
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -944,7 +948,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", UpdateSpotParams{
+					On("UpdateSpot", surf.UpdateSpotParams{
 						ID:          "1",
 						Latitude:    pconv.Float64(1.23),
 						Longitude:   pconv.Float64(2.34),
@@ -953,7 +957,7 @@ func TestService_UpdateSpot(t *testing.T) {
 						Name:        pconv.String("Spot 1"),
 					}).
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -978,7 +982,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				CountryCode: pconv.String(" kz "),
 				Name:        pconv.String(" Spot 1 "),
 			},
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -998,7 +1002,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", UpdateSpotParams{
+					On("UpdateSpot", surf.UpdateSpotParams{
 						ID:          "1",
 						Latitude:    pconv.Float64(1.23),
 						Longitude:   pconv.Float64(2.34),
@@ -1007,7 +1011,7 @@ func TestService_UpdateSpot(t *testing.T) {
 						Name:        pconv.String("Spot 1"),
 					}).
 					Return(
-						Spot{
+						surf.Spot{
 							Location: geo.Location{
 								Coordinates: geo.Coordinates{
 									Latitude:  1.23,
@@ -1032,7 +1036,7 @@ func TestService_UpdateSpot(t *testing.T) {
 				CountryCode: pconv.String("kz"),
 				Name:        pconv.String("Spot 1"),
 			},
-			expectedSpot: Spot{
+			expectedSpot: surf.Spot{
 				Location: geo.Location{
 					Coordinates: geo.Coordinates{
 						Latitude:  1.23,
@@ -1185,7 +1189,7 @@ func TestService_Location(t *testing.T) {
 				Longitude: 180,
 			},
 			expectedLocation: geo.Location{},
-			expectedErrFn:    testutil.IsError(ErrNotFound),
+			expectedErrFn:    testutil.IsError(geo.ErrLocationNotFound),
 		},
 		{
 			name: "return location without error",
