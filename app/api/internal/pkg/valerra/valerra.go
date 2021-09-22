@@ -56,10 +56,10 @@ import "fmt"
 // Validator can be used for validating multiple conditions and catching errors
 // for those that fail.
 type Validator struct {
-	conditions []conditionFn
+	conditions []condition
 }
 
-type conditionFn func() error
+type condition func() error
 
 // New returns a new *Validator.
 func New() *Validator {

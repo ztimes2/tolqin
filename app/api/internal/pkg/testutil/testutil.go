@@ -15,7 +15,7 @@ func IsError(target error) assert.ErrorAssertionFunc {
 
 // AreValidationErrors returns github.com/stretchr/testify package's assert.ErrorAssertionFunc
 // that checks if at least one of the errors in the chain is of type *valerra.Errors
-// and the contains the given targets.
+// and it contains the given targets.
 func AreValidationErrors(targets ...error) assert.ErrorAssertionFunc {
 	return func(t assert.TestingT, err error, i ...interface{}) bool {
 		var vErr *valerra.Errors

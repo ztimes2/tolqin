@@ -78,17 +78,17 @@ func WriteValidationError(w http.ResponseWriter, r *http.Request, desc string) {
 
 // WriteFieldErrors writes a 400 Bad Request HTTP status code and an error using
 // 'invalid_input' error code, the static invalid input error description, and
-// the given fields to the response.
-func WriteFieldErrors(w http.ResponseWriter, r *http.Request, i *InvalidFields) {
-	writeError(w, r, http.StatusBadRequest, newFieldErrorResponse(i))
+// the given invalid fields to the response.
+func WriteFieldErrors(w http.ResponseWriter, r *http.Request, f *InvalidFields) {
+	writeError(w, r, http.StatusBadRequest, newFieldErrorResponse(f))
 }
 
 // WriteFieldError writes a 400 Bad Request HTTP status code and an error using
 // 'invalid_input' error code, the static invalid parameters error description,
-// and the given field to the response.
-func WriteFieldError(w http.ResponseWriter, r *http.Request, i InvalidField) {
+// and the given invalid field to the response.
+func WriteFieldError(w http.ResponseWriter, r *http.Request, f InvalidField) {
 	WriteFieldErrors(w, r, &InvalidFields{
-		fields: []InvalidField{i},
+		fields: []InvalidField{f},
 	})
 }
 
@@ -133,10 +133,10 @@ func newValidationErrorResponse(desc string) validationErrorResponse {
 	}
 }
 
-func newFieldErrorResponse(i *InvalidFields) validationErrorResponse {
+func newFieldErrorResponse(f *InvalidFields) validationErrorResponse {
 	resp := newValidationErrorResponse("Invalid input parameters.")
 
-	for _, field := range i.fields {
+	for _, field := range f.fields {
 		resp.Fields = append(resp.Fields, validationErrorResponseField(field))
 	}
 
@@ -149,7 +149,7 @@ type InvalidField struct {
 	Reason string
 }
 
-// NewInvalidField returns Field using the given key and reason.
+// NewInvalidField returns InvalidField using the given key and reason.
 func NewInvalidField(key, reason string) InvalidField {
 	return InvalidField{
 		Key:    key,
@@ -167,11 +167,11 @@ func NewInvalidFields() *InvalidFields {
 	return &InvalidFields{}
 }
 
-// Is adds the given field to the fields if at least one of errors in the given
-// err's chain matches the target.
-func (i *InvalidFields) Is(err, target error, field InvalidField) {
+// Is adds the given field to the invalid fields if at least one of errors in the 
+// given err's chain matches the target.
+func (f *InvalidFields) Is(err, target error, field InvalidField) {
 	if !errors.Is(err, target) {
 		return
 	}
-	i.fields = append(i.fields, field)
+	f.fields = append(f.fields, field)
 }
