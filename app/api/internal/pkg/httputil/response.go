@@ -79,16 +79,16 @@ func WriteValidationError(w http.ResponseWriter, r *http.Request, desc string) {
 // WriteFieldErrors writes a 400 Bad Request HTTP status code and an error using
 // 'invalid_input' error code, the static invalid input error description, and
 // the given fields to the response.
-func WriteFieldErrors(w http.ResponseWriter, r *http.Request, f *Fields) {
-	writeError(w, r, http.StatusBadRequest, newFieldErrorResponse(f))
+func WriteFieldErrors(w http.ResponseWriter, r *http.Request, i *InvalidFields) {
+	writeError(w, r, http.StatusBadRequest, newFieldErrorResponse(i))
 }
 
 // WriteFieldError writes a 400 Bad Request HTTP status code and an error using
 // 'invalid_input' error code, the static invalid parameters error description,
 // and the given field to the response.
-func WriteFieldError(w http.ResponseWriter, r *http.Request, f Field) {
-	WriteFieldErrors(w, r, &Fields{
-		fields: []Field{f},
+func WriteFieldError(w http.ResponseWriter, r *http.Request, i InvalidField) {
+	WriteFieldErrors(w, r, &InvalidFields{
+		fields: []InvalidField{i},
 	})
 }
 
@@ -133,45 +133,45 @@ func newValidationErrorResponse(desc string) validationErrorResponse {
 	}
 }
 
-func newFieldErrorResponse(f *Fields) validationErrorResponse {
+func newFieldErrorResponse(i *InvalidFields) validationErrorResponse {
 	resp := newValidationErrorResponse("Invalid input parameters.")
 
-	for _, field := range f.fields {
+	for _, field := range i.fields {
 		resp.Fields = append(resp.Fields, validationErrorResponseField(field))
 	}
 
 	return resp
 }
 
-// Field holds details of an invalid field.
-type Field struct {
+// InvalidField holds details of an invalid field.
+type InvalidField struct {
 	Key    string
 	Reason string
 }
 
-// NewField returns Field using the given key and reason.
-func NewField(key, reason string) Field {
-	return Field{
+// NewInvalidField returns Field using the given key and reason.
+func NewInvalidField(key, reason string) InvalidField {
+	return InvalidField{
 		Key:    key,
 		Reason: reason,
 	}
 }
 
-// Fields holds multiple invalid fields.
-type Fields struct {
-	fields []Field
+// InvalidFields holds multiple invalid fields.
+type InvalidFields struct {
+	fields []InvalidField
 }
 
-// NewFields returns a new *Fields.
-func NewFields() *Fields {
-	return &Fields{}
+// NewInvalidFields returns a new *InvalidFields.
+func NewInvalidFields() *InvalidFields {
+	return &InvalidFields{}
 }
 
 // Is adds the given field to the fields if at least one of errors in the given
 // err's chain matches the target.
-func (f *Fields) Is(err, target error, field Field) {
+func (i *InvalidFields) Is(err, target error, field InvalidField) {
 	if !errors.Is(err, target) {
 		return
 	}
-	f.fields = append(f.fields, field)
+	i.fields = append(i.fields, field)
 }
