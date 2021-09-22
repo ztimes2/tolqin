@@ -543,7 +543,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
-		params        surf.CreateSpotParams
+		params        surf.SpotCreationEntry
 		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
@@ -559,7 +559,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 					WithArgs("Spot 1", 1.23, 3.21, "Locality 1", "Country code 1").
 					WillReturnError(errors.New("unexpected error"))
 			},
-			params: surf.CreateSpotParams{
+			params: surf.SpotCreationEntry{
 				Name: "Spot 1",
 				Location: geo.Location{
 					Locality:    "Locality 1",
@@ -591,7 +591,7 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			params: surf.CreateSpotParams{
+			params: surf.SpotCreationEntry{
 				Name: "Spot 1",
 				Location: geo.Location{
 					Locality:    "Locality 1",
@@ -639,11 +639,456 @@ func TestSpotStore_CreateSpot(t *testing.T) {
 	}
 }
 
+func TestSpotStore_CreateSpots(t *testing.T) {
+	tests := []struct {
+		name          string
+		batchSize     int
+		mockFn        func(sqlmock.Sqlmock)
+		entries       []surf.SpotCreationEntry
+		expectedCount int
+		expectedErrFn assert.ErrorAssertionFunc
+	}{
+		{
+			name:          "return error when nothing to import",
+			batchSize:     2,
+			mockFn:        func(m sqlmock.Sqlmock) {},
+			entries:       []surf.SpotCreationEntry{},
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return error during tx init",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin().
+					WillReturnError(errors.New("something went wrong"))
+			},
+			entries: []surf.SpotCreationEntry{
+				{
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+			},
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return error during query execution",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin()
+
+				m.
+					ExpectExec(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
+					)).
+					WithArgs(
+						"Spot 1", 1.23, 3.21, "Locality 1", "Country code 1",
+						"Spot 2", 1.23, 3.21, "Locality 2", "",
+					).
+					WillReturnError(errors.New("something went wrong"))
+
+				m.ExpectRollback()
+			},
+			entries: []surf.SpotCreationEntry{
+				{
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+			},
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return error when reading affected rows",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin()
+
+				m.
+					ExpectExec(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
+					)).
+					WithArgs(
+						"Spot 1", 1.23, 3.21, "Locality 1", "Country code 1",
+						"Spot 2", 1.23, 3.21, "Locality 2", "",
+					).
+					WillReturnResult(sqlmock.NewErrorResult(
+						errors.New("something went wrong"),
+					))
+
+				m.ExpectRollback()
+			},
+			entries: []surf.SpotCreationEntry{
+				{
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+			},
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return error when no rows affected",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin()
+
+				m.
+					ExpectExec(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
+					)).
+					WithArgs(
+						"Spot 1", 1.23, 3.21, "Locality 1", "Country code 1",
+						"Spot 2", 1.23, 3.21, "Locality 2", "",
+					).
+					WillReturnResult(sqlmock.NewResult(0, 0))
+
+				m.ExpectRollback()
+			},
+			entries: []surf.SpotCreationEntry{
+				{
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+			},
+			expectedCount: 0,
+			expectedErrFn: assert.Error,
+		},
+		{
+			name:      "return spots without error",
+			batchSize: 2,
+			mockFn: func(m sqlmock.Sqlmock) {
+				m.ExpectBegin()
+
+				m.
+					ExpectExec(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
+					)).
+					WithArgs(
+						"Spot 1", 1.23, 3.21, "Locality 1", "Country code 1",
+						"Spot 2", 1.23, 3.21, "Locality 2", "",
+					).
+					WillReturnResult(sqlmock.NewResult(0, 2))
+
+				m.
+					ExpectExec(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5),($6,$7,$8,$9,$10)",
+					)).
+					WithArgs(
+						"Spot 3", 1.23, 3.21, "", "Country code 3",
+						"Spot 4", 1.23, 3.21, "", "",
+					).
+					WillReturnResult(sqlmock.NewResult(0, 2))
+
+				m.
+					ExpectExec(regexp.QuoteMeta(
+						"INSERT INTO spots (name,latitude,longitude,locality,country_code) "+
+							"VALUES ($1,$2,$3,$4,$5)",
+					)).
+					WithArgs(
+						"Spot 5", 1.23, 3.21, "Locality 5", "Country code 5",
+					).
+					WillReturnResult(sqlmock.NewResult(0, 1))
+
+				m.ExpectCommit()
+			},
+			entries: []surf.SpotCreationEntry{
+				{
+					Name: "Spot 1",
+					Location: geo.Location{
+						Locality:    "Locality 1",
+						CountryCode: "Country code 1",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 2",
+					Location: geo.Location{
+						Locality:    "Locality 2",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 3",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "Country code 3",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 4",
+					Location: geo.Location{
+						Locality:    "",
+						CountryCode: "",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+				{
+					Name: "Spot 5",
+					Location: geo.Location{
+						Locality:    "Locality 5",
+						CountryCode: "Country code 5",
+						Coordinates: geo.Coordinates{
+							Latitude:  1.23,
+							Longitude: 3.21,
+						},
+					},
+				},
+			},
+			expectedCount: 5,
+			expectedErrFn: assert.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			if err != nil {
+				assert.Fail(t, err.Error())
+			}
+			defer db.Close()
+
+			test.mockFn(mock)
+
+			store := NewSpotStore(sqlx.NewDb(db, psqlutil.DriverNameSQLMock), WithBatchSize(test.batchSize))
+			count, err := store.CreateSpots(test.entries)
+			assert.Equal(t, test.expectedCount, count)
+			test.expectedErrFn(t, err)
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
 func TestSpotStore_UpdateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockFn        func(sqlmock.Sqlmock)
-		params        surf.UpdateSpotParams
+		params        surf.SpotUpdateEntry
 		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
@@ -660,7 +1105,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnError(errors.New("unexpected error"))
 			},
-			params: surf.UpdateSpotParams{
+			params: surf.SpotUpdateEntry{
 				ID:          "1",
 				Name:        pconv.String("Updated spot 1"),
 				Locality:    pconv.String("Locality 1"),
@@ -684,7 +1129,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					WithArgs("Country code 1", 2.34, "Locality 1", 4.32, "Updated spot 1", "1").
 					WillReturnError(sql.ErrNoRows)
 			},
-			params: surf.UpdateSpotParams{
+			params: surf.SpotUpdateEntry{
 				ID:          "1",
 				Name:        pconv.String("Updated spot 1"),
 				Locality:    pconv.String("Locality 1"),
@@ -698,7 +1143,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 		{
 			name:   "return error when nothing to update",
 			mockFn: func(m sqlmock.Sqlmock) {},
-			params: surf.UpdateSpotParams{
+			params: surf.SpotUpdateEntry{
 				ID: "1",
 			},
 			expectedSpot:  surf.Spot{},
@@ -723,7 +1168,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			params: surf.UpdateSpotParams{
+			params: surf.SpotUpdateEntry{
 				ID:          "1",
 				Name:        pconv.String("Updated spot 1"),
 				Locality:    pconv.String("Locality 1"),
@@ -765,7 +1210,7 @@ func TestSpotStore_UpdateSpot(t *testing.T) {
 					).
 					RowsWillBeClosed()
 			},
-			params: surf.UpdateSpotParams{
+			params: surf.SpotUpdateEntry{
 				ID:       "1",
 				Name:     pconv.String("Updated spot 1"),
 				Latitude: pconv.Float64(2.34),

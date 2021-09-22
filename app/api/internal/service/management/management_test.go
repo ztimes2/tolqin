@@ -32,12 +32,12 @@ func (m *mockSpotStore) Spots(p surf.SpotsParams) ([]surf.Spot, error) {
 	return args.Get(0).([]surf.Spot), args.Error(1)
 }
 
-func (m *mockSpotStore) CreateSpot(p surf.CreateSpotParams) (surf.Spot, error) {
+func (m *mockSpotStore) CreateSpot(p surf.SpotCreationEntry) (surf.Spot, error) {
 	args := m.Called(p)
 	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockSpotStore) UpdateSpot(p surf.UpdateSpotParams) (surf.Spot, error) {
+func (m *mockSpotStore) UpdateSpot(p surf.SpotUpdateEntry) (surf.Spot, error) {
 	args := m.Called(p)
 	return args.Get(0).(surf.Spot), args.Error(1)
 }
@@ -583,7 +583,7 @@ func TestService_CreateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("CreateSpot", surf.CreateSpotParams{
+					On("CreateSpot", surf.SpotCreationEntry{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -616,7 +616,7 @@ func TestService_CreateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("CreateSpot", surf.CreateSpotParams{
+					On("CreateSpot", surf.SpotCreationEntry{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -676,7 +676,7 @@ func TestService_CreateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("CreateSpot", surf.CreateSpotParams{
+					On("CreateSpot", surf.SpotCreationEntry{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -827,7 +827,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", surf.UpdateSpotParams{
+					On("UpdateSpot", surf.SpotUpdateEntry{
 						Latitude:    pconv.Float64(1.23),
 						Longitude:   pconv.Float64(2.34),
 						Locality:    pconv.String("Locality 1"),
@@ -854,7 +854,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", surf.UpdateSpotParams{
+					On("UpdateSpot", surf.SpotUpdateEntry{
 						Name: pconv.String("Spot 1"),
 						ID:   "1",
 					}).
@@ -900,7 +900,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", surf.UpdateSpotParams{
+					On("UpdateSpot", surf.SpotUpdateEntry{
 						ID:       "1",
 						Latitude: pconv.Float64(1.23),
 						Locality: pconv.String("Locality 1"),
@@ -948,7 +948,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", surf.UpdateSpotParams{
+					On("UpdateSpot", surf.SpotUpdateEntry{
 						ID:          "1",
 						Latitude:    pconv.Float64(1.23),
 						Longitude:   pconv.Float64(2.34),
@@ -1002,7 +1002,7 @@ func TestService_UpdateSpot(t *testing.T) {
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
-					On("UpdateSpot", surf.UpdateSpotParams{
+					On("UpdateSpot", surf.SpotUpdateEntry{
 						ID:          "1",
 						Latitude:    pconv.Float64(1.23),
 						Longitude:   pconv.Float64(2.34),

@@ -126,10 +126,10 @@ func (s *Service) CreateSpot(p CreateSpotParams) (surf.Spot, error) {
 		return surf.Spot{}, err
 	}
 
-	return s.spotStore.CreateSpot(surf.CreateSpotParams(p))
+	return s.spotStore.CreateSpot(surf.SpotCreationEntry(p))
 }
 
-type CreateSpotParams surf.CreateSpotParams
+type CreateSpotParams surf.SpotCreationEntry
 
 func (p CreateSpotParams) sanitize() CreateSpotParams {
 	p.Name = strings.TrimSpace(p.Name)
@@ -157,10 +157,10 @@ func (s *Service) UpdateSpot(p UpdateSpotParams) (surf.Spot, error) {
 		return surf.Spot{}, err
 	}
 
-	return s.spotStore.UpdateSpot(surf.UpdateSpotParams(p))
+	return s.spotStore.UpdateSpot(surf.SpotUpdateEntry(p))
 }
 
-type UpdateSpotParams surf.UpdateSpotParams
+type UpdateSpotParams surf.SpotUpdateEntry
 
 func (p UpdateSpotParams) sanitize() UpdateSpotParams {
 	sanitized := UpdateSpotParams{

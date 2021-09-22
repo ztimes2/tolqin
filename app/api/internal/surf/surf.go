@@ -38,21 +38,25 @@ type SpotSearchQuery struct {
 }
 
 type SpotWriter interface {
-	CreateSpot(CreateSpotParams) (Spot, error)
-	UpdateSpot(UpdateSpotParams) (Spot, error)
+	CreateSpot(SpotCreationEntry) (Spot, error)
+	UpdateSpot(SpotUpdateEntry) (Spot, error)
 	DeleteSpot(id string) error
 }
 
-type CreateSpotParams struct {
+type SpotCreationEntry struct {
 	Location geo.Location
 	Name     string
 }
 
-type UpdateSpotParams struct {
+type SpotUpdateEntry struct {
 	ID          string
 	Name        *string
 	Latitude    *float64
 	Longitude   *float64
 	Locality    *string
 	CountryCode *string
+}
+
+type MultiSpotWriter interface {
+	CreateSpots([]SpotCreationEntry) (int, error)
 }

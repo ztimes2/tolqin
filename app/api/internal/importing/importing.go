@@ -6,20 +6,14 @@ import (
 	"strings"
 
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 type SpotEntrySource interface {
 	SpotEntries() ([]SpotEntry, error)
 }
 
-type SpotImporter interface {
-	ImportSpots([]SpotEntry) (int, error)
-}
-
-type SpotEntry struct {
-	Location geo.Location
-	Name     string
-}
+type SpotEntry surf.SpotCreationEntry
 
 func (se SpotEntry) sanitize() SpotEntry {
 	se.Name = strings.TrimSpace(se.Name)
@@ -47,21 +41,28 @@ func (se SpotEntry) validate() error {
 	return nil
 }
 
-func ImportSpots(src SpotEntrySource, importer SpotImporter) (int, error) {
-	entries, err := src.SpotEntries()
+type SpotStore interface {
+	surf.MultiSpotWriter
+}
+
+func ImportSpots(src SpotEntrySource, store SpotStore) (int, error) {
+	ee, err := src.SpotEntries()
 	if err != nil {
 		return 0, fmt.Errorf("failed to read spot entries from source: %w", err)
 	}
 
-	for i := range entries {
-		entries[i] = entries[i].sanitize()
+	var entries []surf.SpotCreationEntry
+	for i, e := range ee {
+		e = e.sanitize()
 
-		if err := entries[i].validate(); err != nil {
+		if err := e.validate(); err != nil {
 			return 0, fmt.Errorf("invalid entry #%d: %w", i+1, err)
 		}
+
+		entries = append(entries, surf.SpotCreationEntry(e))
 	}
 
-	count, err := importer.ImportSpots(entries)
+	count, err := store.CreateSpots(entries)
 	if err != nil {
 		return 0, fmt.Errorf("failed to import spots: %w", err)
 	}

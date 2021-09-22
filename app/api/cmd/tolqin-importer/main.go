@@ -9,9 +9,9 @@ import (
 	config "github.com/ztimes2/tolqin/app/api/internal/config/importer"
 	"github.com/ztimes2/tolqin/app/api/internal/importing"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/csv"
-	"github.com/ztimes2/tolqin/app/api/internal/importing/psql"
 	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
+	"github.com/ztimes2/tolqin/app/api/internal/surf/psql"
 )
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 
 	count, err := importing.ImportSpots(
 		csv.NewSpotEntrySource(file),
-		psql.NewSpotImporter(db, conf.BatchSize),
+		psql.NewSpotStore(db, psql.WithBatchSize(conf.BatchSize)),
 	)
 	if err != nil {
 		logger.WithError(err).Fatalf("failed to import spots: %v", err)

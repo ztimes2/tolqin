@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
 type mockSpotEntrySource struct {
@@ -22,15 +23,15 @@ func (m *mockSpotEntrySource) SpotEntries() ([]SpotEntry, error) {
 	return args.Get(0).([]SpotEntry), args.Error(1)
 }
 
-type mockSpotImporter struct {
+type mockSpotStore struct {
 	mock.Mock
 }
 
-func newMockSpotImporter() *mockSpotImporter {
-	return &mockSpotImporter{}
+func newMockSpotStore() *mockSpotStore {
+	return &mockSpotStore{}
 }
 
-func (m *mockSpotImporter) ImportSpots(entries []SpotEntry) (int, error) {
+func (m *mockSpotStore) CreateSpots(entries []surf.SpotCreationEntry) (int, error) {
 	args := m.Called(entries)
 	return args.Int(0), args.Error(1)
 }
@@ -39,7 +40,7 @@ func TestImportSpots(t *testing.T) {
 	tests := []struct {
 		name          string
 		source        SpotEntrySource
-		importer      SpotImporter
+		store         SpotStore
 		expectedCount int
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
@@ -52,7 +53,7 @@ func TestImportSpots(t *testing.T) {
 					Return(([]SpotEntry)(nil), errors.New("something went wrong"))
 				return m
 			}(),
-			importer:      newMockSpotImporter(),
+			store:         newMockSpotStore(),
 			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
@@ -80,7 +81,7 @@ func TestImportSpots(t *testing.T) {
 					)
 				return m
 			}(),
-			importer:      newMockSpotImporter(),
+			store:         newMockSpotStore(),
 			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
@@ -108,7 +109,7 @@ func TestImportSpots(t *testing.T) {
 					)
 				return m
 			}(),
-			importer:      newMockSpotImporter(),
+			store:         newMockSpotStore(),
 			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
@@ -136,7 +137,7 @@ func TestImportSpots(t *testing.T) {
 					)
 				return m
 			}(),
-			importer:      newMockSpotImporter(),
+			store:         newMockSpotStore(),
 			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
@@ -164,7 +165,7 @@ func TestImportSpots(t *testing.T) {
 					)
 				return m
 			}(),
-			importer:      newMockSpotImporter(),
+			store:         newMockSpotStore(),
 			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
@@ -192,12 +193,12 @@ func TestImportSpots(t *testing.T) {
 					)
 				return m
 			}(),
-			importer:      newMockSpotImporter(),
+			store:         newMockSpotStore(),
 			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
 		{
-			name: "return error during spot importer failure",
+			name: "return error during spot store failure",
 			source: func() SpotEntrySource {
 				m := newMockSpotEntrySource()
 				m.
@@ -231,12 +232,12 @@ func TestImportSpots(t *testing.T) {
 					)
 				return m
 			}(),
-			importer: func() SpotImporter {
-				m := newMockSpotImporter()
+			store: func() SpotStore {
+				m := newMockSpotStore()
 				m.
 					On(
-						"ImportSpots",
-						[]SpotEntry{
+						"CreateSpots",
+						[]surf.SpotCreationEntry{
 							{
 								Location: geo.Location{
 									Coordinates: geo.Coordinates{
@@ -302,12 +303,12 @@ func TestImportSpots(t *testing.T) {
 					)
 				return m
 			}(),
-			importer: func() SpotImporter {
-				m := newMockSpotImporter()
+			store: func() SpotStore {
+				m := newMockSpotStore()
 				m.
 					On(
-						"ImportSpots",
-						[]SpotEntry{
+						"CreateSpots",
+						[]surf.SpotCreationEntry{
 							{
 								Location: geo.Location{
 									Coordinates: geo.Coordinates{
@@ -342,7 +343,7 @@ func TestImportSpots(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			count, err := ImportSpots(test.source, test.importer)
+			count, err := ImportSpots(test.source, test.store)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedCount, count)
 		})

@@ -9,19 +9,40 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/batch"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/surf"
 )
 
+const (
+	defaultBatchSize = 100
+)
+
 type SpotStore struct {
-	db      *sqlx.DB
-	builder sq.StatementBuilderType
+	db        *sqlx.DB
+	builder   sq.StatementBuilderType
+	batchSize int
 }
 
-func NewSpotStore(db *sqlx.DB) *SpotStore {
-	return &SpotStore{
-		db:      db,
-		builder: psqlutil.NewQueryBuilder(),
+func NewSpotStore(db *sqlx.DB, opts ...SpotStoreOption) *SpotStore {
+	ss := &SpotStore{
+		db:        db,
+		builder:   psqlutil.NewQueryBuilder(),
+		batchSize: defaultBatchSize,
+	}
+
+	for _, opt := range opts {
+		opt(ss)
+	}
+
+	return ss
+}
+
+type SpotStoreOption func(*SpotStore)
+
+func WithBatchSize(size int) SpotStoreOption {
+	return func(ss *SpotStore) {
+		ss.batchSize = size
 	}
 }
 
@@ -104,16 +125,16 @@ func buildSpotsSQL(b sq.StatementBuilderType, p surf.SpotsParams) sq.SelectBuild
 	return builder
 }
 
-func (ss *SpotStore) CreateSpot(p surf.CreateSpotParams) (surf.Spot, error) {
+func (ss *SpotStore) CreateSpot(e surf.SpotCreationEntry) (surf.Spot, error) {
 	query, args, err := ss.builder.
 		Insert("spots").
 		Columns("name", "latitude", "longitude", "locality", "country_code").
 		Values(
-			p.Name,
-			p.Location.Coordinates.Latitude,
-			p.Location.Coordinates.Longitude,
-			p.Location.Locality,
-			p.Location.CountryCode,
+			e.Name,
+			e.Location.Coordinates.Latitude,
+			e.Location.Coordinates.Longitude,
+			e.Location.Locality,
+			e.Location.CountryCode,
 		).
 		Suffix("RETURNING id, name, latitude, longitude, locality, country_code, created_at").
 		ToSql()
@@ -129,7 +150,73 @@ func (ss *SpotStore) CreateSpot(p surf.CreateSpotParams) (surf.Spot, error) {
 	return toSpot(s), nil
 }
 
-func (ss *SpotStore) UpdateSpot(p surf.UpdateSpotParams) (surf.Spot, error) {
+func (ss *SpotStore) CreateSpots(entries []surf.SpotCreationEntry) (int, error) {
+	if len(entries) == 0 {
+		return 0, errors.New("no entries")
+	}
+
+	tx, err := ss.db.Beginx()
+	if err != nil {
+		return 0, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	var count int
+
+	coord := batch.New(len(entries), ss.batchSize)
+	for coord.HasNext() {
+		b := coord.Batch()
+
+		n, err := ss.createSpots(tx, entries[b.I:b.J+1])
+		if err != nil {
+			_ = tx.Rollback()
+			return 0, fmt.Errorf("failed to import spots: %w", err)
+		}
+
+		count += n
+	}
+
+	_ = tx.Commit()
+	return count, nil
+}
+
+func (ss *SpotStore) createSpots(tx *sqlx.Tx, entries []surf.SpotCreationEntry) (int, error) {
+	builder := ss.builder.
+		Insert("spots").
+		Columns("name", "latitude", "longitude", "locality", "country_code")
+
+	for _, e := range entries {
+		builder = builder.Values(
+			e.Name,
+			e.Location.Coordinates.Latitude,
+			e.Location.Coordinates.Longitude,
+			e.Location.Locality,
+			e.Location.CountryCode,
+		)
+	}
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("failed to build query: %w", err)
+	}
+
+	res, err := tx.Exec(query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to read affected rows: %w", err)
+	}
+
+	if count == 0 {
+		return 0, fmt.Errorf("no rows affected")
+	}
+
+	return int(count), nil
+}
+
+func (ss *SpotStore) UpdateSpot(p surf.SpotUpdateEntry) (surf.Spot, error) {
 	values := make(map[string]interface{})
 	if p.Name != nil {
 		values["name"] = *p.Name
