@@ -18,12 +18,16 @@ const (
 	defaultBatchSize = 100
 )
 
+// SpotStore is a PostgreSQL database adapter that stores spots and implements
+// surf.SpotReader, surf.SpotWriter, and surf.MultiSpotWriter interfaces.
 type SpotStore struct {
 	db        *sqlx.DB
 	builder   sq.StatementBuilderType
 	batchSize int
 }
 
+// NewSpotStore returns a new *SpotStore using the given database connector and
+// various options.
 func NewSpotStore(db *sqlx.DB, opts ...SpotStoreOption) *SpotStore {
 	ss := &SpotStore{
 		db:        db,
@@ -38,14 +42,19 @@ func NewSpotStore(db *sqlx.DB, opts ...SpotStoreOption) *SpotStore {
 	return ss
 }
 
+// SpotStoreOption is an optional function for SpotStore.
 type SpotStoreOption func(*SpotStore)
 
+// WithBatchSize sets a custom batch size for batch processing in the Multi methods
+// of SpotStore.
 func WithBatchSize(size int) SpotStoreOption {
 	return func(ss *SpotStore) {
 		ss.batchSize = size
 	}
 }
 
+// Spot returns a spot by the given ID. surf.ErrSpotNotFound is returned when spot
+// is not found.
 func (ss *SpotStore) Spot(id string) (surf.Spot, error) {
 	query, args, err := ss.builder.
 		Select("id", "name", "latitude", "longitude", "locality", "country_code", "created_at").
@@ -67,6 +76,7 @@ func (ss *SpotStore) Spot(id string) (surf.Spot, error) {
 	return toSpot(s), nil
 }
 
+// Spots returns multiple spots that match the given parameters.
 func (ss *SpotStore) Spots(p surf.SpotsParams) ([]surf.Spot, error) {
 	builder := buildSpotsSQL(ss.builder, p)
 
@@ -125,6 +135,8 @@ func buildSpotsSQL(b sq.StatementBuilderType, p surf.SpotsParams) sq.SelectBuild
 	return builder
 }
 
+// CreateSpot creates a new spot using the given entry and returns it if the creation
+// succeeds.
 func (ss *SpotStore) CreateSpot(e surf.SpotCreationEntry) (surf.Spot, error) {
 	query, args, err := ss.builder.
 		Insert("spots").
@@ -150,36 +162,32 @@ func (ss *SpotStore) CreateSpot(e surf.SpotCreationEntry) (surf.Spot, error) {
 	return toSpot(s), nil
 }
 
-func (ss *SpotStore) CreateSpots(entries []surf.SpotCreationEntry) (int, error) {
+// CreateSpots creates multiple new spots using the given entries.
+func (ss *SpotStore) CreateSpots(entries []surf.SpotCreationEntry) error {
 	if len(entries) == 0 {
-		return 0, errors.New("no entries")
+		return errors.New("no entries")
 	}
 
 	tx, err := ss.db.Beginx()
 	if err != nil {
-		return 0, fmt.Errorf("failed to begin transaction: %w", err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-
-	var count int
 
 	coord := batch.New(len(entries), ss.batchSize)
 	for coord.HasNext() {
 		b := coord.Batch()
 
-		n, err := ss.createSpots(tx, entries[b.I:b.J+1])
-		if err != nil {
+		if err := ss.createSpots(tx, entries[b.I:b.J+1]); err != nil {
 			_ = tx.Rollback()
-			return 0, fmt.Errorf("failed to import spots: %w", err)
+			return fmt.Errorf("failed to import spots: %w", err)
 		}
-
-		count += n
 	}
 
 	_ = tx.Commit()
-	return count, nil
+	return nil
 }
 
-func (ss *SpotStore) createSpots(tx *sqlx.Tx, entries []surf.SpotCreationEntry) (int, error) {
+func (ss *SpotStore) createSpots(tx *sqlx.Tx, entries []surf.SpotCreationEntry) error {
 	builder := ss.builder.
 		Insert("spots").
 		Columns("name", "latitude", "longitude", "locality", "country_code")
@@ -196,26 +204,28 @@ func (ss *SpotStore) createSpots(tx *sqlx.Tx, entries []surf.SpotCreationEntry) 
 
 	query, args, err := builder.ToSql()
 	if err != nil {
-		return 0, fmt.Errorf("failed to build query: %w", err)
+		return fmt.Errorf("failed to build query: %w", err)
 	}
 
 	res, err := tx.Exec(query, args...)
 	if err != nil {
-		return 0, fmt.Errorf("failed to execute query: %w", err)
+		return fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	count, err := res.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf("failed to read affected rows: %w", err)
+		return fmt.Errorf("failed to read affected rows: %w", err)
 	}
 
 	if count == 0 {
-		return 0, fmt.Errorf("no rows affected")
+		return fmt.Errorf("no rows affected")
 	}
 
-	return int(count), nil
+	return nil
 }
 
+// UpdateSpot updates an existing spot using the given entry and returns it if the
+// update succeeds. surf.ErrSpotNotFound is returned when spot is not found.
 func (ss *SpotStore) UpdateSpot(p surf.SpotUpdateEntry) (surf.Spot, error) {
 	values := make(map[string]interface{})
 	if p.Name != nil {
@@ -258,6 +268,8 @@ func (ss *SpotStore) UpdateSpot(p surf.SpotUpdateEntry) (surf.Spot, error) {
 	return toSpot(s), nil
 }
 
+// DeleteSpot deletes a spot by the given ID. surf.ErrSpotNotFound is returned when
+// spot is not found.
 func (ss *SpotStore) DeleteSpot(id string) error {
 	query, args, err := ss.builder.
 		Delete("spots").

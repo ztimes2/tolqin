@@ -31,9 +31,9 @@ func newMockSpotStore() *mockSpotStore {
 	return &mockSpotStore{}
 }
 
-func (m *mockSpotStore) CreateSpots(entries []surf.SpotCreationEntry) (int, error) {
+func (m *mockSpotStore) CreateSpots(entries []surf.SpotCreationEntry) error {
 	args := m.Called(entries)
-	return args.Int(0), args.Error(1)
+	return args.Error(0)
 }
 
 func TestImportSpots(t *testing.T) {
@@ -262,7 +262,7 @@ func TestImportSpots(t *testing.T) {
 							},
 						},
 					).
-					Return(0, errors.New("something went wrong"))
+					Return(errors.New("something went wrong"))
 				return m
 			}(),
 			expectedCount: 0,
@@ -333,7 +333,7 @@ func TestImportSpots(t *testing.T) {
 							},
 						},
 					).
-					Return(2, nil)
+					Return(nil)
 				return m
 			}(),
 			expectedCount: 2,

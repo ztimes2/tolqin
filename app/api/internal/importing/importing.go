@@ -62,10 +62,9 @@ func ImportSpots(src SpotEntrySource, store SpotStore) (int, error) {
 		entries = append(entries, surf.SpotCreationEntry(e))
 	}
 
-	count, err := store.CreateSpots(entries)
-	if err != nil {
+	if err := store.CreateSpots(entries); err != nil {
 		return 0, fmt.Errorf("failed to import spots: %w", err)
 	}
 
-	return count, nil
+	return len(entries), nil
 }

@@ -645,7 +645,6 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 		batchSize     int
 		mockFn        func(sqlmock.Sqlmock)
 		entries       []surf.SpotCreationEntry
-		expectedCount int
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
@@ -653,7 +652,6 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 			batchSize:     2,
 			mockFn:        func(m sqlmock.Sqlmock) {},
 			entries:       []surf.SpotCreationEntry{},
-			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -720,7 +718,6 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -799,7 +796,6 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -880,7 +876,6 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -959,7 +954,6 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 0,
 			expectedErrFn: assert.Error,
 		},
 		{
@@ -1059,7 +1053,6 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 5,
 			expectedErrFn: assert.NoError,
 		},
 	}
@@ -1075,8 +1068,7 @@ func TestSpotStore_CreateSpots(t *testing.T) {
 			test.mockFn(mock)
 
 			store := NewSpotStore(sqlx.NewDb(db, psqlutil.DriverNameSQLMock), WithBatchSize(test.batchSize))
-			count, err := store.CreateSpots(test.entries)
-			assert.Equal(t, test.expectedCount, count)
+			err = store.CreateSpots(test.entries)
 			test.expectedErrFn(t, err)
 
 			assert.NoError(t, mock.ExpectationsWereMet())
