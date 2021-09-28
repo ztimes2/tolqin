@@ -6,11 +6,32 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
 )
 
+type passwordSalter interface {
+	SaltPassword(password string) (salted, salt string, err error)
+}
+
+type passwordHasher interface {
+	HashPassword(password string) (string, error)
+	ComparePassword(hash, password string) error
+}
+
 type Service struct {
-	salter         auth.Salter
-	passwordHasher auth.PasswordHasher
+	passwordSalter passwordSalter
+	passwordHasher passwordHasher
 	tokener        auth.Tokener
 	userStore      auth.UserStore
+}
+
+func NewService(
+	passwordSalter *auth.PasswordSalter,
+	passwordHasher *auth.PasswordHasher,
+	userStore auth.UserStore) *Service {
+
+	return &Service{
+		passwordSalter: passwordSalter,
+		passwordHasher: passwordHasher,
+		userStore:      userStore,
+	}
 }
 
 func (s *Service) Token(email, password string) (string, error) {
@@ -36,5 +57,3 @@ func (s *Service) Token(email, password string) (string, error) {
 
 	return token, nil
 }
-
-
