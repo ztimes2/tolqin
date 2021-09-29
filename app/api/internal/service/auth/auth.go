@@ -6,6 +6,13 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
 )
 
+type Service struct {
+	passwordSalter passwordSalter
+	passwordHasher passwordHasher
+	tokener        tokener
+	userStore      auth.UserStore
+}
+
 type passwordSalter interface {
 	SaltPassword(password string) (salted, salt string, err error)
 }
@@ -15,22 +22,22 @@ type passwordHasher interface {
 	ComparePassword(hash, password string) error
 }
 
-type Service struct {
-	passwordSalter passwordSalter
-	passwordHasher passwordHasher
-	tokener        auth.Tokener
-	userStore      auth.UserStore
+type tokener interface {
+	Token(auth.User) (string, error)
+	ParseTokenClaims(token string) (auth.TokenClaims, error)
 }
 
 func NewService(
-	passwordSalter *auth.PasswordSalter,
-	passwordHasher *auth.PasswordHasher,
-	userStore auth.UserStore) *Service {
+	ps *auth.PasswordSalter,
+	ph *auth.PasswordHasher,
+	t tokener,
+	us auth.UserStore) *Service {
 
 	return &Service{
-		passwordSalter: passwordSalter,
-		passwordHasher: passwordHasher,
-		userStore:      userStore,
+		passwordSalter: ps,
+		passwordHasher: ph,
+		tokener:        t,
+		userStore:      us,
 	}
 }
 
@@ -42,11 +49,7 @@ func (s *Service) Token(email, password string) (string, error) {
 		return "", fmt.Errorf("could not find user: %w", err)
 	}
 
-	if err := s.passwordHasher.ComparePassword(
-		user.PasswordHash,
-		password,
-		user.PasswordSalt,
-	); err != nil {
+	if err := s.passwordHasher.ComparePassword(user.PasswordHash, password); err != nil {
 		return "", fmt.Errorf("could not compare password: %w", err)
 	}
 

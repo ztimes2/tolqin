@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
@@ -71,9 +72,51 @@ func (p *PasswordHasher) ComparePassword(hash, password string) error {
 	return nil
 }
 
-type Tokener interface { // TODO turn into struct
-	Token(User) (string, error)
-	ParseToken(token string) (TokenClaims, error)
+type Tokener struct {
+	issuer        string
+	signingKey    string
+	signingMethod jwt.SigningMethod
+	expiry        time.Duration
+	timeNowFn     func() time.Time
+}
+
+func NewTokener(issuer, signingKey string, expiry time.Duration) *Tokener {
+	return &Tokener{
+		issuer:        issuer,
+		signingKey:    signingKey,
+		signingMethod: jwt.SigningMethodHS256,
+		expiry:        expiry,
+		timeNowFn:     time.Now,
+	}
+}
+
+func (t *Tokener) Token(u User) (string, error) {
+	now := t.timeNowFn()
+
+	claims := TokenClaims{
+		StandardClaims: jwt.StandardClaims{
+			Subject:   u.ID,
+			Issuer:    t.issuer,
+			IssuedAt:  now.Unix(),
+			ExpiresAt: now.Add(t.expiry).Unix(),
+		},
+		Email: u.Email,
+		Role:  u.Role.String(),
+	}
+
+	return jwt.NewWithClaims(t.signingMethod, &claims).SignedString([]byte(t.signingKey))
+}
+
+func (t *Tokener) ParseTokenClaims(token string) (TokenClaims, error) {
+	var claims TokenClaims
+
+	if _, err := jwt.ParseWithClaims(token, &claims, func(_ *jwt.Token) (interface{}, error) {
+		return []byte(t.signingKey), nil
+	}); err != nil {
+		return TokenClaims{}, err
+	}
+
+	return claims, nil 
 }
 
 type TokenClaims struct {
