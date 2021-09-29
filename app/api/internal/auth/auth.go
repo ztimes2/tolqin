@@ -127,6 +127,11 @@ type TokenClaims struct {
 	Role  string `json:"role,omitempty"`
 }
 
+func (t TokenClaims) Valid() error {
+	// TODO validate more claims
+	return t.StandardClaims.Valid()
+}
+
 func (t TokenClaims) UserInfo() UserInfo {
 	return UserInfo{
 		ID:    t.Subject,
@@ -153,3 +158,4 @@ func FromContext(ctx context.Context) (TokenClaims, bool) {
 	t, ok := ctx.Value(tokenClaimsKey).(TokenClaims)
 	return t, ok
 }
+
