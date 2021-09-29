@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -116,7 +117,7 @@ func (t *Tokener) ParseTokenClaims(token string) (TokenClaims, error) {
 		return TokenClaims{}, err
 	}
 
-	return claims, nil 
+	return claims, nil
 }
 
 type TokenClaims struct {
@@ -138,4 +139,17 @@ type UserInfo struct {
 	ID    string
 	Email string
 	Role  Role
+}
+
+type contextKey struct{}
+
+var tokenClaimsKey contextKey = struct{}{}
+
+func ContextWith(ctx context.Context, t TokenClaims) context.Context {
+	return context.WithValue(ctx, tokenClaimsKey, t)
+}
+
+func FromContext(ctx context.Context) (TokenClaims, bool) {
+	t, ok := ctx.Value(tokenClaimsKey).(TokenClaims)
+	return t, ok
 }

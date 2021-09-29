@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
+	"github.com/ztimes2/tolqin/app/api/internal/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
@@ -73,4 +74,26 @@ func withPanicRecoverer(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func withAuthTokenClaims(t *auth.Tokener) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token, err := httputil.BearerAuthHeader(r)
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			claims, err := t.ParseTokenClaims(token)
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			r = r.WithContext(auth.ContextWith(r.Context(), claims))
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
