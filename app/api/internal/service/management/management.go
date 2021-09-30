@@ -25,9 +25,6 @@ const (
 )
 
 var (
-	ErrNotAuthenticated = errors.New("not authenticated")
-	ErrNotAuthorized    = errors.New("not authorized")
-
 	ErrInvalidSearchQuery        = errors.New("invalid search query")
 	ErrInvalidLocality           = errors.New("invalid locality")
 	ErrInvalidCountryCode        = errors.New("invalid country code")
@@ -59,13 +56,8 @@ func NewService(s SpotStore, l geo.LocationSource) *Service {
 }
 
 func (s *Service) Spot(ctx context.Context, id string) (surf.Spot, error) {
-	token, ok := auth.FromContext(ctx)
-	if !ok {
-		return surf.Spot{}, ErrNotAuthenticated
-	}
-
-	if token.UserInfo().Role != auth.RoleAdmin {
-		return surf.Spot{}, ErrNotAuthorized
+	if _, err := auth.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return surf.Spot{}, err
 	}
 
 	id = strings.TrimSpace(id)
@@ -78,13 +70,8 @@ func (s *Service) Spot(ctx context.Context, id string) (surf.Spot, error) {
 }
 
 func (s *Service) Spots(ctx context.Context, p SpotsParams) ([]surf.Spot, error) {
-	token, ok := auth.FromContext(ctx)
-	if !ok {
-		return nil, ErrNotAuthenticated
-	}
-
-	if token.UserInfo().Role != auth.RoleAdmin {
-		return nil, ErrNotAuthorized
+	if _, err := auth.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return nil, err
 	}
 
 	p = p.sanitize()
@@ -143,13 +130,8 @@ func (p SpotsParams) validate() error {
 }
 
 func (s *Service) CreateSpot(ctx context.Context, p CreateSpotParams) (surf.Spot, error) {
-	token, ok := auth.FromContext(ctx)
-	if !ok {
-		return surf.Spot{}, ErrNotAuthenticated
-	}
-
-	if token.UserInfo().Role != auth.RoleAdmin {
-		return surf.Spot{}, ErrNotAuthorized
+	if _, err := auth.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return surf.Spot{}, err
 	}
 
 	p = p.sanitize()
@@ -183,13 +165,8 @@ func (p CreateSpotParams) validate() error {
 }
 
 func (s *Service) UpdateSpot(ctx context.Context, p UpdateSpotParams) (surf.Spot, error) {
-	token, ok := auth.FromContext(ctx)
-	if !ok {
-		return surf.Spot{}, ErrNotAuthenticated
-	}
-
-	if token.UserInfo().Role != auth.RoleAdmin {
-		return surf.Spot{}, ErrNotAuthorized
+	if _, err := auth.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return surf.Spot{}, err
 	}
 
 	p = p.sanitize()
@@ -245,13 +222,8 @@ func (p UpdateSpotParams) validate() error {
 }
 
 func (s *Service) DeleteSpot(ctx context.Context, id string) error {
-	token, ok := auth.FromContext(ctx)
-	if !ok {
-		return ErrNotAuthenticated
-	}
-
-	if token.UserInfo().Role != auth.RoleAdmin {
-		return ErrNotAuthorized
+	if _, err := auth.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return err
 	}
 
 	id = strings.TrimSpace(id)
@@ -264,13 +236,8 @@ func (s *Service) DeleteSpot(ctx context.Context, id string) error {
 }
 
 func (s *Service) Location(ctx context.Context, c geo.Coordinates) (geo.Location, error) {
-	token, ok := auth.FromContext(ctx)
-	if !ok {
-		return geo.Location{}, ErrNotAuthenticated
-	}
-
-	if token.UserInfo().Role != auth.RoleAdmin {
-		return geo.Location{}, ErrNotAuthorized
+	if _, err := auth.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return geo.Location{}, err
 	}
 
 	v := valerra.New()

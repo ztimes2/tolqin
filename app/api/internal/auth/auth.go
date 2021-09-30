@@ -102,7 +102,7 @@ func (t *Tokener) Token(u User) (string, error) {
 			ExpiresAt: now.Add(t.expiry).Unix(),
 		},
 		Email: u.Email,
-		Role:  u.Role.String(),
+		Role:  u.Role,
 	}
 
 	return jwt.NewWithClaims(t.signingMethod, &claims).SignedString([]byte(t.signingKey))
@@ -124,26 +124,12 @@ type TokenClaims struct {
 	jwt.StandardClaims
 
 	Email string `json:"email,omitempty"`
-	Role  string `json:"role,omitempty"`
+	Role  Role   `json:"role,omitempty"`
 }
 
 func (t TokenClaims) Valid() error {
 	// TODO validate more claims
 	return t.StandardClaims.Valid()
-}
-
-func (t TokenClaims) UserInfo() UserInfo {
-	return UserInfo{
-		ID:    t.Subject,
-		Email: t.Email,
-		Role:  NewRole(t.Role),
-	}
-}
-
-type UserInfo struct {
-	ID    string
-	Email string
-	Role  Role
 }
 
 type contextKey struct{}
@@ -159,3 +145,20 @@ func FromContext(ctx context.Context) (TokenClaims, bool) {
 	return t, ok
 }
 
+var (
+	ErrNotAuthenticated = errors.New("not authenticated")
+	ErrNotAuthorized    = errors.New("not authorized")
+)
+
+func WithRoleFromContext(ctx context.Context, r Role) (TokenClaims, error) {
+	claims, ok := FromContext(ctx)
+	if !ok {
+		return TokenClaims{}, ErrNotAuthenticated
+	}
+
+	if claims.Role != r {
+		return TokenClaims{}, ErrNotAuthorized
+	}
+
+	return claims, nil
+}

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -42,6 +43,16 @@ func (r Role) String() string {
 	default:
 		return ""
 	}
+}
+
+func (r Role) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + r.String() + `"`), nil
+}
+
+func (r *Role) UnmarshalJSON(data []byte) error {
+	s := strings.Trim(string(data), `"`)
+	*r = NewRole(s)
+	return nil
 }
 
 var (
