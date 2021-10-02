@@ -1,16 +1,33 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
+	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
+)
+
+const (
+	maxEmailLength    = 100
+	maxPasswordLength = 50
+)
+
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 type Service struct {
 	passwordSalter passwordSalter
 	passwordHasher passwordHasher
 	tokener        tokener
-	userStore      auth.UserStore
+	userStore      UserStore
+}
+
+type UserStore interface {
+	auth.UserReader
 }
 
 type passwordSalter interface {
@@ -30,8 +47,8 @@ type tokener interface {
 func NewService(
 	ps *auth.PasswordSalter,
 	ph *auth.PasswordHasher,
-	t tokener,
-	us auth.UserStore) *Service {
+	t *auth.Tokener,
+	us UserStore) *Service {
 
 	return &Service{
 		passwordSalter: ps,
@@ -42,7 +59,16 @@ func NewService(
 }
 
 func (s *Service) Token(email, password string) (string, error) {
-	// TODO sanitize and validate input
+	email = strings.TrimSpace(email)
+
+	v := valerra.New()
+	v.IfFalse(valerra.StringLessOrEqual(email, maxEmailLength), ErrInvalidCredentials)
+	v.IfFalse(valerrautil.IsEmail(email), ErrInvalidCredentials)
+	v.IfFalse(valerra.StringLessOrEqual(password, maxEmailLength), ErrInvalidCredentials)
+
+	if err := v.Validate(); err != nil {
+		return "", err
+	}
 
 	user, err := s.userStore.UserByEmail(email)
 	if err != nil {

@@ -1,6 +1,8 @@
 package valerrautil
 
 import (
+	"net/mail"
+
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 )
@@ -26,5 +28,18 @@ func IsLatitude(lat float64) valerra.Condition {
 func IsLongitude(lon float64) valerra.Condition {
 	return func() bool {
 		return geo.IsLongitude(lon)
+	}
+}
+
+func IsEmail(email string) valerra.Condition {
+	return func() bool {
+		addr, err := mail.ParseAddress(email)
+		if err != nil {
+			return false
+		}
+		if addr.Name != "" {
+			return false
+		}
+		return true
 	}
 }

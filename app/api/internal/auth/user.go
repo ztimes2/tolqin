@@ -59,8 +59,11 @@ var (
 	ErrEmailAlreadyTaken = errors.New("email has already been taken")
 )
 
-type UserStore interface {
+type UserReader interface {
 	UserByEmail(email string) (User, error)
+}
+
+type UserWriter interface {
 	CreateUser(UserCreationEntry) (User, error)
 }
 
