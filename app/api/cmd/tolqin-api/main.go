@@ -2,14 +2,18 @@ package main
 
 import (
 	"log"
+	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/ztimes2/tolqin/app/api/internal/auth"
+	authpsql "github.com/ztimes2/tolqin/app/api/internal/auth/psql"
 	config "github.com/ztimes2/tolqin/app/api/internal/config/api"
 	"github.com/ztimes2/tolqin/app/api/internal/geo/nominatim"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httpserver"
 	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/router"
+	serviceauth "github.com/ztimes2/tolqin/app/api/internal/service/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 	"github.com/ztimes2/tolqin/app/api/internal/surf/psql"
@@ -42,6 +46,12 @@ func main() {
 	spotStore := psql.NewSpotStore(db)
 
 	router := router.New(
+		serviceauth.NewService(
+			auth.NewPasswordSalter(),
+			auth.NewPasswordHasher(),
+			auth.NewTokener("tolqin", "123456", 10*time.Minute),
+			authpsql.NewUserStore(db),
+		),
 		surfer.NewService(spotStore),
 		management.NewService(
 			spotStore,

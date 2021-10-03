@@ -3,12 +3,14 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
+	serviceauth "github.com/ztimes2/tolqin/app/api/internal/service/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 )
@@ -18,11 +20,21 @@ const (
 )
 
 // New returns an HTTP router that serves various APIs of the application.
-func New(ss *surfer.Service, ms *management.Service, l *logrus.Logger) http.Handler {
-	return newRouter(ss, ms, l)
+func New(
+	as *serviceauth.Service,
+	ss *surfer.Service,
+	ms *management.Service,
+	l *logrus.Logger) http.Handler {
+
+	return newRouter(as, ss, ms, l)
 }
 
-func newRouter(ss surferService, ms managementService, l *logrus.Logger) http.Handler {
+func newRouter(
+	as authService,
+	ss surferService,
+	ms managementService,
+	l *logrus.Logger) http.Handler {
+
 	router := chi.NewRouter()
 
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
@@ -32,9 +44,13 @@ func newRouter(ss surferService, ms managementService, l *logrus.Logger) http.Ha
 	router.Use(
 		withLogger(l),
 		withPanicRecoverer,
+		withAuthTokenClaims(auth.NewTokener("tolqin", "123456", 10*time.Minute)), // FIXME inject
 	)
 
 	router.Get("/health", handleHealthCheck)
+
+	ah := newAuthHandler(as)
+	router.Post("/auth/token", ah.token)
 
 	sh := newSurferHandler(ss)
 	router.Get("/v1/spots", sh.spots)

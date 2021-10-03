@@ -32,3 +32,7 @@ type locationResponse struct {
 	Locality    string  `json:"locality"`
 	CountryCode string  `json:"country_code"`
 }
+
+type tokenResponse struct {
+	AccessToken string `json:"access_token"`
+}

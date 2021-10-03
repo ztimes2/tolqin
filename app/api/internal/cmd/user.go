@@ -8,17 +8,21 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/cmdio"
 )
 
-func newUserCmd(cio *cmdio.IO) *cobra.Command {
+type userService interface {
+	CreateUser(email, password string, role auth.Role) (auth.User, error)
+}
+
+func newUserCmd(cio *cmdio.IO, s userService) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "user",
 		Short: "Manage users of the application",
 		Long:  "Manage users of the application",
 	}
-	cmd.AddCommand(newCreateUserCmd(cio))
+	cmd.AddCommand(newCreateUserCmd(cio, s))
 	return cmd
 }
 
-func newCreateUserCmd(cio *cmdio.IO) *cobra.Command {
+func newCreateUserCmd(cio *cmdio.IO, s userService) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create",
 		Short: "Create a new user",
@@ -41,9 +45,12 @@ func newCreateUserCmd(cio *cmdio.IO) *cobra.Command {
 				return err
 			}
 
-			// TODO call service to create the user
+			user, err := s.CreateUser(email, password, auth.NewRole(role))
+			if err != nil {
+				return err
+			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), email, password, role)
+			fmt.Fprintln(cmd.OutOrStdout(), user.ID)
 			return nil
 		},
 	}

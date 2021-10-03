@@ -69,7 +69,9 @@ func (s *Service) Token(email, password string) (string, error) {
 		return "", fmt.Errorf("could not find user: %w", err)
 	}
 
-	if err := s.passwordHasher.ComparePassword(user.PasswordHash, password); err != nil {
+	salted := password + user.PasswordSalt // FIXME
+
+	if err := s.passwordHasher.ComparePassword(user.PasswordHash, salted); err != nil {
 		return "", fmt.Errorf("could not compare password: %w", err)
 	}
 

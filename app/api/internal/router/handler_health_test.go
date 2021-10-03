@@ -10,7 +10,7 @@ import (
 )
 
 func TestHandleHealthCheck(t *testing.T) {
-	r := newRouter(newMockSurferService(), newMockManagementService(), nil)
+	r := newRouter(nil, newMockSurferService(), newMockManagementService(), nil)
 
 	server := httptest.NewServer(r)
 	defer server.Close()
