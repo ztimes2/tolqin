@@ -9,7 +9,6 @@ import (
 type User struct {
 	ID           string
 	Email        string
-	Name         string
 	CreatedAt    time.Time
 	Role         Role
 	PasswordHash string
@@ -57,6 +56,7 @@ func (r *Role) UnmarshalJSON(data []byte) error {
 
 var (
 	ErrEmailAlreadyTaken = errors.New("email has already been taken")
+	ErrUserNotFound      = errors.New("user not found")
 )
 
 type UserReader interface {
