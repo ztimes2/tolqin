@@ -12,16 +12,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	defaultSaltByteSize = 16
+)
+
 type PasswordSalter struct {
 	byteSize int
 	reader   io.Reader
 	encodeFn func([]byte) string
 }
 
-func NewPasswordSalter(byteSize int) *PasswordSalter {
+func NewPasswordSalter() *PasswordSalter {
 	return &PasswordSalter{
 		reader:   rand.Reader,
-		byteSize: byteSize,
+		byteSize: defaultSaltByteSize,
 		encodeFn: base64.URLEncoding.EncodeToString,
 	}
 }

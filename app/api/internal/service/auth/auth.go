@@ -10,11 +10,6 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
 )
 
-const (
-	maxEmailLength    = 100
-	maxPasswordLength = 50
-)
-
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
@@ -62,9 +57,8 @@ func (s *Service) Token(email, password string) (string, error) {
 	email = strings.TrimSpace(email)
 
 	v := valerra.New()
-	v.IfFalse(valerra.StringLessOrEqual(email, maxEmailLength), ErrInvalidCredentials)
 	v.IfFalse(valerrautil.IsEmail(email), ErrInvalidCredentials)
-	v.IfFalse(valerra.StringLessOrEqual(password, maxEmailLength), ErrInvalidCredentials)
+	v.IfFalse(valerrautil.IsPassword(password), ErrInvalidCredentials)
 
 	if err := v.Validate(); err != nil {
 		return "", err
