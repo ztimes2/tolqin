@@ -26,7 +26,7 @@ type UserStore interface {
 }
 
 type passwordSalter interface {
-	SaltPassword(password string) (salted, salt string, err error)
+	SaltPassword(password, salt string) string
 }
 
 type passwordHasher interface {
@@ -69,7 +69,7 @@ func (s *Service) Token(email, password string) (string, error) {
 		return "", fmt.Errorf("could not find user: %w", err)
 	}
 
-	salted := password + user.PasswordSalt // FIXME
+	salted := s.passwordSalter.SaltPassword(password, user.PasswordSalt)
 
 	if err := s.passwordHasher.ComparePassword(user.PasswordHash, salted); err != nil {
 		return "", fmt.Errorf("could not compare password: %w", err)

@@ -10,7 +10,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/cmd"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
-	"github.com/ztimes2/tolqin/app/api/internal/service/ops"
+	"github.com/ztimes2/tolqin/app/api/internal/service/operator"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("❌ %s", err.Error())
 	}
 
-	s := ops.NewService(
+	s := operator.NewService(
 		auth.NewPasswordSalter(),
 		auth.NewPasswordHasher(),
 		authpsql.NewUserStore(db),

@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/cmdio"
-	"github.com/ztimes2/tolqin/app/api/internal/service/ops"
+	"github.com/ztimes2/tolqin/app/api/internal/service/operator"
 )
 
-func New(s *ops.Service) *cobra.Command {
+func New(s *operator.Service) *cobra.Command {
 	cio := cmdio.New(os.Stdin, os.Stdout)
 
 	cmd := &cobra.Command{

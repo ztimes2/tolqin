@@ -1,4 +1,4 @@
-package ops
+package operator
 
 import (
 	"errors"
@@ -32,7 +32,8 @@ type UserStore interface {
 }
 
 type passwordSalter interface {
-	SaltPassword(password string) (salted, salt string, err error)
+	GenerateSalt() (string, error)
+	SaltPassword(password, salt string) string
 }
 
 type passwordHasher interface {
@@ -63,10 +64,12 @@ func (s *Service) CreateUser(email, password string, role auth.Role) (auth.User,
 		return auth.User{}, err
 	}
 
-	salted, salt, err := s.passwordSalter.SaltPassword(password)
+	salt, err := s.passwordSalter.GenerateSalt()
 	if err != nil {
-		return auth.User{}, fmt.Errorf("could not salt password: %w", err)
+		return auth.User{}, fmt.Errorf("could not generate salt: %w", err)
 	}
+
+	salted := s.passwordSalter.SaltPassword(password, salt)
 
 	hash, err := s.passwordHasher.HashPassword(salted)
 	if err != nil {

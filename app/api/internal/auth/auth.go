@@ -30,15 +30,17 @@ func NewPasswordSalter() *PasswordSalter {
 	}
 }
 
-func (p *PasswordSalter) SaltPassword(password string) (salted, salt string, err error) {
+func (p *PasswordSalter) GenerateSalt() (string, error) {
 	b := make([]byte, p.byteSize)
 	if _, err := p.reader.Read(b); err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	salt = p.encodeFn(b)
+	return p.encodeFn(b), nil
+}
 
-	return password + salt, salt, nil
+func (p *PasswordSalter) SaltPassword(password, salt string) string {
+	return password + salt
 }
 
 var (
