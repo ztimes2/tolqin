@@ -1,10 +1,13 @@
 package management
 
 import (
+	"context"
 	"errors"
 	"strings"
 
+	"github.com/ztimes2/tolqin/app/api/internal/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/jwt"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/paging"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
@@ -53,7 +56,11 @@ func NewService(s SpotStore, l geo.LocationSource) *Service {
 	}
 }
 
-func (s *Service) Spot(id string) (surf.Spot, error) {
+func (s *Service) Spot(ctx context.Context, id string) (surf.Spot, error) {
+	if _, err := jwt.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return surf.Spot{}, err
+	}
+
 	id = strings.TrimSpace(id)
 
 	if err := valerra.IfFalse(valerra.StringNotEmpty(id), ErrInvalidSpotID); err != nil {
@@ -63,7 +70,11 @@ func (s *Service) Spot(id string) (surf.Spot, error) {
 	return s.spotStore.Spot(id)
 }
 
-func (s *Service) Spots(p SpotsParams) ([]surf.Spot, error) {
+func (s *Service) Spots(ctx context.Context, p SpotsParams) ([]surf.Spot, error) {
+	if _, err := jwt.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return nil, err
+	}
+
 	p = p.sanitize()
 
 	if err := p.validate(); err != nil {
@@ -119,7 +130,11 @@ func (p SpotsParams) validate() error {
 	return v.Validate()
 }
 
-func (s *Service) CreateSpot(p CreateSpotParams) (surf.Spot, error) {
+func (s *Service) CreateSpot(ctx context.Context, p CreateSpotParams) (surf.Spot, error) {
+	if _, err := jwt.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return surf.Spot{}, err
+	}
+
 	p = p.sanitize()
 
 	if err := p.validate(); err != nil {
@@ -150,7 +165,11 @@ func (p CreateSpotParams) validate() error {
 	return v.Validate()
 }
 
-func (s *Service) UpdateSpot(p UpdateSpotParams) (surf.Spot, error) {
+func (s *Service) UpdateSpot(ctx context.Context, p UpdateSpotParams) (surf.Spot, error) {
+	if _, err := jwt.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return surf.Spot{}, err
+	}
+
 	p = p.sanitize()
 
 	if err := p.validate(); err != nil {
@@ -203,7 +222,11 @@ func (p UpdateSpotParams) validate() error {
 	return v.Validate()
 }
 
-func (s *Service) DeleteSpot(id string) error {
+func (s *Service) DeleteSpot(ctx context.Context, id string) error {
+	if _, err := jwt.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return err
+	}
+
 	id = strings.TrimSpace(id)
 
 	if err := valerra.IfFalse(valerra.StringNotEmpty(id), ErrInvalidSpotID); err != nil {
@@ -213,7 +236,11 @@ func (s *Service) DeleteSpot(id string) error {
 	return s.spotStore.DeleteSpot(id)
 }
 
-func (s *Service) Location(c geo.Coordinates) (geo.Location, error) {
+func (s *Service) Location(ctx context.Context, c geo.Coordinates) (geo.Location, error) {
+	if _, err := jwt.WithRoleFromContext(ctx, auth.RoleAdmin); err != nil {
+		return geo.Location{}, err
+	}
+
 	v := valerra.New()
 	v.IfFalse(valerrautil.IsLatitude(c.Latitude), ErrInvalidLatitude)
 	v.IfFalse(valerrautil.IsLongitude(c.Longitude), ErrInvalidLongitude)

@@ -1,13 +1,16 @@
 package management
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/ztimes2/tolqin/app/api/internal/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/jwt"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/strutil"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
@@ -63,13 +66,41 @@ func (m *mockLocationSource) Location(c geo.Coordinates) (geo.Location, error) {
 func TestService_Spot(t *testing.T) {
 	tests := []struct {
 		name          string
+		ctxFn         func() context.Context
 		spotStore     SpotStore
 		id            string
 		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
-			name:          "return error for invalid spot id",
+			name: "return error for unauthenticated request",
+			ctxFn: func() context.Context {
+				return context.Background()
+			},
+			spotStore:     newMockSpotStore(),
+			id:            "",
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(jwt.ErrClaimsNotFound),
+		},
+		{
+			name: "return error for unauthorized request",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: "",
+				})
+			},
+			spotStore:     newMockSpotStore(),
+			id:            "",
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(jwt.ErrMismatchedRole),
+		},
+		{
+			name: "return error for invalid spot id",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore:     newMockSpotStore(),
 			id:            "",
 			expectedSpot:  surf.Spot{},
@@ -77,6 +108,11 @@ func TestService_Spot(t *testing.T) {
 		},
 		{
 			name: "return error during spot store failure",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -90,6 +126,11 @@ func TestService_Spot(t *testing.T) {
 		},
 		{
 			name: "return spot using sanitized id without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -130,6 +171,11 @@ func TestService_Spot(t *testing.T) {
 		},
 		{
 			name: "return spot without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -174,7 +220,7 @@ func TestService_Spot(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := NewService(test.spotStore, newMockLocationSource())
 
-			spot, err := s.Spot(test.id)
+			spot, err := s.Spot(test.ctxFn(), test.id)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpot, spot)
 		})
@@ -184,13 +230,49 @@ func TestService_Spot(t *testing.T) {
 func TestService_Spots(t *testing.T) {
 	tests := []struct {
 		name          string
+		ctxFn         func() context.Context
 		spotStore     SpotStore
 		params        SpotsParams
 		expectedSpots []surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
-			name:      "return error for invalid country code",
+			name: "return error for unauthenticated request",
+			ctxFn: func() context.Context {
+				return context.Background()
+			},
+			spotStore: newMockSpotStore(),
+			params: SpotsParams{
+				Limit:       20,
+				Offset:      0,
+				CountryCode: "invalid",
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsError(jwt.ErrClaimsNotFound),
+		},
+		{
+			name: "return error for unauthorized request",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: "",
+				})
+			},
+			spotStore: newMockSpotStore(),
+			params: SpotsParams{
+				Limit:       20,
+				Offset:      0,
+				CountryCode: "invalid",
+			},
+			expectedSpots: nil,
+			expectedErrFn: testutil.IsError(jwt.ErrMismatchedRole),
+		},
+		{
+			name: "return error for invalid country code",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:       20,
@@ -201,7 +283,12 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidCountryCode),
 		},
 		{
-			name:      "return error for invalid query",
+			name: "return error for invalid query",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:       20,
@@ -213,7 +300,12 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSearchQuery),
 		},
 		{
-			name:      "return error for invalid north-east latitude",
+			name: "return error for invalid north-east latitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:  20,
@@ -233,7 +325,12 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidNorthEastLatitude),
 		},
 		{
-			name:      "return error for invalid north-east longitude",
+			name: "return error for invalid north-east longitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:  20,
@@ -253,7 +350,12 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidNorthEastLongitude),
 		},
 		{
-			name:      "return error for invalid south-west latitude",
+			name: "return error for invalid south-west latitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:  20,
@@ -273,7 +375,12 @@ func TestService_Spots(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSouthWestLatitude),
 		},
 		{
-			name:      "return error for invalid south-west longitude",
+			name: "return error for invalid south-west longitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: SpotsParams{
 				Limit:  20,
@@ -294,6 +401,11 @@ func TestService_Spots(t *testing.T) {
 		},
 		{
 			name: "return error during spot store failure",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -313,6 +425,11 @@ func TestService_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots using sanitized params without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -396,6 +513,11 @@ func TestService_Spots(t *testing.T) {
 		},
 		{
 			name: "return spots without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -478,7 +600,7 @@ func TestService_Spots(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := NewService(test.spotStore, newMockLocationSource())
 
-			spots, err := s.Spots(test.params)
+			spots, err := s.Spots(test.ctxFn(), test.params)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpots, spots)
 		})
@@ -488,13 +610,61 @@ func TestService_Spots(t *testing.T) {
 func TestService_CreateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
+		ctxFn         func() context.Context
 		spotStore     SpotStore
 		params        CreateSpotParams
 		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
-			name:      "return error for invalid name",
+			name: "return error for unauthenticated request",
+			ctxFn: func() context.Context {
+				return context.Background()
+			},
+			spotStore: newMockSpotStore(),
+			params: CreateSpotParams{
+				Name: "",
+				Location: geo.Location{
+					Coordinates: geo.Coordinates{
+						Latitude:  1.23,
+						Longitude: 3.21,
+					},
+					Locality:    "Locality 1",
+					CountryCode: "kz",
+				},
+			},
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(jwt.ErrClaimsNotFound),
+		},
+		{
+			name: "return error for unauthorized request",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: "",
+				})
+			},
+			spotStore: newMockSpotStore(),
+			params: CreateSpotParams{
+				Name: "",
+				Location: geo.Location{
+					Coordinates: geo.Coordinates{
+						Latitude:  1.23,
+						Longitude: 3.21,
+					},
+					Locality:    "Locality 1",
+					CountryCode: "kz",
+				},
+			},
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(jwt.ErrMismatchedRole),
+		},
+		{
+			name: "return error for invalid name",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: CreateSpotParams{
 				Name: "",
@@ -511,7 +681,12 @@ func TestService_CreateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotName),
 		},
 		{
-			name:      "return error for invalid latitude",
+			name: "return error for invalid latitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: CreateSpotParams{
 				Name: "Spot 1",
@@ -528,7 +703,12 @@ func TestService_CreateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLatitude),
 		},
 		{
-			name:      "return error for invalid longitide",
+			name: "return error for invalid longitide",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: CreateSpotParams{
 				Name: "Spot 1",
@@ -545,7 +725,12 @@ func TestService_CreateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLongitude),
 		},
 		{
-			name:      "return error for invalid locality",
+			name: "return error for invalid locality",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: CreateSpotParams{
 				Name: "Spot 1",
@@ -562,7 +747,12 @@ func TestService_CreateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLocality),
 		},
 		{
-			name:      "return error for invalid country code",
+			name: "return error for invalid country code",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: CreateSpotParams{
 				Name: "Spot 1",
@@ -580,6 +770,11 @@ func TestService_CreateSpot(t *testing.T) {
 		},
 		{
 			name: "return error during spot store failure",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -613,6 +808,11 @@ func TestService_CreateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot using sanitized params without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -673,6 +873,11 @@ func TestService_CreateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -737,7 +942,7 @@ func TestService_CreateSpot(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := NewService(test.spotStore, newMockLocationSource())
 
-			spot, err := s.CreateSpot(test.params)
+			spot, err := s.CreateSpot(test.ctxFn(), test.params)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpot, spot)
 		})
@@ -747,13 +952,47 @@ func TestService_CreateSpot(t *testing.T) {
 func TestService_UpdateSpot(t *testing.T) {
 	tests := []struct {
 		name          string
+		ctxFn         func() context.Context
 		spotStore     SpotStore
 		params        UpdateSpotParams
 		expectedSpot  surf.Spot
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
-			name:      "return error for invalid id",
+			name: "return error for unauthenticated request",
+			ctxFn: func() context.Context {
+				return context.Background()
+			},
+			spotStore: newMockSpotStore(),
+			params: UpdateSpotParams{
+				ID:   "",
+				Name: pconv.String("Spot 1"),
+			},
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(jwt.ErrClaimsNotFound),
+		},
+		{
+			name: "return error for unauthorized request",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: "",
+				})
+			},
+			spotStore: newMockSpotStore(),
+			params: UpdateSpotParams{
+				ID:   "",
+				Name: pconv.String("Spot 1"),
+			},
+			expectedSpot:  surf.Spot{},
+			expectedErrFn: testutil.IsError(jwt.ErrMismatchedRole),
+		},
+		{
+			name: "return error for invalid id",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: UpdateSpotParams{
 				ID:   "",
@@ -763,7 +1002,12 @@ func TestService_UpdateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotID),
 		},
 		{
-			name:      "return error for invalid name",
+			name: "return error for invalid name",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: UpdateSpotParams{
 				ID:   "1",
@@ -773,7 +1017,12 @@ func TestService_UpdateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotName),
 		},
 		{
-			name:      "return error for invalid latitude",
+			name: "return error for invalid latitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: UpdateSpotParams{
 				ID:       "1",
@@ -784,7 +1033,12 @@ func TestService_UpdateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLatitude),
 		},
 		{
-			name:      "return error for invalid longitude",
+			name: "return error for invalid longitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: UpdateSpotParams{
 				ID:        "1",
@@ -796,7 +1050,12 @@ func TestService_UpdateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLongitude),
 		},
 		{
-			name:      "return error for invalid locality",
+			name: "return error for invalid locality",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: UpdateSpotParams{
 				ID:        "1",
@@ -809,7 +1068,12 @@ func TestService_UpdateSpot(t *testing.T) {
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidLocality),
 		},
 		{
-			name:      "return error for invalid country code",
+			name: "return error for invalid country code",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: newMockSpotStore(),
 			params: UpdateSpotParams{
 				ID:          "1",
@@ -824,6 +1088,11 @@ func TestService_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return error during spot store failure",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -851,6 +1120,11 @@ func TestService_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot for coordinateless params without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -897,6 +1171,11 @@ func TestService_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot for nameless params without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -945,6 +1224,11 @@ func TestService_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot using sanitized params without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -999,6 +1283,11 @@ func TestService_UpdateSpot(t *testing.T) {
 		},
 		{
 			name: "return spot without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -1057,7 +1346,7 @@ func TestService_UpdateSpot(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := NewService(test.spotStore, newMockLocationSource())
 
-			spot, err := s.UpdateSpot(test.params)
+			spot, err := s.UpdateSpot(test.ctxFn(), test.params)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedSpot, spot)
 		})
@@ -1067,18 +1356,49 @@ func TestService_UpdateSpot(t *testing.T) {
 func TestService_DeleteSpot(t *testing.T) {
 	tests := []struct {
 		name          string
+		ctxFn         func() context.Context
 		spotStore     SpotStore
 		id            string
 		expectedErrFn assert.ErrorAssertionFunc
 	}{
 		{
-			name:          "return error for invalid spot id",
+			name: "return error for unauthenticated request",
+			ctxFn: func() context.Context {
+				return context.Background()
+			},
+			spotStore:     newMockSpotStore(),
+			id:            "",
+			expectedErrFn: testutil.IsError(jwt.ErrClaimsNotFound),
+		},
+		{
+			name: "return error for unauthorized request",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: "",
+				})
+			},
+			spotStore:     newMockSpotStore(),
+			id:            "",
+			expectedErrFn: testutil.IsError(jwt.ErrMismatchedRole),
+		},
+		{
+			name: "return error for invalid spot id",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore:     newMockSpotStore(),
 			id:            "",
 			expectedErrFn: testutil.AreValidationErrors(ErrInvalidSpotID),
 		},
 		{
 			name: "return error during spot store failure",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -1091,6 +1411,11 @@ func TestService_DeleteSpot(t *testing.T) {
 		},
 		{
 			name: "return spot using sanitized id without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -1103,6 +1428,11 @@ func TestService_DeleteSpot(t *testing.T) {
 		},
 		{
 			name: "return spot without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			spotStore: func() SpotStore {
 				m := newMockSpotStore()
 				m.
@@ -1119,7 +1449,7 @@ func TestService_DeleteSpot(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := NewService(test.spotStore, newMockLocationSource())
 
-			err := s.DeleteSpot(test.id)
+			err := s.DeleteSpot(test.ctxFn(), test.id)
 			test.expectedErrFn(t, err)
 		})
 	}
@@ -1128,13 +1458,47 @@ func TestService_DeleteSpot(t *testing.T) {
 func TestService_Location(t *testing.T) {
 	tests := []struct {
 		name             string
+		ctxFn            func() context.Context
 		locationSource   geo.LocationSource
 		coord            geo.Coordinates
 		expectedLocation geo.Location
 		expectedErrFn    assert.ErrorAssertionFunc
 	}{
 		{
-			name:           "return error for invalid latitude",
+			name: "return error for unauthenticated request",
+			ctxFn: func() context.Context {
+				return context.Background()
+			},
+			locationSource: newMockLocationSource(),
+			coord: geo.Coordinates{
+				Latitude:  -91,
+				Longitude: 180,
+			},
+			expectedLocation: geo.Location{},
+			expectedErrFn:    testutil.IsError(jwt.ErrClaimsNotFound),
+		},
+		{
+			name: "return error for unauthorized request",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: "",
+				})
+			},
+			locationSource: newMockLocationSource(),
+			coord: geo.Coordinates{
+				Latitude:  -91,
+				Longitude: 180,
+			},
+			expectedLocation: geo.Location{},
+			expectedErrFn:    testutil.IsError(jwt.ErrMismatchedRole),
+		},
+		{
+			name: "return error for invalid latitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			locationSource: newMockLocationSource(),
 			coord: geo.Coordinates{
 				Latitude:  -91,
@@ -1144,7 +1508,12 @@ func TestService_Location(t *testing.T) {
 			expectedErrFn:    testutil.AreValidationErrors(ErrInvalidLatitude),
 		},
 		{
-			name:           "return error for invalid longitude",
+			name: "return error for invalid longitude",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			locationSource: newMockLocationSource(),
 			coord: geo.Coordinates{
 				Latitude:  -90,
@@ -1155,6 +1524,11 @@ func TestService_Location(t *testing.T) {
 		},
 		{
 			name: "return error during unexpected location source failure",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			locationSource: func() geo.LocationSource {
 				m := newMockLocationSource()
 				m.
@@ -1174,6 +1548,11 @@ func TestService_Location(t *testing.T) {
 		},
 		{
 			name: "return error when location is not found",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			locationSource: func() geo.LocationSource {
 				m := newMockLocationSource()
 				m.
@@ -1193,6 +1572,11 @@ func TestService_Location(t *testing.T) {
 		},
 		{
 			name: "return location without error",
+			ctxFn: func() context.Context {
+				return jwt.ContextWith(context.Background(), jwt.Claims{
+					Role: jwt.RoleName(auth.RoleAdmin),
+				})
+			},
 			locationSource: func() geo.LocationSource {
 				m := newMockLocationSource()
 				m.
@@ -1233,7 +1617,7 @@ func TestService_Location(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := NewService(newMockSpotStore(), test.locationSource)
 
-			l, err := s.Location(test.coord)
+			l, err := s.Location(test.ctxFn(), test.coord)
 			test.expectedErrFn(t, err)
 			assert.Equal(t, test.expectedLocation, l)
 		})
