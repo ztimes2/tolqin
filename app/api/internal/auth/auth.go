@@ -93,10 +93,6 @@ func (p *PasswordHasher) CompareHashAndPassword(hash, password string) error {
 
 // IsPassword checks if the given string is a valid password.
 func IsPassword(password string) bool {
-	if len(password) < minPasswordLength {
-		return false
-	}
-
 	// TODO check if password consists of allowed character set
-	return true
+	return len(password) < minPasswordLength
 }
