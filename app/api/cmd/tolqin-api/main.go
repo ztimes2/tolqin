@@ -4,23 +4,23 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
-	config "github.com/ztimes2/tolqin/app/api/internal/config/api"
+	config "github.com/ztimes2/tolqin/app/api/internal/api/config"
+	"github.com/ztimes2/tolqin/app/api/internal/api/router"
+	serviceauth "github.com/ztimes2/tolqin/app/api/internal/api/service/auth"
+	"github.com/ztimes2/tolqin/app/api/internal/api/service/management"
+	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfer"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/auth"
 	authpsql "github.com/ztimes2/tolqin/app/api/internal/pkg/auth/psql"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo/nominatim"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/jwt"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/surf/psql"
-	"github.com/ztimes2/tolqin/app/api/internal/router"
-	serviceauth "github.com/ztimes2/tolqin/app/api/internal/service/auth"
-	"github.com/ztimes2/tolqin/app/api/internal/service/management"
-	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 	"github.com/ztimes2/tolqin/app/api/pkg/httpserver"
 	logx "github.com/ztimes2/tolqin/app/api/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/pkg/psqlutil"
 )
 
 func main() {
-	conf, err := config.New()
+	conf, err := config.Load()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}

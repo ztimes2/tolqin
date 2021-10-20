@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/ztimes2/tolqin/app/api/internal/importing"
+	"github.com/ztimes2/tolqin/app/api/internal/importer/importing"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo"
 )
 
