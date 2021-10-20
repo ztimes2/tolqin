@@ -4,12 +4,16 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
+	"github.com/ztimes2/tolqin/app/api/internal/auth"
+	authpsql "github.com/ztimes2/tolqin/app/api/internal/auth/psql"
 	config "github.com/ztimes2/tolqin/app/api/internal/config/api"
 	"github.com/ztimes2/tolqin/app/api/internal/geo/nominatim"
+	"github.com/ztimes2/tolqin/app/api/internal/jwt"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/httpserver"
 	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/router"
+	serviceauth "github.com/ztimes2/tolqin/app/api/internal/service/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 	"github.com/ztimes2/tolqin/app/api/internal/surf/psql"
@@ -41,7 +45,15 @@ func main() {
 
 	spotStore := psql.NewSpotStore(db)
 
+	jwtEncodeDecoder := jwt.NewEncodeDecoder(conf.JWTSigningKey, conf.JWTExpiry)
+
 	router := router.New(
+		serviceauth.NewService(
+			auth.NewPasswordSalter(),
+			auth.NewPasswordHasher(),
+			jwtEncodeDecoder,
+			authpsql.NewUserStore(db),
+		),
 		surfer.NewService(spotStore),
 		management.NewService(
 			spotStore,
@@ -50,6 +62,7 @@ func main() {
 				Timeout: conf.Nominatim.Timeout,
 			}),
 		),
+		jwtEncodeDecoder,
 		logger,
 	)
 
