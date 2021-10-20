@@ -1,6 +1,6 @@
 package router
 
-import "github.com/ztimes2/tolqin/app/api/internal/surf"
+import "github.com/ztimes2/tolqin/app/api/internal/pkg/surf"
 
 type spotResponse struct {
 	ID          string  `json:"id"`

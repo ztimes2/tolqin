@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/ztimes2/tolqin/app/api/internal/auth"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/auth"
 	"github.com/ztimes2/tolqin/app/api/pkg/psqlutil"
 
 	sq "github.com/Masterminds/squirrel"

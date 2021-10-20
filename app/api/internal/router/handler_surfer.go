@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/surf"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
-	"github.com/ztimes2/tolqin/app/api/internal/surf"
 	"github.com/ztimes2/tolqin/app/api/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )

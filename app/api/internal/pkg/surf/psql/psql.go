@@ -8,8 +8,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/surf"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/surf"
 	"github.com/ztimes2/tolqin/app/api/pkg/batch"
 	"github.com/ztimes2/tolqin/app/api/pkg/psqlutil"
 )

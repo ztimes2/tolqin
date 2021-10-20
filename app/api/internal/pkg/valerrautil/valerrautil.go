@@ -3,8 +3,8 @@ package valerrautil
 import (
 	"net/mail"
 
-	"github.com/ztimes2/tolqin/app/api/internal/auth"
-	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/auth"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo"
 	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 

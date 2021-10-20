@@ -14,9 +14,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/surf"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
-	"github.com/ztimes2/tolqin/app/api/internal/surf"
 	"github.com/ztimes2/tolqin/app/api/pkg/pconv"
 	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )

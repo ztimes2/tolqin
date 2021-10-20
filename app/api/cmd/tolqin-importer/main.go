@@ -9,7 +9,7 @@ import (
 	config "github.com/ztimes2/tolqin/app/api/internal/config/importer"
 	"github.com/ztimes2/tolqin/app/api/internal/importing"
 	"github.com/ztimes2/tolqin/app/api/internal/importing/csv"
-	"github.com/ztimes2/tolqin/app/api/internal/surf/psql"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/surf/psql"
 	logx "github.com/ztimes2/tolqin/app/api/pkg/log"
 	"github.com/ztimes2/tolqin/app/api/pkg/psqlutil"
 )

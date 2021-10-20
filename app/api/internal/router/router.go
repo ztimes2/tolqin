@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
-	"github.com/ztimes2/tolqin/app/api/internal/jwt"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/jwt"
 	serviceauth "github.com/ztimes2/tolqin/app/api/internal/service/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ztimes2/tolqin/app/api/internal/auth"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/auth"
 	"github.com/ztimes2/tolqin/app/api/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )

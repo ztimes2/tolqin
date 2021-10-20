@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/ztimes2/tolqin/app/api/internal/auth"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/auth"
 )
 
 const (

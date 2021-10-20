@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ztimes2/tolqin/app/api/internal/geo"
+	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo"
 )
 
 var (
