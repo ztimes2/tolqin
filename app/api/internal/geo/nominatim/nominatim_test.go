@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
+	"github.com/ztimes2/tolqin/app/api/pkg/testutil"
 )
 
 func TestNominatim_Location(t *testing.T) {

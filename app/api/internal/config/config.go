@@ -7,7 +7,7 @@ import (
 	"github.com/heetch/confita"
 	"github.com/heetch/confita/backend"
 	"github.com/heetch/confita/backend/env"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/dotenv"
+	"github.com/ztimes2/tolqin/app/api/pkg/dotenv"
 )
 
 type Database struct {

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
+	"github.com/ztimes2/tolqin/app/api/pkg/log"
 )
 
 type response struct {
@@ -167,7 +167,7 @@ func NewInvalidFields() *InvalidFields {
 	return &InvalidFields{}
 }
 
-// Is adds the given field to the invalid fields if at least one of errors in the 
+// Is adds the given field to the invalid fields if at least one of errors in the
 // given err's chain matches the target.
 func (f *InvalidFields) Is(err, target error, field InvalidField) {
 	if !errors.Is(err, target) {

@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/paging"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/surf"
 	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
+	"github.com/ztimes2/tolqin/app/api/pkg/paging"
+	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
 const (

@@ -11,10 +11,10 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/jwt"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/pconv"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/strutil"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/testutil"
 	"github.com/ztimes2/tolqin/app/api/internal/surf"
+	"github.com/ztimes2/tolqin/app/api/pkg/pconv"
+	"github.com/ztimes2/tolqin/app/api/pkg/strutil"
+	"github.com/ztimes2/tolqin/app/api/pkg/testutil"
 )
 
 type mockSpotStore struct {

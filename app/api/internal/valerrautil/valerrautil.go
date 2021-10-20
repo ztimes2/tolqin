@@ -5,7 +5,7 @@ import (
 
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
+	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
 const (

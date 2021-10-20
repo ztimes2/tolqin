@@ -2,7 +2,7 @@ package testutil
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
+	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
 // IsError returns github.com/stretchr/testify package's assert.ErrorAssertionFunc

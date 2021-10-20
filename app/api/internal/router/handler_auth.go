@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
+	"github.com/ztimes2/tolqin/app/api/pkg/httputil"
+	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
 type authService interface {

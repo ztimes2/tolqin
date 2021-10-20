@@ -9,14 +9,14 @@ import (
 	config "github.com/ztimes2/tolqin/app/api/internal/config/api"
 	"github.com/ztimes2/tolqin/app/api/internal/geo/nominatim"
 	"github.com/ztimes2/tolqin/app/api/internal/jwt"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/httpserver"
-	logx "github.com/ztimes2/tolqin/app/api/internal/pkg/log"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/psqlutil"
 	"github.com/ztimes2/tolqin/app/api/internal/router"
 	serviceauth "github.com/ztimes2/tolqin/app/api/internal/service/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/service/surfer"
 	"github.com/ztimes2/tolqin/app/api/internal/surf/psql"
+	"github.com/ztimes2/tolqin/app/api/pkg/httpserver"
+	logx "github.com/ztimes2/tolqin/app/api/pkg/log"
+	"github.com/ztimes2/tolqin/app/api/pkg/psqlutil"
 )
 
 func main() {

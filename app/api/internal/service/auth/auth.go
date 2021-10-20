@@ -7,8 +7,8 @@ import (
 
 	"github.com/ztimes2/tolqin/app/api/internal/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/jwt"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/valerrautil"
+	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
 var (

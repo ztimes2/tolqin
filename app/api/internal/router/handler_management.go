@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/ztimes2/tolqin/app/api/internal/geo"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/httputil"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/valerra"
 	"github.com/ztimes2/tolqin/app/api/internal/service/management"
 	"github.com/ztimes2/tolqin/app/api/internal/surf"
+	"github.com/ztimes2/tolqin/app/api/pkg/httputil"
+	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
 type managementService interface {

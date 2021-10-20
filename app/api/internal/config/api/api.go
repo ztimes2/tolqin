@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/ztimes2/tolqin/app/api/internal/config"
-	"github.com/ztimes2/tolqin/app/api/internal/pkg/log"
+	"github.com/ztimes2/tolqin/app/api/pkg/log"
 )
 
 type Config struct {
