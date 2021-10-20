@@ -193,7 +193,7 @@ func TestSurferHandler_Spot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(test.service, nil, test.logger)) // TODO replace nil
+			server := httptest.NewServer(newRouter(nil, test.service, nil, nil, test.logger)) // TODO replace nil
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/v1/spots/"+test.id, nil)
@@ -701,7 +701,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(test.service, nil, test.logger)) // TODO replace nil
+			server := httptest.NewServer(newRouter(nil, test.service, nil, nil, test.logger)) // TODO replace nil
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/v1/spots", nil)

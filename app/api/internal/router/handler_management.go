@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -14,12 +15,12 @@ import (
 )
 
 type managementService interface {
-	Spot(id string) (surf.Spot, error)
-	Spots(management.SpotsParams) ([]surf.Spot, error)
-	CreateSpot(management.CreateSpotParams) (surf.Spot, error)
-	UpdateSpot(management.UpdateSpotParams) (surf.Spot, error)
-	DeleteSpot(id string) error
-	Location(geo.Coordinates) (geo.Location, error)
+	Spot(ctx context.Context, id string) (surf.Spot, error)
+	Spots(context.Context, management.SpotsParams) ([]surf.Spot, error)
+	CreateSpot(context.Context, management.CreateSpotParams) (surf.Spot, error)
+	UpdateSpot(context.Context, management.UpdateSpotParams) (surf.Spot, error)
+	DeleteSpot(ctx context.Context, id string) error
+	Location(context.Context, geo.Coordinates) (geo.Location, error)
 }
 
 type managementHandler struct {
@@ -35,7 +36,7 @@ func newManagementHandler(s managementService) *managementHandler {
 func (h *managementHandler) spot(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, paramKeySpotID)
 
-	spot, err := h.service.Spot(id)
+	spot, err := h.service.Spot(r.Context(), id)
 	if err != nil {
 		var vErr *valerra.Errors
 		if errors.As(err, &vErr) {
@@ -94,7 +95,7 @@ func (h *managementHandler) spots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spots, err := h.service.Spots(management.SpotsParams{
+	spots, err := h.service.Spots(r.Context(), management.SpotsParams{
 		Limit:       limit,
 		Offset:      offset,
 		CountryCode: countryCode,
@@ -147,7 +148,7 @@ func (h *managementHandler) createSpot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spot, err := h.service.CreateSpot(management.CreateSpotParams{
+	spot, err := h.service.CreateSpot(r.Context(), management.CreateSpotParams{
 		Name: payload.Name,
 		Location: geo.Location{
 			Coordinates: geo.Coordinates{
@@ -197,7 +198,7 @@ func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spot, err := h.service.UpdateSpot(management.UpdateSpotParams{
+	spot, err := h.service.UpdateSpot(r.Context(), management.UpdateSpotParams{
 		ID:          spotID,
 		Name:        payload.Name,
 		Latitude:    payload.Latitude,
@@ -241,7 +242,7 @@ func (h *managementHandler) updateSpot(w http.ResponseWriter, r *http.Request) {
 func (h *managementHandler) deleteSpot(w http.ResponseWriter, r *http.Request) {
 	spotID := chi.URLParam(r, paramKeySpotID)
 
-	if err := h.service.DeleteSpot(spotID); err != nil {
+	if err := h.service.DeleteSpot(r.Context(), spotID); err != nil {
 		var vErr *valerra.Errors
 		if errors.As(err, &vErr) {
 			f := httputil.NewInvalidFields()
@@ -277,7 +278,7 @@ func (h *managementHandler) location(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	l, err := h.service.Location(geo.Coordinates{
+	l, err := h.service.Location(r.Context(), geo.Coordinates{
 		Latitude:  latitude,
 		Longitude: longitude,
 	})

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -28,33 +29,33 @@ func newMockManagementService() *mockManagementService {
 	return &mockManagementService{}
 }
 
-func (m *mockManagementService) Spot(id string) (surf.Spot, error) {
-	args := m.Called(id)
+func (m *mockManagementService) Spot(ctx context.Context, id string) (surf.Spot, error) {
+	args := m.Called(ctx, id)
 	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockManagementService) Spots(p management.SpotsParams) ([]surf.Spot, error) {
-	args := m.Called(p)
+func (m *mockManagementService) Spots(ctx context.Context, p management.SpotsParams) ([]surf.Spot, error) {
+	args := m.Called(ctx, p)
 	return args.Get(0).([]surf.Spot), args.Error(1)
 }
 
-func (m *mockManagementService) CreateSpot(p management.CreateSpotParams) (surf.Spot, error) {
-	args := m.Called(p)
+func (m *mockManagementService) CreateSpot(ctx context.Context, p management.CreateSpotParams) (surf.Spot, error) {
+	args := m.Called(ctx, p)
 	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockManagementService) UpdateSpot(p management.UpdateSpotParams) (surf.Spot, error) {
-	args := m.Called(p)
+func (m *mockManagementService) UpdateSpot(ctx context.Context, p management.UpdateSpotParams) (surf.Spot, error) {
+	args := m.Called(ctx, p)
 	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockManagementService) DeleteSpot(id string) error {
-	args := m.Called(id)
+func (m *mockManagementService) DeleteSpot(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
-func (m *mockManagementService) Location(c geo.Coordinates) (geo.Location, error) {
-	args := m.Called(c)
+func (m *mockManagementService) Location(ctx context.Context, c geo.Coordinates) (geo.Location, error) {
+	args := m.Called(ctx, c)
 	return args.Get(0).(geo.Location), args.Error(1)
 }
 
@@ -71,7 +72,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spot", "1").
+					On("Spot", mock.Anything, "1").
 					Return(surf.Spot{}, errors.New("something went wrong"))
 				return m
 			}(),
@@ -101,7 +102,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spot", "1").
+					On("Spot", mock.Anything, "1").
 					Return(surf.Spot{}, surf.ErrSpotNotFound)
 				return m
 			}(),
@@ -131,7 +132,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spot", "1").
+					On("Spot", mock.Anything, "1").
 					Return(surf.Spot{}, valerra.NewErrors(management.ErrInvalidSpotID))
 				return m
 			}(),
@@ -167,7 +168,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spot", "1").
+					On("Spot", mock.Anything, "1").
 					Return(
 						surf.Spot{
 							Location: geo.Location{
@@ -215,7 +216,7 @@ func TestManagementHandler_Spot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(nil, newMockSurferService(), test.service, nil, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/management/v1/spots/"+test.id, nil)
@@ -474,7 +475,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spots", management.SpotsParams{
+					On("Spots", mock.Anything, management.SpotsParams{
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "zz",
@@ -548,7 +549,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spots", management.SpotsParams{
+					On("Spots", mock.Anything, management.SpotsParams{
 						Limit:  10,
 						Offset: 0,
 					}).
@@ -587,7 +588,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spots", management.SpotsParams{
+					On("Spots", mock.Anything, management.SpotsParams{
 						Limit:  0,
 						Offset: 0,
 					}).
@@ -621,7 +622,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Spots", management.SpotsParams{
+					On("Spots", mock.Anything, management.SpotsParams{
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",
@@ -723,7 +724,7 @@ func TestManagementHandler_Spots(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(nil, newMockSurferService(), test.service, nil, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/management/v1/spots", nil)
@@ -779,7 +780,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("CreateSpot", management.CreateSpotParams{
+					On("CreateSpot", mock.Anything, management.CreateSpotParams{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -855,7 +856,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("CreateSpot", management.CreateSpotParams{
+					On("CreateSpot", mock.Anything, management.CreateSpotParams{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -905,7 +906,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("CreateSpot", management.CreateSpotParams{
+					On("CreateSpot", mock.Anything, management.CreateSpotParams{
 						Location: geo.Location{
 							Coordinates: geo.Coordinates{
 								Latitude:  1.23,
@@ -973,7 +974,7 @@ func TestManagementHandler_CreateSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(nil, newMockSurferService(), test.service, nil, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodPost, server.URL+"/management/v1/spots", nil)
@@ -1031,7 +1032,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("UpdateSpot", management.UpdateSpotParams{
+					On("UpdateSpot", mock.Anything, management.UpdateSpotParams{
 						Latitude:  pconv.Float64(1.23),
 						Longitude: pconv.Float64(3.21),
 						Name:      pconv.String(""),
@@ -1108,7 +1109,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("UpdateSpot", management.UpdateSpotParams{
+					On("UpdateSpot", mock.Anything, management.UpdateSpotParams{
 						ID: "1",
 					}).
 					Return(surf.Spot{}, surf.ErrEmptySpotUpdateEntry)
@@ -1144,7 +1145,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("UpdateSpot", management.UpdateSpotParams{
+					On("UpdateSpot", mock.Anything, management.UpdateSpotParams{
 						Latitude:  pconv.Float64(1.23),
 						Longitude: pconv.Float64(3.21),
 						Name:      pconv.String("Spot 1"),
@@ -1188,7 +1189,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("UpdateSpot", management.UpdateSpotParams{
+					On("UpdateSpot", mock.Anything, management.UpdateSpotParams{
 						Latitude:  pconv.Float64(1.23),
 						Longitude: pconv.Float64(3.21),
 						Name:      pconv.String("Spot 1"),
@@ -1232,7 +1233,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("UpdateSpot", management.UpdateSpotParams{
+					On("UpdateSpot", mock.Anything, management.UpdateSpotParams{
 						Name:      pconv.String("Spot 1"),
 						Latitude:  pconv.Float64(1.23),
 						Longitude: pconv.Float64(3.21),
@@ -1295,7 +1296,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("UpdateSpot", management.UpdateSpotParams{
+					On("UpdateSpot", mock.Anything, management.UpdateSpotParams{
 						Locality:    pconv.String("Locality 1"),
 						CountryCode: pconv.String("kz"),
 						ID:          "1",
@@ -1356,7 +1357,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("UpdateSpot", management.UpdateSpotParams{
+					On("UpdateSpot", mock.Anything, management.UpdateSpotParams{
 						Name:        pconv.String("Spot 1"),
 						Latitude:    pconv.Float64(1.23),
 						Longitude:   pconv.Float64(3.21),
@@ -1422,7 +1423,7 @@ func TestManagementHandler_UpdateSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(nil, newMockSurferService(), test.service, nil, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodPatch, server.URL+"/management/v1/spots/"+test.id, nil)
@@ -1451,7 +1452,7 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("DeleteSpot", "1").
+					On("DeleteSpot", mock.Anything, "1").
 					Return(errors.New("something went wrong"))
 				return m
 			}(),
@@ -1481,7 +1482,7 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("DeleteSpot", "1").
+					On("DeleteSpot", mock.Anything, "1").
 					Return(surf.ErrSpotNotFound)
 				return m
 			}(),
@@ -1511,7 +1512,7 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("DeleteSpot", "1").
+					On("DeleteSpot", mock.Anything, "1").
 					Return(valerra.NewErrors(management.ErrInvalidSpotID))
 				return m
 			}(),
@@ -1547,7 +1548,7 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("DeleteSpot", "1").
+					On("DeleteSpot", mock.Anything, "1").
 					Return(nil)
 				return m
 			}(),
@@ -1567,7 +1568,7 @@ func TestManagementHandler_DeleteSpot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(nil, newMockSurferService(), test.service, nil, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodDelete, server.URL+"/management/v1/spots/"+test.id, nil)
@@ -1736,7 +1737,7 @@ func TestManagementHandler_Location(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Location", geo.Coordinates{
+					On("Location", mock.Anything, geo.Coordinates{
 						Latitude:  -91,
 						Longitude: -181,
 					}).
@@ -1788,7 +1789,7 @@ func TestManagementHandler_Location(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Location", geo.Coordinates{
+					On("Location", mock.Anything, geo.Coordinates{
 						Latitude:  1.23,
 						Longitude: 3.21,
 					}).
@@ -1827,7 +1828,7 @@ func TestManagementHandler_Location(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Location", geo.Coordinates{
+					On("Location", mock.Anything, geo.Coordinates{
 						Latitude:  1.23,
 						Longitude: 3.21,
 					}).
@@ -1866,7 +1867,7 @@ func TestManagementHandler_Location(t *testing.T) {
 			service: func() managementService {
 				m := newMockManagementService()
 				m.
-					On("Location", geo.Coordinates{
+					On("Location", mock.Anything, geo.Coordinates{
 						Latitude:  1.23,
 						Longitude: 3.21,
 					}).
@@ -1916,7 +1917,7 @@ func TestManagementHandler_Location(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(newRouter(newMockSurferService(), test.service, test.logger))
+			server := httptest.NewServer(newRouter(nil, newMockSurferService(), test.service, nil, test.logger))
 			defer server.Close()
 
 			req, err := http.NewRequest(http.MethodGet, server.URL+"/management/v1/geo/location", nil)
