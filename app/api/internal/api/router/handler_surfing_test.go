@@ -196,7 +196,7 @@ func TestSurfingHandler_Spot(t *testing.T) {
 			server := httptest.NewServer(newRouter(nil, test.service, nil, nil, test.logger)) // TODO replace nil
 			defer server.Close()
 
-			req, err := http.NewRequest(http.MethodGet, server.URL+"/v1/spots/"+test.id, nil)
+			req, err := http.NewRequest(http.MethodGet, server.URL+"/surfing/v1/spots/"+test.id, nil)
 			assert.NoError(t, err)
 
 			resp, err := http.DefaultClient.Do(req)
@@ -207,7 +207,7 @@ func TestSurfingHandler_Spot(t *testing.T) {
 	}
 }
 
-func TestSurferHandler_Spots(t *testing.T) {
+func TestSurfingHandler_Spots(t *testing.T) {
 	tests := []struct {
 		name               string
 		service            surfingService
@@ -704,7 +704,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 			server := httptest.NewServer(newRouter(nil, test.service, nil, nil, test.logger)) // TODO replace nil
 			defer server.Close()
 
-			req, err := http.NewRequest(http.MethodGet, server.URL+"/v1/spots", nil)
+			req, err := http.NewRequest(http.MethodGet, server.URL+"/surfing/v1/spots", nil)
 			assert.NoError(t, err)
 
 			test.requestFn(req)
