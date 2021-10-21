@@ -55,7 +55,7 @@ func Load() (Config, error) {
 		dotenv.NewBackend(),
 	}
 
-	if err := confita.NewLoader(backends...).Load(context.Background(), cfg); err != nil {
+	if err := confita.NewLoader(backends...).Load(context.Background(), &cfg); err != nil {
 		return Config{}, err
 	}
 

@@ -75,6 +75,12 @@ type SpotCreationEntry struct {
 	Name     string
 }
 
+// SpotCreationEntrySource is anything that can fetch entries for creating spots.
+type SpotCreationEntrySource interface {
+	// SpotCreationEntries fetches and returns entries for creating spots.
+	SpotCreationEntries() ([]SpotCreationEntry, error)
+}
+
 // SpotUpdateEntry holds parameters for updating a spot in a data storage. It can
 // be used for both partial and full updates. In order to achieve a full update,
 // all pointer-fields must not be nil. For a partial update, only the desired fields
