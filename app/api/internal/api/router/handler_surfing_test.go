@@ -12,42 +12,42 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfer"
+	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfing"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/surf"
 	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
-type mockSurferService struct {
+type mockSurfingService struct {
 	mock.Mock
 }
 
-func newMockSurferService() *mockSurferService {
-	return &mockSurferService{}
+func newMockSurfingService() *mockSurfingService {
+	return &mockSurfingService{}
 }
 
-func (m *mockSurferService) Spot(id string) (surf.Spot, error) {
+func (m *mockSurfingService) Spot(id string) (surf.Spot, error) {
 	args := m.Called(id)
 	return args.Get(0).(surf.Spot), args.Error(1)
 }
 
-func (m *mockSurferService) Spots(p surfer.SpotsParams) ([]surf.Spot, error) {
+func (m *mockSurfingService) Spots(p surfing.SpotsParams) ([]surf.Spot, error) {
 	args := m.Called(p)
 	return args.Get(0).([]surf.Spot), args.Error(1)
 }
 
-func TestSurferHandler_Spot(t *testing.T) {
+func TestSurfingHandler_Spot(t *testing.T) {
 	tests := []struct {
 		name               string
-		service            surferService
+		service            surfingService
 		logger             *logrus.Logger
 		id                 string
 		expectedResponseFn func(t *testing.T, r *http.Response)
 	}{
 		{
 			name: "respond with 500 status code and error body for unexpected error",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
 					On("Spot", "1").
 					Return(surf.Spot{}, errors.New("something went wrong"))
@@ -76,8 +76,8 @@ func TestSurferHandler_Spot(t *testing.T) {
 		},
 		{
 			name: "respond with 404 status code and error body for unexisting spot",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
 					On("Spot", "1").
 					Return(surf.Spot{}, surf.ErrSpotNotFound)
@@ -106,11 +106,11 @@ func TestSurferHandler_Spot(t *testing.T) {
 		},
 		{
 			name: "respond with 400 status code and error body for invalid spot id",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
 					On("Spot", "invalid").
-					Return(surf.Spot{}, valerra.NewErrors(surfer.ErrInvalidSpotID))
+					Return(surf.Spot{}, valerra.NewErrors(surfing.ErrInvalidSpotID))
 				return m
 			}(),
 			logger: nil, // FIXME catch error logs
@@ -142,8 +142,8 @@ func TestSurferHandler_Spot(t *testing.T) {
 		},
 		{
 			name: "respond with 200 status code and spot body",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
 					On("Spot", "1").
 					Return(
@@ -210,14 +210,14 @@ func TestSurferHandler_Spot(t *testing.T) {
 func TestSurferHandler_Spots(t *testing.T) {
 	tests := []struct {
 		name               string
-		service            surferService
+		service            surfingService
 		logger             *logrus.Logger
 		requestFn          func(r *http.Request)
 		expectedResponseFn func(t *testing.T, r *http.Response)
 	}{
 		{
 			name:    "respond with 400 status code and error body for invalid limit",
-			service: newMockSurferService(),
+			service: newMockSurfingService(),
 			logger:  nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
@@ -253,7 +253,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name:    "respond with 400 status code and error body for invalid offset",
-			service: newMockSurferService(),
+			service: newMockSurfingService(),
 			logger:  nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
@@ -289,7 +289,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name:    "respond with 400 status code and error body for invalid north-east latitude",
-			service: newMockSurferService(),
+			service: newMockSurfingService(),
 			logger:  nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
@@ -329,7 +329,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name:    "respond with 400 status code and error body for invalid north-east longitude",
-			service: newMockSurferService(),
+			service: newMockSurfingService(),
 			logger:  nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
@@ -369,7 +369,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name:    "respond with 400 status code and error body for invalid south-west latitude",
-			service: newMockSurferService(),
+			service: newMockSurfingService(),
 			logger:  nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
@@ -409,7 +409,7 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name:    "respond with 400 status code and error body for invalid south-west longitude",
-			service: newMockSurferService(),
+			service: newMockSurfingService(),
 			logger:  nil, // FIXME catch error logs
 			requestFn: func(r *http.Request) {
 				vals := url.Values{
@@ -449,21 +449,21 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name: "respond with 400 status code and error body for validation error",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
-					On("Spots", surfer.SpotsParams{
+					On("Spots", surfing.SpotsParams{
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "zz",
 					}).
 					Return(([]surf.Spot)(nil), valerra.NewErrors(
-						surfer.ErrInvalidSearchQuery,
-						surfer.ErrInvalidCountryCode,
-						surfer.ErrInvalidNorthEastLatitude,
-						surfer.ErrInvalidNorthEastLongitude,
-						surfer.ErrInvalidSouthWestLatitude,
-						surfer.ErrInvalidSouthWestLongitude,
+						surfing.ErrInvalidSearchQuery,
+						surfing.ErrInvalidCountryCode,
+						surfing.ErrInvalidNorthEastLatitude,
+						surfing.ErrInvalidNorthEastLongitude,
+						surfing.ErrInvalidSouthWestLatitude,
+						surfing.ErrInvalidSouthWestLongitude,
 					))
 				return m
 			}(),
@@ -523,10 +523,10 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name: "respond with 500 status code and error body for expected error",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
-					On("Spots", surfer.SpotsParams{
+					On("Spots", surfing.SpotsParams{
 						Limit:  10,
 						Offset: 0,
 					}).
@@ -562,10 +562,10 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name: "respond with 200 status code and empty spot list body",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
-					On("Spots", surfer.SpotsParams{
+					On("Spots", surfing.SpotsParams{
 						Limit:  0,
 						Offset: 0,
 					}).
@@ -596,10 +596,10 @@ func TestSurferHandler_Spots(t *testing.T) {
 		},
 		{
 			name: "respond with 200 status code and spot list body",
-			service: func() surferService {
-				m := newMockSurferService()
+			service: func() surfingService {
+				m := newMockSurfingService()
 				m.
-					On("Spots", surfer.SpotsParams{
+					On("Spots", surfing.SpotsParams{
 						Limit:       10,
 						Offset:      0,
 						CountryCode: "kz",

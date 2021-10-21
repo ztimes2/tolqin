@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	serviceauth "github.com/ztimes2/tolqin/app/api/internal/api/service/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/api/service/management"
-	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfer"
+	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfing"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/jwt"
 	"github.com/ztimes2/tolqin/app/api/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/pkg/log"
@@ -21,7 +21,7 @@ const (
 // New returns an HTTP router that serves various APIs of the application.
 func New(
 	as *serviceauth.Service,
-	ss *surfer.Service,
+	ss *surfing.Service,
 	ms *management.Service,
 	j *jwt.EncodeDecoder,
 	l *logrus.Logger) http.Handler {
@@ -31,7 +31,7 @@ func New(
 
 func newRouter(
 	as authService,
-	ss surferService,
+	ss surfingService,
 	ms managementService,
 	j *jwt.EncodeDecoder,
 	l *logrus.Logger) http.Handler {
@@ -53,9 +53,9 @@ func newRouter(
 	ah := newAuthHandler(as)
 	router.Post("/auth/v1/token", ah.token)
 
-	sh := newSurferHandler(ss)
-	router.Get("/v1/spots", sh.spots)
-	router.Get("/v1/spots/{"+paramKeySpotID+"}", sh.spot)
+	sh := newSurfingHandler(ss)
+	router.Get("/surfing/v1/spots", sh.spots)
+	router.Get("/surfing/v1/spots/{"+paramKeySpotID+"}", sh.spot)
 
 	mh := newManagementHandler(ms)
 	router.Get("/management/v1/spots", mh.spots)

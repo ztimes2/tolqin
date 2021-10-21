@@ -5,28 +5,29 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfer"
+	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfing"
+	surfer "github.com/ztimes2/tolqin/app/api/internal/api/service/surfing"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/surf"
 	"github.com/ztimes2/tolqin/app/api/pkg/httputil"
 	"github.com/ztimes2/tolqin/app/api/pkg/valerra"
 )
 
-type surferService interface {
+type surfingService interface {
 	Spot(id string) (surf.Spot, error)
-	Spots(surfer.SpotsParams) ([]surf.Spot, error)
+	Spots(surfing.SpotsParams) ([]surf.Spot, error)
 }
 
-type surferHandler struct {
-	service surferService
+type surfingHandler struct {
+	service surfingService
 }
 
-func newSurferHandler(s surferService) *surferHandler {
-	return &surferHandler{
+func newSurfingHandler(s surfingService) *surfingHandler {
+	return &surfingHandler{
 		service: s,
 	}
 }
 
-func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
+func (h *surfingHandler) spot(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, paramKeySpotID)
 
 	spot, err := h.service.Spot(id)
@@ -53,7 +54,7 @@ func (h *surferHandler) spot(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, r, toSpotResponse(spot))
 }
 
-func (h *surferHandler) spots(w http.ResponseWriter, r *http.Request) {
+func (h *surfingHandler) spots(w http.ResponseWriter, r *http.Request) {
 	limit, err := httputil.QueryParamInt(r, "limit")
 	if err != nil && !errors.Is(err, httputil.ErrParamNotFound) {
 		httputil.WriteFieldError(w, r, httputil.NewInvalidField("limit", "Must be a valid integer."))

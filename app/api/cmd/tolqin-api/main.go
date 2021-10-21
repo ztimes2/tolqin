@@ -8,7 +8,7 @@ import (
 	"github.com/ztimes2/tolqin/app/api/internal/api/router"
 	serviceauth "github.com/ztimes2/tolqin/app/api/internal/api/service/auth"
 	"github.com/ztimes2/tolqin/app/api/internal/api/service/management"
-	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfer"
+	"github.com/ztimes2/tolqin/app/api/internal/api/service/surfing"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/auth"
 	authpsql "github.com/ztimes2/tolqin/app/api/internal/pkg/auth/psql"
 	"github.com/ztimes2/tolqin/app/api/internal/pkg/geo/nominatim"
@@ -54,7 +54,7 @@ func main() {
 			jwtEncodeDecoder,
 			authpsql.NewUserStore(db),
 		),
-		surfer.NewService(spotStore),
+		surfing.NewService(spotStore),
 		management.NewService(
 			spotStore,
 			nominatim.New(nominatim.Config{
